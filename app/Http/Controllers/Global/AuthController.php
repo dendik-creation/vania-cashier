@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\global;
+namespace App\Http\Controllers\Global;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -12,14 +12,22 @@ use Inertia\Inertia;
 
 class AuthController extends Controller
 {
-    public function signedInStatus(Request $request)
+    public function signedInStatus()
     {
         $auth = Auth::user();
         if (!$auth) {
             return Inertia::location("/auth/signin");
         }
         Session::flash("success", "Login berhasil");
-        return Inertia::location("/dashboard");
+        switch ($auth->role) {
+            case "admin":
+                return Inertia::location("/admin/dashboard");
+            case "cashier":
+                return Inertia::location("/cashier/dashboard");
+            default:
+                Auth::logout();
+                Session::flash("error", "Role pengguna tidak dikenali");
+        }
     }
 
     public function signInView()

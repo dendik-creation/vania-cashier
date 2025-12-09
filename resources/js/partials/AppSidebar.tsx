@@ -8,20 +8,21 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import sidebarNavs from "@/lib/sidebar_navs";
+import { sidebarNavs } from "@/lib/sidebar_navs";
 import { Link } from "@inertiajs/react";
 import { ArrowBigRightDash } from "lucide-react";
 
 export default function AppSidebar({ role }: { role: string }) {
     const pathname = window.location.pathname;
-    const items = sidebarNavs;
+    const items =
+        role == "admin" ? sidebarNavs.adminNavs : sidebarNavs.cashierNavs;
     return (
         <Sidebar>
-            <SidebarContent className="bg-amber-200 min-h-full relative h-full flex flex-col">
+            <SidebarContent className="bg-pink-900 min-h-full relative h-full flex flex-col">
                 <SidebarHeader className="mt-3 ms-3 gap-0">
-                    <span className="text-black/80 font-bold">App Name</span>
-                    <span className="text-black/60 text-sm font-normal">
-                        App Description
+                    <span className="text-white/80 font-bold">Vania Shop</span>
+                    <span className="text-white/60 text-sm font-normal">
+                        Point Of Sale
                     </span>
                 </SidebarHeader>
                 <SidebarGroup>
@@ -31,12 +32,12 @@ export default function AppSidebar({ role }: { role: string }) {
                                 if (item.type === "splitter") {
                                     return (
                                         <SidebarMenuItem
-                                            className="border-b border-slate-700 mt-2"
+                                            className="border-b border-slate-400 mt-2"
                                             key={item.title}
                                         >
                                             <SidebarMenuButton
                                                 disabled
-                                                className="text-black uppercase text-xs"
+                                                className="text-white uppercase text-xs"
                                             >
                                                 <ArrowBigRightDash />
                                                 {item.title}
@@ -47,7 +48,7 @@ export default function AppSidebar({ role }: { role: string }) {
                                     const Icon = item.icon;
                                     return (
                                         <SidebarMenuItem
-                                            className="text-black/80 transition-all mb-0.5"
+                                            className="text-white/80 transition-all mb-0.5"
                                             key={item.title}
                                         >
                                             <SidebarMenuButton

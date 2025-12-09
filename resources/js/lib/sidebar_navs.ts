@@ -1,4 +1,4 @@
-import { Grid2X2, LucideProps } from "lucide-react";
+import { Grid2X2, LucideProps, Package, Users, Users2 } from "lucide-react";
 import { ForwardRefExoticComponent, RefAttributes } from "react";
 
 export type NavItems = {
@@ -10,7 +10,39 @@ export type NavItems = {
     >;
 }[];
 
-const sidebarNavs: NavItems = [
+const adminNavs: NavItems = [
+    {
+        type: "item",
+        title: "Dashboard",
+        url: "/dashboard",
+        icon: Grid2X2,
+    },
+    {
+        type: "splitter",
+        title: "Data Master",
+        url: "#",
+    },
+    {
+        type: "item",
+        title: "Data User",
+        url: "/users",
+        icon: Users2,
+    },
+    {
+        type: "item",
+        title: "Data Pelanggan",
+        url: "/customers",
+        icon: Users,
+    },
+    {
+        type: "item",
+        title: "Data Produk",
+        url: "/products",
+        icon: Package,
+    },
+];
+
+const cashierNavs: NavItems = [
     {
         type: "item",
         title: "Dashboard",
@@ -19,4 +51,19 @@ const sidebarNavs: NavItems = [
     },
 ];
 
-export default sidebarNavs;
+const addPrefixByRole = (role: string, menus: NavItems) => {
+    return menus.map((menu) => {
+        if (menu.type === "item") {
+            return {
+                ...menu,
+                url: `/${role}${menu.url}`,
+            };
+        }
+        return menu;
+    });
+};
+
+export const sidebarNavs = {
+    adminNavs: addPrefixByRole("admin", adminNavs),
+    cashierNavs: addPrefixByRole("cashier", cashierNavs),
+};

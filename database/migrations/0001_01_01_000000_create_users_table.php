@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->string("username")->unique();
             $table->string("password");
             $table->enum("role", ["admin", "cashier"]);
-            $table->dateTime("joined_at")->nullable();
+            $table->dateTime("joined_at")->default(now());
             $table->timestamps();
         });
 
