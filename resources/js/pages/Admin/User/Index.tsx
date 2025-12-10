@@ -1,4 +1,5 @@
 import {
+    PaginatorBuilder,
     SearchInput,
     SelectSearchInput,
 } from "@/components/custom/FormElement";
@@ -31,6 +32,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
+import EmptyCard from "@/components/custom/EmptyCard";
 
 const AdminUserIndex = ({
     title,
@@ -84,7 +86,7 @@ const AdminUserIndex = ({
             <div className="flex flex-col lg:flex-row lg:justify-between items-center gap-3 mb-4">
                 <div className="flex flex-col lg:flex-row items-center gap-3 w-full">
                     <SearchInput
-                        placeholder={`Cari berdasarkan NIP atau nama karyawan`}
+                        placeholder={`Cari username atau nama`}
                         className="lg:max-w-sm w-full"
                         onChange={(e) => handleFilter("search", e.target.value)}
                         value={filterData.search || ""}
@@ -186,7 +188,17 @@ const AdminUserIndex = ({
                         </CardContent>
                     </Card>
                 ))}
+
+                {users.data.length === 0 && <EmptyCard />}
             </div>
+            {users.total > users.per_page && (
+                <PaginatorBuilder
+                    prevUrl={users.prev_page_url ?? "#"}
+                    nextUrl={users.next_page_url ?? "#"}
+                    currentPage={users.current_page}
+                    totalPage={users.last_page}
+                />
+            )}
         </AppLayout>
     );
 };

@@ -30,8 +30,7 @@ import "filepond/dist/filepond.min.css";
 import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
 import { SelectOption } from "@/types/global";
 import { ymdToIdDate } from "../helper/helper";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import { Link } from "@inertiajs/react";
 
 registerPlugin(FilePondPluginFileValidateType);
 
@@ -717,11 +716,12 @@ export const PaginatorBuilder = ({
 
                     const pageNum = page as number;
                     const isActive = pageNum === currentPage;
-
+                    const eachPageUrl = new URL(window.location.href);
+                    eachPageUrl.searchParams.set("page", pageNum.toString());
                     return (
                         <PaginationItem key={pageNum}>
-                            <a
-                                href={`?page=${pageNum}`}
+                            <Link
+                                href={eachPageUrl.toString()}
                                 className={cn(
                                     "flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
                                     isActive &&
@@ -729,7 +729,7 @@ export const PaginatorBuilder = ({
                                 )}
                             >
                                 {pageNum}
-                            </a>
+                            </Link>
                         </PaginationItem>
                     );
                 })}
@@ -744,25 +744,5 @@ export const PaginatorBuilder = ({
                 </PaginationItem>
             </PaginationContent>
         </Pagination>
-    );
-};
-
-export const RichTextEditorInput = ({
-    value,
-    onChange,
-    placeholder = "Tulis sesuatu...",
-    className,
-    disabled = false,
-}: RichTextEditorInputProps) => {
-    return (
-        <div className={className}>
-            <ReactQuill
-                value={value}
-                onChange={onChange}
-                placeholder={placeholder}
-                readOnly={disabled}
-                theme="snow"
-            />
-        </div>
     );
 };

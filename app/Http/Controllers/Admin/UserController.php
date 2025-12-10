@@ -38,12 +38,18 @@ class UserController extends Controller
     }
     public function store(Request $request)
     {
-        $request->validate([
-            "name" => "required|string|max:255",
-            "username" => "required|string|unique:users,username|max:255",
-            "password" => "required|string|min:6",
-            "role" => "required|in:admin,cashier",
-        ]);
+        $request->validate(
+            [
+                "name" => "required|string|max:255",
+                "username" => "required|string|unique:users,username|max:255",
+                "password" => "required|string|min:6",
+                "role" => "required|in:admin,cashier",
+            ],
+            [
+                "username.unique" => "Username sudah digunakan",
+                "password.min" => "Password minimal 6 karakter",
+            ],
+        );
 
         User::create([
             "name" => $request->name,
@@ -53,22 +59,27 @@ class UserController extends Controller
             "joined_at" => now(),
         ]);
 
-        return redirect()
-            ->back()
-            ->with("success", "User berhasil ditambahkan.");
+        Session::flash("success", "User berhasil ditambahkan");
+        return Inertia::location(route("admin.users.index"));
     }
 
     public function update(Request $request, string $id)
     {
         $user = User::findOrFail($id);
 
-        $request->validate([
-            "name" => "required|string|max:255",
-            "username" =>
-                "required|string|unique:users,username," . $id . "|max:255",
-            "password" => "nullable|string|min:6",
-            "role" => "required|in:admin,cashier",
-        ]);
+        $request->validate(
+            [
+                "name" => "required|string|max:255",
+                "username" =>
+                    "required|string|unique:users,username," . $id . "|max:255",
+                "password" => "nullable|string|min:6",
+                "role" => "required|in:admin,cashier",
+            ],
+            [
+                "username.unique" => "Username sudah digunakan",
+                "password.min" => "Password minimal 6 karakter",
+            ],
+        );
 
         $updateData = [
             "name" => $request->name,
@@ -81,8 +92,8 @@ class UserController extends Controller
         }
 
         $user->update($updateData);
-
-        return redirect()->back()->with("success", "User berhasil diperbarui.");
+        Session::flash("success", "User berhasil diperbarui");
+        return Inertia::location("/admin/users");
     }
 
     public function destroy(string $id)
@@ -90,7 +101,8 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         $user->delete();
 
-        return redirect()->back()->with("success", "User berhasil dihapus.");
+        Session::flash("success", "User berhasil dihapus");
+        return Inertia::location("/admin/users");
     }
 
     public function resetPassword($id, Request $request)
@@ -98,7 +110,7 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         if (!$user) {
             Session::flash("error", "User tidak ditemukan");
-            return Inertia::location(route("admin.users.index"));
+            return Inertia::location("/admin/users");
         }
 
         $validated = $request->validate([
@@ -109,7 +121,7 @@ class UserController extends Controller
             "password" => Hash::make($validated["password"]),
         ]);
 
-        Session::flash("success", "Password user berhasil direset");
-        return Inertia::location(route("admin.users.index"));
+        Session::flash("success", "Password berhasil direset");
+        return Inertia::location("/admin/users");
     }
 }
