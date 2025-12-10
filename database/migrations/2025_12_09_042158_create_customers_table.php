@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->text("address")->nullable();
             $table->enum("type", ["member", "reseller"]);
             $table->integer("points")->default(0);
+            $table->date("joined_at");
             $table->timestamps();
         });
     }

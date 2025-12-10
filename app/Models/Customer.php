@@ -11,6 +11,7 @@ class Customer extends Model
     const TYPE_RESELLER = "reseller";
 
     protected $guarded = ["id"];
+    protected $hidden = ["created_at", "updated_at"];
 
     // Relationships
     public function transactions()

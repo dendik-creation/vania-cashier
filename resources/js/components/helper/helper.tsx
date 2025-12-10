@@ -126,3 +126,14 @@ export const humanRole = (role: string) => {
             return role;
     }
 };
+
+export const humanCustType = (type: string) => {
+    switch (type) {
+        case "member":
+            return "Member";
+        case "reseller":
+            return "Reseller";
+        default:
+            return "Umum";
+    }
+};

@@ -1,5 +1,5 @@
 <?php return [
     "default" => [
-        "pagination_size" => 4,
+        "pagination_size" => 8,
     ],
 ];

@@ -6,6 +6,7 @@ use App\Http\Controllers\Global\AuthController;
 use App\Http\Controllers\Global\DashboardController;
 // Admin Controllers
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 
 Route::get("/", [AuthController::class, "signedInStatus"])->name("login");
 Route::prefix("auth")->group(function () {
@@ -50,5 +51,27 @@ Route::prefix("admin")
                 AdminUserController::class,
                 "destroy",
             ])->name("admin.users.destroy");
+        });
+
+        // Master Customers
+        Route::prefix("customers")->group(function () {
+            Route::get("/", [AdminCustomerController::class, "index"])->name(
+                "admin.customers.index",
+            );
+            Route::post("/", [AdminCustomerController::class, "store"])->name(
+                "admin.customers.store",
+            );
+            Route::put("/{id}", [
+                AdminCustomerController::class,
+                "update",
+            ])->name("admin.customers.update");
+            Route::put("/{id}/reset-password", [
+                AdminCustomerController::class,
+                "resetPassword",
+            ])->name("admin.customers.reset-password");
+            Route::delete("/{id}", [
+                AdminCustomerController::class,
+                "destroy",
+            ])->name("admin.customers.destroy");
         });
     });

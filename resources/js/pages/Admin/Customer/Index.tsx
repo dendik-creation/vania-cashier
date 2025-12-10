@@ -4,26 +4,25 @@ import {
     SelectSearchInput,
 } from "@/components/custom/FormElement";
 import {
-    humanRole,
+    humanCustType,
     inputDebounce,
     ymdToIdDate,
 } from "@/components/helper/helper";
 import { Button } from "@/components/ui/button";
 import AppLayout from "@/partials/AppLayout";
 import { PageTitle } from "@/Partials/PageTitle";
-import { AdminUserIndexProps } from "@/types/user";
+import { CustomerIndexProps } from "@/types/customer";
 import { router, useForm } from "@inertiajs/react";
 import {
     Calendar,
+    Coins,
     MoreHorizontal,
-    SearchXIcon,
+    Phone,
+    ReceiptText,
     Trash2,
-    User,
 } from "lucide-react";
 import { useEffect, useRef } from "react";
-import AdminUserCreate from "./ModalCreate";
-import AdminUserEdit from "./ModalEdit";
-import AdminUserModalResetPassword from "./ModalResetPassword";
+import AdminCustomerCreate from "./ModalCreate";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -33,17 +32,18 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import EmptyCard from "@/components/custom/EmptyCard";
+import AdminCustomerEdit from "./ModalEdit";
 
-const AdminUserIndex = ({
+const AdminCustomerIndex = ({
     title,
     description,
-    users,
+    customers,
     filters,
-}: AdminUserIndexProps) => {
+}: CustomerIndexProps) => {
     const firstRender = useRef(true);
     const { data: filterData, setData: setFilterData } = useForm({
         search: filters.search || "",
-        role: filters.role || "",
+        type: filters.type || "",
     });
 
     const handleFilter = (key: keyof typeof filterData, value: string) => {
@@ -52,24 +52,24 @@ const AdminUserIndex = ({
 
     const debounceSearch = inputDebounce((data: typeof filterData) => {
         router.get(
-            "/admin/users",
+            "/admin/customers",
             {
                 search: data.search,
-                role: data.role,
+                type: data.type,
             },
             {
                 preserveState: true,
                 replace: true,
-                only: ["users"],
+                only: ["customers"],
             },
         );
     });
 
     const handleDelete = (id: number) => {
-        router.delete(`/admin/users/${id}`, {
+        router.delete(`/admin/customers/${id}`, {
             preserveScroll: true,
             replace: true,
-            only: ["users"],
+            only: ["customers"],
         });
     };
 
@@ -86,7 +86,7 @@ const AdminUserIndex = ({
             <div className="flex flex-col lg:flex-row lg:justify-between items-center gap-3 mb-4">
                 <div className="flex flex-col lg:flex-row items-center gap-3 w-full">
                     <SearchInput
-                        placeholder={`Cari username atau nama`}
+                        placeholder={`Cari nama atau no hp`}
                         className="lg:max-w-sm w-full"
                         onChange={(e) => handleFilter("search", e.target.value)}
                         value={filterData.search || ""}
@@ -94,30 +94,30 @@ const AdminUserIndex = ({
                     <div className="w-full lg:w-fit">
                         <SelectSearchInput
                             className="w-full"
-                            placeholder="Pilih Role"
-                            value={filterData.role || ""}
+                            placeholder="Pilih Tipe"
+                            value={filterData.type || ""}
                             options={[
                                 {
-                                    label: "Kasir",
-                                    value: "cashier",
+                                    label: "Member",
+                                    value: "member",
                                 },
                                 {
-                                    label: "Administrator",
-                                    value: "admin",
+                                    label: "Reseller",
+                                    value: "reseller",
                                 },
                             ]}
                             onChange={(value) =>
-                                handleFilter("role", value.toString())
+                                handleFilter("type", value.toString())
                             }
-                            removeValue={() => handleFilter("role", "")}
+                            removeValue={() => handleFilter("type", "")}
                         />
                     </div>
                 </div>
-                <AdminUserCreate />
+                <AdminCustomerCreate />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                {users.data.map((item, index) => (
+                {customers.data.map((item, index) => (
                     <Card
                         key={item.id}
                         className="relative py-3 overflow-hidden"
@@ -130,26 +130,42 @@ const AdminUserIndex = ({
                                             <span className="text-lg font-semibold text-gray-900">
                                                 {item.name}
                                             </span>
-                                            <span className="text-xs">
-                                                {item.username}
-                                            </span>
+                                            <Badge
+                                                variant={
+                                                    item.type == "member"
+                                                        ? "green"
+                                                        : "blue"
+                                                }
+                                            >
+                                                {humanCustType(item.type)}
+                                            </Badge>
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Badge
-                                            variant={
-                                                item.role == "admin"
-                                                    ? "green"
-                                                    : "blue"
-                                            }
-                                        >
-                                            {humanRole(item.role)}
-                                        </Badge>
+                                        <div className="flex items-center gap-2">
+                                            <Phone size={16} />
+                                            <span className="text-sm">
+                                                No.Hp {item.phone || "-"}
+                                            </span>
+                                        </div>
                                         <div className="flex items-center gap-2">
                                             <Calendar size={16} />
                                             <span className="text-sm">
                                                 Bergabung{" "}
                                                 {ymdToIdDate(item.joined_at)}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Coins size={16} />
+                                            <span className="text-sm">
+                                                {item.points} Poin
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <ReceiptText size={16} />
+                                            <span className="text-sm">
+                                                {item.transaction_count || 0}{" "}
+                                                Transaksi
                                             </span>
                                         </div>
                                     </div>
@@ -166,9 +182,8 @@ const AdminUserIndex = ({
                                     </PopoverTrigger>
                                     <PopoverContent className="w-48 p-2">
                                         <div className="space-y-2">
-                                            <AdminUserEdit user={item} />
-                                            <AdminUserModalResetPassword
-                                                id={item.id}
+                                            <AdminCustomerEdit
+                                                customer={item}
                                             />
                                             <ConfirmDialog
                                                 triggerNode={
@@ -181,8 +196,8 @@ const AdminUserIndex = ({
                                                         <span>Hapus</span>
                                                     </Button>
                                                 }
-                                                title="Hapus User"
-                                                description="Menghapus user menyebabkan kehilangan akses terhadap sistem. Apakah anda yakin ?"
+                                                title="Hapus Pelanggan"
+                                                description="Menghapus pelanggan menyebabkan kehilangan rekap transaksi terkait. Apakah anda yakin ?"
                                                 type="danger"
                                                 confirmAction={() =>
                                                     handleDelete(item.id)
@@ -196,18 +211,18 @@ const AdminUserIndex = ({
                     </Card>
                 ))}
 
-                {users.data.length === 0 && <EmptyCard />}
+                {customers.data.length === 0 && <EmptyCard />}
             </div>
-            {users.total > users.per_page && (
+            {customers.total > customers.per_page && (
                 <PaginatorBuilder
-                    prevUrl={users.prev_page_url ?? "#"}
-                    nextUrl={users.next_page_url ?? "#"}
-                    currentPage={users.current_page}
-                    totalPage={users.last_page}
+                    prevUrl={customers.prev_page_url ?? "#"}
+                    nextUrl={customers.next_page_url ?? "#"}
+                    currentPage={customers.current_page}
+                    totalPage={customers.last_page}
                 />
             )}
         </AppLayout>
     );
 };
 
-export default AdminUserIndex;
+export default AdminCustomerIndex;

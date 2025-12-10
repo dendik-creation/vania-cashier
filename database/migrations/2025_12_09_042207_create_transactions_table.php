@@ -25,6 +25,9 @@ return new class extends Migration {
                 ->constrained("customers")
                 ->nullOnDelete();
 
+            $table->integer("points_earned")->default(0);
+            $table->integer("point_used")->default(0);
+
             $table->integer("subtotal");
             $table->integer("discount")->default(0);
             $table->integer("total");
