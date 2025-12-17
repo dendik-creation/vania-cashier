@@ -137,3 +137,16 @@ export const humanCustType = (type: string) => {
             return "Umum";
     }
 };
+
+export const humanProductType = (type: string) => {
+    switch (type) {
+        case "shoes":
+            return "Sepatu";
+        case "bag":
+            return "Tas";
+        case "accessory":
+            return "Aksesoris";
+        default:
+            return "Lainnya";
+    }
+};

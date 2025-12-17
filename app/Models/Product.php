@@ -11,11 +11,29 @@ class Product extends Model
     const TYPE_BAG = "bag";
     const TYPE_ACCESSORY = "accessory";
 
-    protected $guarded = ["id"];
+    protected $fillable = [
+        'name',
+        'type',
+        'brand',
+    ];
+
+    protected $casts = [
+        'type' => 'string',
+    ];
 
     // Relationships
     public function variants()
     {
         return $this->hasMany(ProductVariant::class);
+    }
+
+    // Helper methods
+    public static function types()
+    {
+        return [
+            self::TYPE_SHOES => 'Sepatu',
+            self::TYPE_BAG => 'Tas',
+            self::TYPE_ACCESSORY => 'Aksesoris',
+        ];
     }
 }

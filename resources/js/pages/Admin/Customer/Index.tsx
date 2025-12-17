@@ -13,23 +13,11 @@ import AppLayout from "@/partials/AppLayout";
 import { PageTitle } from "@/Partials/PageTitle";
 import { CustomerIndexProps } from "@/types/customer";
 import { router, useForm } from "@inertiajs/react";
-import {
-    Calendar,
-    Coins,
-    MoreHorizontal,
-    Phone,
-    ReceiptText,
-    Trash2,
-} from "lucide-react";
+import { Calendar, Coins, Phone, ReceiptText, Trash2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import AdminCustomerCreate from "./ModalCreate";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import EmptyCard from "@/components/custom/EmptyCard";
 import AdminCustomerEdit from "./ModalEdit";
@@ -61,7 +49,7 @@ const AdminCustomerIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["customers"],
-            },
+            }
         );
     });
 
@@ -171,41 +159,19 @@ const AdminCustomerIndex = ({
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center justify-end mt-4">
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <span>
-                                            <Button variant="outline" size="sm">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </span>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-48 p-2">
-                                        <div className="space-y-2">
-                                            <AdminCustomerEdit
-                                                customer={item}
-                                            />
-                                            <ConfirmDialog
-                                                triggerNode={
-                                                    <Button
-                                                        variant="red"
-                                                        size="sm"
-                                                        className="w-full"
-                                                    >
-                                                        <Trash2 />
-                                                        <span>Hapus</span>
-                                                    </Button>
-                                                }
-                                                title="Hapus Pelanggan"
-                                                description="Menghapus pelanggan menyebabkan kehilangan rekap transaksi terkait. Apakah anda yakin ?"
-                                                type="danger"
-                                                confirmAction={() =>
-                                                    handleDelete(item.id)
-                                                }
-                                            />
-                                        </div>
-                                    </PopoverContent>
-                                </Popover>
+                            <div className="flex items-center justify-end gap-2 mt-4">
+                                <AdminCustomerEdit customer={item} />
+                                <ConfirmDialog
+                                    triggerNode={
+                                        <Button variant="outline">
+                                            <Trash2 className="text-destructive hover:text-destructive" />
+                                        </Button>
+                                    }
+                                    title="Hapus Pelanggan"
+                                    description="Menghapus pelanggan menyebabkan kehilangan rekap transaksi terkait. Apakah anda yakin ?"
+                                    type="danger"
+                                    confirmAction={() => handleDelete(item.id)}
+                                />
                             </div>
                         </CardContent>
                     </Card>

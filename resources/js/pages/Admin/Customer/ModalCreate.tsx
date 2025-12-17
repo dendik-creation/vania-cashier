@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "@inertiajs/react";
-import { CircleFadingPlus, CircleX, Dices, Loader, Save } from "lucide-react";
+import { CircleFadingPlus, CircleX, Loader, Save } from "lucide-react";
 import React from "react";
 
 const AdminCustomerCreate = () => {
@@ -135,7 +135,7 @@ const AdminCustomerCreate = () => {
                                     onChange={(value) =>
                                         handleChangeInput(
                                             "type",
-                                            value.toString(),
+                                            value.toString()
                                         )
                                     }
                                     removeValue={() =>

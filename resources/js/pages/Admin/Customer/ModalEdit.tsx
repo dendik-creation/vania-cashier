@@ -14,14 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Customer } from "@/types/customer";
 import { useForm } from "@inertiajs/react";
-import {
-    CircleFadingPlus,
-    CircleX,
-    Dices,
-    Loader,
-    Pencil,
-    Save,
-} from "lucide-react";
+import { CircleX, Loader, Pencil, Save } from "lucide-react";
 import React from "react";
 
 const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
@@ -76,9 +69,8 @@ const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button className="w-full" variant={"outline"}>
-                    <Pencil />
-                    <span>Edit</span>
+                <Button variant={"outline"}>
+                    <Pencil className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-7xl">
@@ -143,7 +135,7 @@ const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
                                     onChange={(value) =>
                                         handleChangeInput(
                                             "type",
-                                            value.toString(),
+                                            value.toString()
                                         )
                                     }
                                     removeValue={() =>

@@ -63,9 +63,8 @@ const AdminUserModalResetPassword = ({ id }: { id: number }) => {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant={"outline"} className="w-full" size={"sm"}>
-                    <Key />
-                    <span>Reset Password</span>
+                <Button variant={"outline"}>
+                    <Key className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-7xl">
@@ -89,7 +88,7 @@ const AdminUserModalResetPassword = ({ id }: { id: number }) => {
                                     onChange={(e) =>
                                         handleChangeInput(
                                             "password",
-                                            e.target.value,
+                                            e.target.value
                                         )
                                     }
                                 />

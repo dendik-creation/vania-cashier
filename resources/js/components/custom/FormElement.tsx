@@ -35,16 +35,17 @@ import { Link } from "@inertiajs/react";
 registerPlugin(FilePondPluginFileValidateType);
 
 type ErrorInputProps = {
-    error: string | null;
+    error?: string | null;
     afterLabel?: boolean;
 };
 
 export function ErrorInput({ error, afterLabel = false }: ErrorInputProps) {
+    if (!error) return null;
     return (
         <p
             className={cn(
                 "text-sm text-red-500 flex items-center",
-                !afterLabel && "mt-1.5",
+                !afterLabel && "mt-1.5"
             )}
         >
             <TriangleAlert size={16} className="me-2" />
@@ -126,7 +127,7 @@ export function SelectSearchInput({
                     tabIndex={tabIndex}
                     className={cn(
                         "min-w-full py-1.5 justify-between relative border border-input rounded-md px-4 flex items-center cursor-pointer outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-                        className,
+                        className
                     )}
                     onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
@@ -187,7 +188,7 @@ export function SelectSearchInput({
                                                 "mr-2 h-4 w-4",
                                                 value === option.value
                                                     ? "opacity-100"
-                                                    : "opacity-0",
+                                                    : "opacity-0"
                                             )}
                                         />
                                         <span className="w-full">
@@ -248,7 +249,7 @@ export const MultiSelectSearchInput = ({
                                 // Ensure we match using normalized string values
                                 const label = options.find(
                                     (option) =>
-                                        String(option.value) === String(val),
+                                        String(option.value) === String(val)
                                 )?.label;
                                 return (
                                     <span
@@ -298,7 +299,7 @@ export const MultiSelectSearchInput = ({
                                                 "mr-2 h-4 w-4",
                                                 isSelected
                                                     ? "opacity-100"
-                                                    : "opacity-0",
+                                                    : "opacity-0"
                                             )}
                                         />
                                         <span className="w-full">
@@ -339,7 +340,7 @@ export const DatePickerInput = ({
     // Helper to format date and time
     const formatDateTime = (
         date: string | Date | undefined,
-        timeStr?: string,
+        timeStr?: string
     ) => {
         if (!date) return placeholder;
         try {
@@ -390,7 +391,7 @@ export const DatePickerInput = ({
 
     // Handle date selection
     const handleSelect = (
-        date: Date | Date[] | { from: Date; to: Date } | undefined,
+        date: Date | Date[] | { from: Date; to: Date } | undefined
     ) => {
         if (!date) {
             onChange(undefined);
@@ -418,7 +419,7 @@ export const DatePickerInput = ({
                             ? time
                                 ? `${formattedDate} ${time}`
                                 : `${formattedDate}`
-                            : undefined,
+                            : undefined
                     );
                 } else {
                     onChange(formattedDate || undefined);
@@ -430,7 +431,7 @@ export const DatePickerInput = ({
                 onChange(
                     formattedDates.length > 0
                         ? formattedDates.join(",")
-                        : undefined,
+                        : undefined
                 );
             } else if (mode === "range") {
                 const range = date as { from: Date; to: Date };
@@ -442,8 +443,8 @@ export const DatePickerInput = ({
                 ) {
                     onChange(
                         `${formatSingleDate(range.from)} - ${formatSingleDate(
-                            range.to,
-                        )}`,
+                            range.to
+                        )}`
                     );
                 } else {
                     onChange(undefined);
@@ -549,7 +550,7 @@ export const DatePickerInput = ({
                         buttonVariants({ variant: "outline" }),
                         "w-full pl-3 h-10 text-left font-normal",
                         !value && "text-muted-foreground",
-                        className,
+                        className
                     )}
                 >
                     {mode === "range" &&
@@ -567,7 +568,7 @@ export const DatePickerInput = ({
                                       .map(
                                           (date) =>
                                               ymdToIdDate(date.trim()) ||
-                                              date.trim(),
+                                              date.trim()
                                       )
                                       .join(" - ")
                                 : placeholder}
@@ -579,12 +580,12 @@ export const DatePickerInput = ({
                                       typeof value === "string"
                                           ? value
                                           : undefined,
-                                      time,
+                                      time
                                   )
                                 : formatDateTime(
                                       typeof value === "string"
                                           ? value
-                                          : undefined,
+                                          : undefined
                                   )}
                         </span>
                     )}
@@ -634,7 +635,7 @@ export const DatePickerInput = ({
                                     onChange(
                                         e.target.value
                                             ? `${formattedDate} ${e.target.value}`
-                                            : formattedDate,
+                                            : formattedDate
                                     );
                                 }
                             }}
@@ -698,7 +699,7 @@ export const PaginatorBuilder = ({
                     <PaginationPrevious
                         href={isPrevDisabled ? "#" : prevUrl}
                         className={cn(
-                            isPrevDisabled && "pointer-events-none opacity-50",
+                            isPrevDisabled && "pointer-events-none opacity-50"
                         )}
                     />
                 </PaginationItem>
@@ -725,7 +726,7 @@ export const PaginatorBuilder = ({
                                 className={cn(
                                     "flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
                                     isActive &&
-                                        "bg-primary text-primary-foreground hover:bg-primary/90",
+                                        "bg-primary text-primary-foreground hover:bg-primary/90"
                                 )}
                             >
                                 {pageNum}
@@ -738,7 +739,7 @@ export const PaginatorBuilder = ({
                     <PaginationNext
                         href={isNextDisabled ? "#" : nextUrl}
                         className={cn(
-                            isNextDisabled && "pointer-events-none opacity-50",
+                            isNextDisabled && "pointer-events-none opacity-50"
                         )}
                     />
                 </PaginationItem>

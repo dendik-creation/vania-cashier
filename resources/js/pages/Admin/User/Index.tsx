@@ -13,24 +13,13 @@ import AppLayout from "@/partials/AppLayout";
 import { PageTitle } from "@/Partials/PageTitle";
 import { AdminUserIndexProps } from "@/types/user";
 import { router, useForm } from "@inertiajs/react";
-import {
-    Calendar,
-    MoreHorizontal,
-    SearchXIcon,
-    Trash2,
-    User,
-} from "lucide-react";
+import { Calendar, Trash2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import AdminUserCreate from "./ModalCreate";
 import AdminUserEdit from "./ModalEdit";
 import AdminUserModalResetPassword from "./ModalResetPassword";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import EmptyCard from "@/components/custom/EmptyCard";
 
@@ -61,7 +50,7 @@ const AdminUserIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["users"],
-            },
+            }
         );
     });
 
@@ -127,7 +116,7 @@ const AdminUserIndex = ({
                                 <div className="flex-1">
                                     <div className="flex items-center mb-2">
                                         <div className="flex flex-col">
-                                            <span className="text-lg font-semibold text-gray-900">
+                                            <span className="text-md font-semibold text-gray-900">
                                                 {item.name}
                                             </span>
                                             <span className="text-xs">
@@ -155,42 +144,22 @@ const AdminUserIndex = ({
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center justify-end mt-4">
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <span>
-                                            <Button variant="outline" size="sm">
-                                                <MoreHorizontal className="h-4 w-4" />
+                            <div className="flex items-center gap-2 justify-end mt-4">
+                                <AdminUserEdit user={item} />
+                                <AdminUserModalResetPassword id={item.id} />
+                                <ConfirmDialog
+                                    triggerNode={
+                                        <div>
+                                            <Button variant="outline">
+                                                <Trash2 className="text-destructive hover:text-destructive" />
                                             </Button>
-                                        </span>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-48 p-2">
-                                        <div className="space-y-2">
-                                            <AdminUserEdit user={item} />
-                                            <AdminUserModalResetPassword
-                                                id={item.id}
-                                            />
-                                            <ConfirmDialog
-                                                triggerNode={
-                                                    <Button
-                                                        variant="red"
-                                                        size="sm"
-                                                        className="w-full"
-                                                    >
-                                                        <Trash2 />
-                                                        <span>Hapus</span>
-                                                    </Button>
-                                                }
-                                                title="Hapus User"
-                                                description="Menghapus user menyebabkan kehilangan akses terhadap sistem. Apakah anda yakin ?"
-                                                type="danger"
-                                                confirmAction={() =>
-                                                    handleDelete(item.id)
-                                                }
-                                            />
                                         </div>
-                                    </PopoverContent>
-                                </Popover>
+                                    }
+                                    title="Hapus User"
+                                    description="Menghapus user menyebabkan kehilangan akses terhadap sistem. Apakah anda yakin ?"
+                                    type="danger"
+                                    confirmAction={() => handleDelete(item.id)}
+                                />
                             </div>
                         </CardContent>
                     </Card>

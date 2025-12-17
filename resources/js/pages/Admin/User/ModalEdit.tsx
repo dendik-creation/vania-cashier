@@ -68,9 +68,8 @@ const AdminUserEdit = ({ user }: { user: User }) => {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant={"outline"} className="w-full" size={"sm"}>
-                    <Pencil />
-                    <span>Edit</span>
+                <Button variant={"outline"}>
+                    <Pencil className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-7xl">
@@ -93,7 +92,7 @@ const AdminUserEdit = ({ user }: { user: User }) => {
                                 onChange={(e) =>
                                     handleChangeInput(
                                         "username",
-                                        e.target.value,
+                                        e.target.value
                                     )
                                 }
                             />
@@ -138,7 +137,7 @@ const AdminUserEdit = ({ user }: { user: User }) => {
                                     onChange={(value) =>
                                         handleChangeInput(
                                             "role",
-                                            value.toString(),
+                                            value.toString()
                                         )
                                     }
                                     removeValue={() =>

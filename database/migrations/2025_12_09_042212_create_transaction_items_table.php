@@ -23,8 +23,8 @@ return new class extends Migration {
                 ->constrained("product_variants")
                 ->cascadeOnDelete();
 
+            $table->integer("basic_price");
             $table->integer("quantity");
-            $table->integer("price");
             $table->integer("total_price");
 
             $table->timestamps();

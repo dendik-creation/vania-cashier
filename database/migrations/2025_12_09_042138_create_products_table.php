@@ -12,12 +12,9 @@ return new class extends Migration {
     {
         Schema::create("products", function (Blueprint $table) {
             $table->id();
-            $table->string("code")->unique();
             $table->string("name");
             $table->enum("type", ["shoes", "bag", "accessory"]);
             $table->string("brand")->nullable();
-            $table->text("description")->nullable();
-            $table->integer("default_price")->nullable();
             $table->timestamps();
         });
     }

@@ -16,14 +16,10 @@ return new class extends Migration {
                 ->foreignId("product_id")
                 ->constrained("products")
                 ->cascadeOnDelete();
-
-            $table->string("variant_code")->unique();
-            $table->string("color")->nullable();
-            $table->string("size")->nullable(); // shoes only
-
-            $table->integer("price")->nullable(); // override default_price
+            $table->string("sku")->unique();
+            $table->json("attributes");
+            $table->json("price_criteria");
             $table->integer("stock")->default(0);
-
             $table->timestamps();
         });
     }

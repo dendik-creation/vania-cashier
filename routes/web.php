@@ -7,6 +7,7 @@ use App\Http\Controllers\Global\DashboardController;
 // Admin Controllers
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
 
 Route::get("/", [AuthController::class, "signedInStatus"])->name("login");
 Route::prefix("auth")->group(function () {
@@ -65,13 +66,36 @@ Route::prefix("admin")
                 AdminCustomerController::class,
                 "update",
             ])->name("admin.customers.update");
-            Route::put("/{id}/reset-password", [
-                AdminCustomerController::class,
-                "resetPassword",
-            ])->name("admin.customers.reset-password");
             Route::delete("/{id}", [
                 AdminCustomerController::class,
                 "destroy",
             ])->name("admin.customers.destroy");
+        });
+
+        // Master Products
+        Route::prefix("products")->group(function () {
+            Route::get("/", [AdminProductController::class, "index"])->name(
+                "admin.products.index",
+            );
+            Route::get("/create", [AdminProductController::class, "create"])->name(
+                "admin.products.create",
+            );
+            Route::post("/", [AdminProductController::class, "store"])->name(
+                "admin.products.store",
+            );
+            Route::get("/{id}", [AdminProductController::class, "show"])->name(
+                "admin.products.show",
+            );
+            Route::get("/{id}/edit", [AdminProductController::class, "edit"])->name(
+                "admin.products.edit",
+            );
+            Route::put("/{id}", [
+                AdminProductController::class,
+                "update",
+            ])->name("admin.products.update");
+            Route::delete("/{id}", [
+                AdminProductController::class,
+                "destroy",
+            ])->name("admin.products.destroy");
         });
     });
