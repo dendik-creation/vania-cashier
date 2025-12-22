@@ -26,14 +26,4 @@ class Product extends Model
     {
         return $this->hasMany(ProductVariant::class);
     }
-
-    // Helper methods
-    public static function types()
-    {
-        return [
-            self::TYPE_SHOES => 'Sepatu',
-            self::TYPE_BAG => 'Tas',
-            self::TYPE_ACCESSORY => 'Aksesoris',
-        ];
-    }
 }

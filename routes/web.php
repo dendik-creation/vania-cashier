@@ -8,6 +8,7 @@ use App\Http\Controllers\Global\DashboardController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
 
 Route::get("/", [AuthController::class, "signedInStatus"])->name("login");
 Route::prefix("auth")->group(function () {
@@ -77,18 +78,20 @@ Route::prefix("admin")
             Route::get("/", [AdminProductController::class, "index"])->name(
                 "admin.products.index",
             );
-            Route::get("/create", [AdminProductController::class, "create"])->name(
-                "admin.products.create",
-            );
+            Route::get("/create", [
+                AdminProductController::class,
+                "create",
+            ])->name("admin.products.create");
             Route::post("/", [AdminProductController::class, "store"])->name(
                 "admin.products.store",
             );
             Route::get("/{id}", [AdminProductController::class, "show"])->name(
                 "admin.products.show",
             );
-            Route::get("/{id}/edit", [AdminProductController::class, "edit"])->name(
-                "admin.products.edit",
-            );
+            Route::get("/{id}/edit", [
+                AdminProductController::class,
+                "edit",
+            ])->name("admin.products.edit");
             Route::put("/{id}", [
                 AdminProductController::class,
                 "update",
@@ -97,5 +100,32 @@ Route::prefix("admin")
                 AdminProductController::class,
                 "destroy",
             ])->name("admin.products.destroy");
+        });
+
+        Route::prefix("transactions")->group(function () {
+            Route::get("/find/customer", [
+                AdminTransactionController::class,
+                "findCustomer",
+            ])->name("admin.transactions.findCustomer");
+            Route::get("/find/sku", [
+                AdminTransactionController::class,
+                "findSku",
+            ])->name("admin.transactions.findSku");
+            Route::get("/records", [
+                AdminTransactionController::class,
+                "index",
+            ])->name("admin.transactions.index");
+            Route::get("/create", [
+                AdminTransactionController::class,
+                "create",
+            ])->name("admin.transactions.create");
+            Route::post("/", [
+                AdminTransactionController::class,
+                "store",
+            ])->name("admin.transactions.store");
+            Route::get("/{id}", [
+                AdminTransactionController::class,
+                "show",
+            ])->name("admin.transactions.show");
         });
     });

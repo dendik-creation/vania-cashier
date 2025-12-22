@@ -12,8 +12,11 @@ return new class extends Migration {
     {
         Schema::create("settings", function (Blueprint $table) {
             $table->id();
-            $table->string("key")->unique();
-            $table->text("value");
+            $table->string("app_name");
+            $table->string("app_logo")->nullable();
+            $table->string("app_address")->nullable();
+            $table->integer("eligible_point_minimum")->default(50000);
+            $table->json("admin_fee_criteria");
             $table->timestamps();
         });
     }
