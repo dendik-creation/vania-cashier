@@ -27,4 +27,6 @@ export type ProductVariant = {
 export type TransactionCreateProps = {
     admin_fee_criteria: Setting["admin_fee_criteria"];
     eligible_point_minimum: Setting["eligible_point_minimum"];
+    idr_point_value: Setting["idr_point_value"];
+    minimum_point_can_used: Setting["minimum_point_can_used"];
 };

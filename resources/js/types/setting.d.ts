@@ -8,4 +8,6 @@ export type Setting = {
         admin_fee: number;
     }[];
     eligible_point_minimum: number;
+    idr_point_value: number;
+    minimum_point_can_used: number;
 };
