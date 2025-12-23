@@ -1,4 +1,12 @@
-import { Grid2X2, LucideProps, Package, Users, Users2 } from "lucide-react";
+import {
+    Grid2X2,
+    LucideProps,
+    Package,
+    ScanBarcode,
+    ShoppingBag,
+    Users,
+    Users2,
+} from "lucide-react";
 import { ForwardRefExoticComponent, RefAttributes } from "react";
 
 export type NavItems = {
@@ -16,6 +24,12 @@ const adminNavs: NavItems = [
         title: "Dashboard",
         url: "/dashboard",
         icon: Grid2X2,
+    },
+    {
+        type: "item",
+        title: "Transaksi Baru",
+        url: "/transactions/create",
+        icon: ScanBarcode,
     },
     {
         type: "splitter",
@@ -39,6 +53,17 @@ const adminNavs: NavItems = [
         title: "Data Produk",
         url: "/products",
         icon: Package,
+    },
+    {
+        type: "splitter",
+        title: "Aktivitas Sistem",
+        url: "#",
+    },
+    {
+        type: "item",
+        title: "Data Transaksi",
+        url: "/transactions/records",
+        icon: ShoppingBag,
     },
 ];
 

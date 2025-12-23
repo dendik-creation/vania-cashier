@@ -1,4 +1,3 @@
-
 {
     "compilerOptions": {
         "target": "ESNext",
@@ -9,14 +8,14 @@
         "isolatedModules": true,
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
-        "forceConsistentCasingInFileNames": true,
+        "forceConsistentCasingInFileNames": false,
         "strict": true,
         "skipLibCheck": true,
         "baseUrl": "./resources/js",
         "paths": {
-            "@/*": ["*"]
-        }
+            "@/*": ["*"],
+        },
     },
     "include": ["resources/js"],
-    "exclude": ["node_modules"]
+    "exclude": ["node_modules"],
 }
