@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import AppLayout from "@/partials/AppLayout";
-import { PageTitle } from "@/Partials/PageTitle";
+import { PageTitle } from "@/partials/PageTitle";
 import { Link } from "@inertiajs/react";
 import { Edit, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,8 +66,8 @@ const AdminProductShow = ({
                                 {product.type === "shoes"
                                     ? "Sepatu"
                                     : product.type === "bag"
-                                    ? "Tas"
-                                    : "Aksesoris"}
+                                      ? "Tas"
+                                      : "Aksesoris"}
                             </Badge>
                         </div>
                         <div>
@@ -152,7 +152,7 @@ const AdminProductShow = ({
                                                         {floatToIdCurrency(
                                                             variant
                                                                 .price_criteria
-                                                                ?.basic || 0
+                                                                ?.basic || 0,
                                                         )}
                                                     </span>
                                                 </TableCell>
@@ -161,7 +161,7 @@ const AdminProductShow = ({
                                                         {floatToIdCurrency(
                                                             variant
                                                                 .price_criteria
-                                                                ?.reseller || 0
+                                                                ?.reseller || 0,
                                                         )}
                                                     </span>
                                                 </TableCell>
@@ -171,7 +171,7 @@ const AdminProductShow = ({
                                                             variant
                                                                 .price_criteria
                                                                 ?.order_qty_3 ||
-                                                                0
+                                                                0,
                                                         )}
                                                     </span>
                                                 </TableCell>
@@ -181,7 +181,7 @@ const AdminProductShow = ({
                                                             variant
                                                                 .price_criteria
                                                                 ?.order_qty_6 ||
-                                                                0
+                                                                0,
                                                         )}
                                                     </span>
                                                 </TableCell>

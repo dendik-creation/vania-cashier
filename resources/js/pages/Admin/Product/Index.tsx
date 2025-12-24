@@ -6,7 +6,7 @@ import {
 import { humanProductType, inputDebounce } from "@/components/helper/helper";
 import { Button } from "@/components/ui/button";
 import AppLayout from "@/partials/AppLayout";
-import { PageTitle } from "@/Partials/PageTitle";
+import { PageTitle } from "@/partials/PageTitle";
 import { router, useForm, Link } from "@inertiajs/react";
 import {
     Trash2,
@@ -73,7 +73,7 @@ const AdminProductIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["products"],
-            }
+            },
         );
     });
 

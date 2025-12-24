@@ -10,7 +10,7 @@ import {
 } from "@/components/helper/helper";
 import { Button } from "@/components/ui/button";
 import AppLayout from "@/partials/AppLayout";
-import { PageTitle } from "@/Partials/PageTitle";
+import { PageTitle } from "@/partials/PageTitle";
 import { AdminUserIndexProps } from "@/types/user";
 import { router, useForm } from "@inertiajs/react";
 import { Calendar, Trash2 } from "lucide-react";
@@ -50,7 +50,7 @@ const AdminUserIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["users"],
-            }
+            },
         );
     });
 

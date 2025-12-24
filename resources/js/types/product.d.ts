@@ -1,7 +1,6 @@
 import { PageTitleProps } from "@/Partials/PageTitle";
 import { PaginationData } from "./global";
 
-// Product type based on migration
 export type Product = {
     id: number;
     name: string;
@@ -13,7 +12,6 @@ export type Product = {
     variants?: ProductVariant[];
 };
 
-// ProductVariant with JSON fields
 export type ProductVariant = {
     id: number;
     product_id: number;
@@ -23,22 +21,18 @@ export type ProductVariant = {
         color?: string;
         [key: string]: any;
     };
-    price_criteria: PriceCriteria; // Multiple price criteria as JSON
+    price_criteria: PriceCriteria;
     stock: number;
     created_at?: string;
     updated_at?: string;
     product?: Product;
 };
-
-// Price criteria structure for future use
 export type PriceCriteria = {
     basic: number;
     reseller: number;
     order_qty_3: number;
     order_qty_6: number;
 };
-
-// Form variant for Create/Edit
 export type VariantFormData = {
     id?: number;
     sku: string;

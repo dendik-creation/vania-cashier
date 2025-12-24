@@ -2,7 +2,7 @@ import { ErrorInput, SelectSearchInput } from "@/components/custom/FormElement";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AppLayout from "@/partials/AppLayout";
-import { PageTitle, PageTitleProps } from "@/Partials/PageTitle";
+import { PageTitle, PageTitleProps } from "@/partials/PageTitle";
 import { TransactionCreateProps } from "@/types/transaction";
 import { useForm } from "@inertiajs/react";
 import { FormEvent, useEffect, useMemo } from "react";

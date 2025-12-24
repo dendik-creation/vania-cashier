@@ -78,13 +78,25 @@ class TransactionController extends Controller
         $by_search = $request->query("by_search", "");
         $by_customer_type = $request->query("by_customer_type", "");
         $by_payment_method = $request->query("by_payment_method", "");
+        $by_start_date = $request->query("by_start_date", "");
+        $by_end_date = $request->query("by_end_date", "");
 
         $transactions = Transaction::with("customer", "cashier")
             ->when($by_search, function ($query, $by_search) {
-                $query->where("invoice_code", "like", "%" . $by_search . "%");
+                $query
+                    ->where("invoice_code", "like", "%" . $by_search . "%")
+                    ->orWhereHas("customer", function ($q) use ($by_search) {
+                        $q->where("name", "like", "%" . $by_search . "%");
+                    });
             })
             ->when($by_customer_type, function ($query, $by_customer_type) {
                 $query->where("customer_type", $by_customer_type);
+            })
+            ->when($by_start_date, function ($query, $by_start_date) {
+                $query->whereDate("transaction_time", ">=", $by_start_date);
+            })
+            ->when($by_end_date, function ($query, $by_end_date) {
+                $query->whereDate("transaction_time", "<=", $by_end_date);
             })
             ->when($by_payment_method, function ($query, $by_payment_method) {
                 $query->where("payment_method", $by_payment_method);

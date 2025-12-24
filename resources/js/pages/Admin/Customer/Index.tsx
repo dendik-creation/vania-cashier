@@ -10,7 +10,7 @@ import {
 } from "@/components/helper/helper";
 import { Button } from "@/components/ui/button";
 import AppLayout from "@/partials/AppLayout";
-import { PageTitle } from "@/Partials/PageTitle";
+import { PageTitle } from "@/partials/PageTitle";
 import { CustomerIndexProps } from "@/types/customer";
 import { router, useForm } from "@inertiajs/react";
 import { Calendar, Coins, Phone, ReceiptText, Trash2 } from "lucide-react";
@@ -49,7 +49,7 @@ const AdminCustomerIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["customers"],
-            }
+            },
         );
     });
 

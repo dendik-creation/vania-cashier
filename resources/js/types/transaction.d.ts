@@ -1,27 +1,29 @@
 import { Setting } from "./setting";
 
-export type Product = {
+export type Transaction = {
     id: number;
-    name: string;
-    type: "shoes" | "bag" | "accessory";
-    brand?: string;
+    invoice_code: string;
+    cashier_id: number;
+    customer_type: "general" | "member" | "reseller";
+    customer_id: number | null;
+    points_earned: number;
+    point_used: number;
+    subtotal: number;
+    discount: number;
+    total: number;
+    payment_method: "cash" | "qris" | "transfer";
+    admin_fee: number;
+    transaction_time: string;
+    items: TransactionItem[];
 };
 
-export type ProductVariant = {
+export type TransactionItem = {
     id: number;
-    product_id: number;
-    sku: string;
-    attributes: {
-        color?: string;
-        size?: string;
-    };
-    price_criteria: {
-        basic: number;
-        reseller: number;
-        min_3_qty: number;
-        min_6_qty: number;
-    };
-    stock: number;
+    transaction_id: number;
+    variant_id: number;
+    price_per_item: number;
+    quantity: number;
+    subtotal: number;
 };
 
 export type TransactionCreateProps = {
