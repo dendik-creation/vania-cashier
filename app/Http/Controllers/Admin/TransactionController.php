@@ -73,6 +73,36 @@ class TransactionController extends Controller
         );
     }
 
+    public function index(Request $request)
+    {
+        $by_search = $request->query("by_search", "");
+        $by_customer_type = $request->query("by_customer_type", "");
+        $by_payment_method = $request->query("by_payment_method", "");
+
+        $transactions = Transaction::with("customer", "cashier")
+            ->when($by_search, function ($query, $by_search) {
+                $query->where("invoice_code", "like", "%" . $by_search . "%");
+            })
+            ->when($by_customer_type, function ($query, $by_customer_type) {
+                $query->where("customer_type", $by_customer_type);
+            })
+            ->when($by_payment_method, function ($query, $by_payment_method) {
+                $query->where("payment_method", $by_payment_method);
+            })
+            ->orderBy("created_at", "desc")
+            ->paginate(10);
+        return Inertia::render("Admin/Transaction/Index", [
+            "title" => "Daftar Transaksi",
+            "description" => "Kelola informasi transaksi pelanggan",
+            "transactions" => $transactions,
+            "filters" => [
+                "by_search" => $by_search,
+                "by_customer_type" => $by_customer_type,
+                "by_payment_method" => $by_payment_method,
+            ],
+        ]);
+    }
+
     public function create()
     {
         $setting = Setting::first();
