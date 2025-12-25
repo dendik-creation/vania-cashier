@@ -31,7 +31,7 @@ export default function AppLayout({ children, className }: AppLayoutProps) {
     return (
         <SidebarProvider>
             <Toaster
-                position={"bottom-right"}
+                position={"top-center"}
                 toastOptions={{
                     className: "text-sm md:text-base",
                     duration: 3000,
@@ -49,7 +49,7 @@ export default function AppLayout({ children, className }: AppLayoutProps) {
                     <main className="flex-1 p-4 md:p-6 lg:p-8 bg-gray-50 overflow-y-auto overflow-x-hidden">
                         <div className="max-w-full mx-auto">{children}</div>
                     </main>
-                    <AppFooter />
+                    {/*<AppFooter />*/}
                 </div>
             </div>
         </SidebarProvider>

@@ -46,7 +46,7 @@ export default function SignIn({ app_name }: { app_name: string }) {
 
     return (
         <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-background">
-            <Toaster position={"bottom-right"} reverseOrder={false} />
+            <Toaster position={"top-center"} reverseOrder={false} />
             <Card className="w-full max-w-7xl shadow-md mx-4 flex flex-col md:flex-row">
                 {/* Kiri: Gambar */}
                 <div className="w-full flex flex-1 items-center justify-center dark:bg-muted rounded-t-md md:rounded-l-md md:rounded-tr-none p-6">

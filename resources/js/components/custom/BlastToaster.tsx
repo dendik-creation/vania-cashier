@@ -1,16 +1,6 @@
 import toast from "react-hot-toast";
 
-const BlastToaster = (
-    type: "success" | "error",
-    message: string,
-    position:
-        | "top-left"
-        | "top-right"
-        | "bottom-left"
-        | "bottom-right"
-        | "top-center"
-        | "bottom-center" = "bottom-right",
-) => {
+const BlastToaster = (type: "success" | "error", message: string) => {
     if (type === "success") {
         toast.success(message, {
             duration: 3000,
@@ -21,7 +11,6 @@ const BlastToaster = (
                 border: "1px solid #A5D6A7",
                 zIndex: 1000,
             },
-            position: position || "bottom-right",
         });
     } else if (type === "error") {
         toast.error(message, {
@@ -33,7 +22,6 @@ const BlastToaster = (
                 border: "1px solid #EF9A9A",
                 zIndex: 1000,
             },
-            position: position || "bottom-right",
         });
     }
 };

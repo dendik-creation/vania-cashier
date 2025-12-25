@@ -7,10 +7,11 @@ use App\Models\Customer;
 use App\Models\ProductVariant;
 use App\Models\Setting;
 use App\Models\Transaction;
-use Auth;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
-use Session;
+use Illuminate\Support\Facades\Session;
 
 class TransactionController extends Controller
 {
@@ -75,18 +76,18 @@ class TransactionController extends Controller
 
     public function index(Request $request)
     {
-        $by_search = $request->query("by_search", "");
-        $by_customer_type = $request->query("by_customer_type", "");
-        $by_payment_method = $request->query("by_payment_method", "");
-        $by_start_date = $request->query("by_start_date", "");
-        $by_end_date = $request->query("by_end_date", "");
+        $by_search = $request->query("search", "");
+        $by_customer_type = $request->query("customer_type", "");
+        $by_payment_method = $request->query("payment_method", "");
+        $by_start_date = $request->query("start_date", "");
+        $by_end_date = $request->query("end_date", "");
 
-        $transactions = Transaction::with("customer", "cashier")
+        $transactions = Transaction::with(["customer", "cashier", "items"])
             ->when($by_search, function ($query, $by_search) {
                 $query
-                    ->where("invoice_code", "like", "%" . $by_search . "%")
+                    ->where("invoice_code", "like", "%{$by_search}%")
                     ->orWhereHas("customer", function ($q) use ($by_search) {
-                        $q->where("name", "like", "%" . $by_search . "%");
+                        $q->where("name", "like", "%{$by_search}%");
                     });
             })
             ->when($by_customer_type, function ($query, $by_customer_type) {
@@ -103,14 +104,24 @@ class TransactionController extends Controller
             })
             ->orderBy("created_at", "desc")
             ->paginate(10);
+
+        foreach ($transactions as $transaction) {
+            $sku_sold = 0;
+            foreach ($transaction->items as $item) {
+                $sku_sold += $item->quantity;
+            }
+            $transaction->sku_sold = $sku_sold;
+        }
         return Inertia::render("Admin/Transaction/Index", [
             "title" => "Daftar Transaksi",
             "description" => "Kelola informasi transaksi pelanggan",
             "transactions" => $transactions,
             "filters" => [
-                "by_search" => $by_search,
-                "by_customer_type" => $by_customer_type,
-                "by_payment_method" => $by_payment_method,
+                "search" => $by_search,
+                "customer_type" => $by_customer_type,
+                "payment_method" => $by_payment_method,
+                "start_date" => $by_start_date,
+                "end_date" => $by_end_date,
             ],
         ]);
     }
@@ -131,12 +142,13 @@ class TransactionController extends Controller
     private function recalculatePointEarned($items)
     {
         $setting = Setting::first();
+        $points = 0;
         foreach ($items as $item) {
             if ($item["price_applied"] > $setting->eligible_point_minimum) {
-                return 1;
+                $points += 1;
             }
         }
-        return 0;
+        return $points;
     }
 
     private function discountInDecimal($point_used)
@@ -278,7 +290,7 @@ class TransactionController extends Controller
             "cashier_id" => $cashier_id,
             "customer_type" => $validated["customer_type"] ?: "general",
             "customer_id" => $validated["customer_id"] ?: null,
-            "points_earned" => $point_earned,
+            "point_earned" => $point_earned,
             "point_used" => $point_used,
             "subtotal" => $subtotal,
             "discount" => $discount,
@@ -323,5 +335,224 @@ class TransactionController extends Controller
 
         Session::flash("success", "Transaksi berhasil disimpan");
         return Inertia::location("/admin/transactions/create");
+    }
+
+    public function show($id)
+    {
+        $transaction = Transaction::with(
+            "customer",
+            "cashier",
+            "items.variant.product",
+        )->find($id);
+        if (!$transaction) {
+            return back()->with("error", "Transaksi tidak ditemukan");
+        }
+        return Inertia::render("Admin/Transaction/Show", [
+            "title" => "Detail Transaksi",
+            "description" => "Informasi lengkap transaksi pelanggan",
+            "transaction" => $transaction,
+        ]);
+    }
+
+    public function edit($id)
+    {
+        $setting = Setting::first();
+        $transaction = Transaction::with(
+            "customer",
+            "cashier",
+            "items.variant.product",
+        )->find($id);
+        if (!$transaction) {
+            return back()->with("error", "Transaksi tidak ditemukan");
+        }
+        return Inertia::render("Admin/Transaction/Edit", [
+            "admin_fee_criteria" => $setting->admin_fee_criteria,
+            "eligible_point_minimum" => $setting->eligible_point_minimum,
+            "idr_point_value" => $setting->idr_point_value,
+            "minimum_point_can_used" => $setting->minimum_point_can_used,
+            "title" => "Edit Transaksi",
+            "description" => "Edit transaksi untuk pelanggan",
+            "transaction" => $transaction,
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            "is_new_customer" => ["required", "boolean"],
+            "customer_id" => ["nullable", "numeric"],
+            "customer_type" => ["nullable", "string"],
+            "register_customer" => ["nullable", "array"],
+            "payment_method" => ["required", "string"],
+            "items" => ["required", "array", "min:1"],
+            "items.*.id" => ["required", "numeric"],
+            "items.*.sku" => ["required", "string"],
+            "items.*.product_name" => ["required", "string"],
+            "items.*.attributes" => ["required", "array"],
+            "items.*.attributes.color" => ["required", "string"],
+            "items.*.price_applied" => ["required", "numeric"],
+            "items.*.price_criteria" => ["required", "array"],
+            "items.*.price_criteria.basic" => ["required", "numeric"],
+            "items.*.price_criteria.reseller" => ["required", "numeric"],
+            "items.*.price_criteria.order_qty_3" => ["required", "numeric"],
+            "items.*.price_criteria.order_qty_6" => ["required", "numeric"],
+            "items.*.product_type" => ["required", "string"],
+            "items.*.qty" => ["required", "integer", "min:1"],
+            "subtotal" => ["required", "numeric"],
+            "point_used" => ["required", "numeric"],
+            "point_earned" => ["required", "numeric"],
+            "discount" => ["required", "numeric"],
+            "admin_fee" => ["required", "numeric"],
+            "total" => ["required", "numeric"],
+        ]);
+        try {
+            DB::transaction(function () use ($validated, $id) {
+                $transaction = Transaction::with('items')->findOrFail($id);
+
+                // 1. Revert Old State
+                // Revert Stock
+                foreach ($transaction->items as $item) {
+                    $variant = ProductVariant::find($item->variant_id);
+                    if ($variant) {
+                        $variant->increment('stock', $item->quantity);
+                    }
+                }
+
+                // Revert Points
+                if ($transaction->customer_id) {
+                    $oldCustomer = Customer::find($transaction->customer_id);
+                    if ($oldCustomer) {
+                        if ($transaction->point_used > 0) {
+                            $oldCustomer->increment('points', $transaction->point_used);
+                        }
+                        if ($transaction->point_earned > 0) {
+                            $oldCustomer->decrement('points', $transaction->point_earned);
+                        }
+                    }
+                }
+
+                // 2. Process New Data
+                // Handle Customer
+                if (
+                    $validated["is_new_customer"] ||
+                    (isset($validated["register_customer"]["name"]) &&
+                        isset($validated["register_customer"]["phone"]) &&
+                        isset($validated["register_customer"]["address"]) &&
+                        (empty($validated["register_customer"]["name"]) ||
+                            empty($validated["register_customer"]["phone"]) ||
+                            empty($validated["register_customer"]["address"])))
+                ) {
+                    $validated["customer_id"] = null;
+                    $validated["customer_type"] = "general";
+                }
+
+                if (
+                    $validated["is_new_customer"] &&
+                    isset($validated["register_customer"]) &&
+                    isset($validated["register_customer"]["name"]) &&
+                    isset($validated["register_customer"]["phone"]) &&
+                    isset($validated["register_customer"]["address"]) &&
+                    !empty($validated["register_customer"]["name"]) &&
+                    !empty($validated["register_customer"]["phone"]) &&
+                    !empty($validated["register_customer"]["address"])
+                ) {
+                    $customer = Customer::create([
+                        "name" => $validated["register_customer"]["name"],
+                        "phone" => $validated["register_customer"]["phone"],
+                        "address" => $validated["register_customer"]["address"],
+                        "type" => $validated["register_customer"]["type"] ?? "member",
+                        "points" => 0,
+                    ]);
+                    $validated["customer_id"] = $customer->id;
+                    $validated["customer_type"] = "member";
+                }
+
+                // Validate Items and Stock (Check against current stock which now includes the reverted stock)
+                $items = [];
+                foreach ($validated["items"] as $item) {
+                    $product_variant = ProductVariant::find($item["id"]);
+                    if (!$product_variant) {
+                        throw new \Exception("Produk dengan SKU " . $item["sku"] . " tidak ditemukan");
+                    }
+                    if ($product_variant->stock < $item["qty"]) {
+                        throw new \Exception("Stok produk dengan SKU " . $item["sku"] . " tidak mencukupi");
+                    }
+                    $items[] = $item;
+                }
+
+                // Recalculate
+                $subtotal = $this->recalculateSubtotal($items);
+                $point_earned = $this->recalculatePointEarned($items);
+                $point_used = $validated["point_used"];
+                $admin_fee = $validated["admin_fee"];
+                $discount = $this->discountInDecimal($point_used);
+                $total = $this->recalculateTotal($subtotal, $discount, $admin_fee);
+
+                // 3. Update Transaction
+                $transaction->update([
+                    "customer_type" => $validated["customer_type"] ?: "general",
+                    "customer_id" => $validated["customer_id"] ?: null,
+                    "point_earned" => $point_earned,
+                    "point_used" => $point_used,
+                    "subtotal" => $subtotal,
+                    "discount" => $discount,
+                    "total" => $total,
+                    "payment_method" => $validated["payment_method"],
+                    "admin_fee" => $admin_fee,
+                ]);
+
+                // Update Items (Delete old, create new)
+                $transaction->items()->delete();
+                
+                $transaction_items = collect($items)
+                    ->map(function ($item) use ($transaction) {
+                        return [
+                            "transaction_id" => $transaction->id,
+                            "variant_id" => $item["id"],
+                            "quantity" => $item["qty"],
+                            "price_per_item" => $item["price_applied"],
+                            "subtotal" => $item["price_applied"] * $item["qty"],
+                        ];
+                    })
+                    ->toArray();
+                $transaction->items()->createMany($transaction_items);
+
+                // 4. Apply New State
+                // Update Stock
+                foreach ($items as $item) {
+                    $product_variant = ProductVariant::find($item["id"]);
+                    $product_variant->decrement("stock", $item["qty"]);
+                }
+
+                // Update Points
+                if ($validated["customer_id"]) {
+                    $customer = Customer::find($validated["customer_id"]);
+                    if ($customer) {
+                        if ($point_used > 0) {
+                            $customer->decrement("points", $point_used);
+                        }
+                        if ($point_earned > 0) {
+                            $customer->increment("points", $point_earned);
+                        }
+                    }
+                }
+            });
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+
+        Session::flash("success", "Transaksi berhasil diperbarui");
+        return Inertia::location("/admin/transactions/{$id}");
+    }
+
+    public function destroy($id)
+    {
+        $transaction = Transaction::find($id);
+        if (!$transaction) {
+            return back()->with("error", "Transaksi tidak ditemukan");
+        }
+        $transaction->delete();
+        Session::flash("success", "Transaksi berhasil dihapus");
+        return Inertia::location("/admin/transactions/records");
     }
 }

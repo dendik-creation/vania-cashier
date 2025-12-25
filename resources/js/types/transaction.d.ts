@@ -1,4 +1,7 @@
+import { Customer } from "./customer";
+import { ProductVariant } from "./product";
 import { Setting } from "./setting";
+import { User } from "./user";
 
 export type Transaction = {
     id: number;
@@ -6,15 +9,18 @@ export type Transaction = {
     cashier_id: number;
     customer_type: "general" | "member" | "reseller";
     customer_id: number | null;
-    points_earned: number;
+    point_earned: number;
     point_used: number;
     subtotal: number;
     discount: number;
     total: number;
+    sku_sold?: number;
     payment_method: "cash" | "qris" | "transfer";
     admin_fee: number;
     transaction_time: string;
     items: TransactionItem[];
+    customer?: Customer;
+    cashier: User;
 };
 
 export type TransactionItem = {
@@ -24,6 +30,7 @@ export type TransactionItem = {
     price_per_item: number;
     quantity: number;
     subtotal: number;
+    variant: ProductVariant;
 };
 
 export type TransactionCreateProps = {

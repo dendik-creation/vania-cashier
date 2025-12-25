@@ -150,3 +150,16 @@ export const humanProductType = (type: string) => {
             return "Lainnya";
     }
 };
+
+export const humanPaymentMethod = (method: string) => {
+    switch (method) {
+        case "cash":
+            return "Tunai";
+        case "transfer":
+            return "Transfer";
+        case "qris":
+            return "QRIS";
+        default:
+            return method;
+    }
+};

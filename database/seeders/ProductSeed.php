@@ -21,48 +21,48 @@ class ProductSeed extends Seeder
 
         ProductVariant::create([
             'product_id' => $product1->id,
-            'sku' => 'NIKE270-BLK-40',
+            'sku' => 'NIKE270BLK40',
             'attributes' => [
                 'color' => 'Black',
                 'size' => 40,
             ],
             'price_criteria' => [
-                'basic' => 1200000,
-                'reseller' => 1100000,
-                'order_qty_3' => 1050000,
-                'order_qty_6' => 1000000,
+                'basic' => 900000,
+                'reseller' => 850000,
+                'order_qty_3' => 820000,
+                'order_qty_6' => 800000,
             ],
             'stock' => 10,
         ]);
 
         ProductVariant::create([
             'product_id' => $product1->id,
-            'sku' => 'NIKE270-BLK-41',
+            'sku' => 'NIKE270BLK41',
             'attributes' => [
                 'color' => 'Black',
                 'size' => 41,
             ],
             'price_criteria' => [
-                'basic' => 1200000,
-                'reseller' => 1100000,
-                'order_qty_3' => 1050000,
-                'order_qty_6' => 1000000,
+                'basic' => 900000,
+                'reseller' => 850000,
+                'order_qty_3' => 820000,
+                'order_qty_6' => 800000,
             ],
             'stock' => 15,
         ]);
 
         ProductVariant::create([
             'product_id' => $product1->id,
-            'sku' => 'NIKE270-WHT-40',
+            'sku' => 'NIKE270WHT40',
             'attributes' => [
                 'color' => 'White',
                 'size' => 40,
             ],
             'price_criteria' => [
-                'basic' => 1200000,
-                'reseller' => 1100000,
-                'order_qty_3' => 1050000,
-                'order_qty_6' => 1000000,
+                'basic' => 900000,
+                'reseller' => 850000,
+                'order_qty_3' => 820000,
+                'order_qty_6' => 800000,
             ],
             'stock' => 8,
         ]);
@@ -75,32 +75,32 @@ class ProductSeed extends Seeder
 
         ProductVariant::create([
             'product_id' => $product2->id,
-            'sku' => 'GUCCI-MAR-BLK',
+            'sku' => 'GUCCIMARBLK',
             'attributes' => [
                 'color' => 'Black',
                 'material' => 'Leather',
             ],
             'price_criteria' => [
-                'basic' => 5000000,
-                'reseller' => 4700000,
-                'order_qty_3' => 4500000,
-                'order_qty_6' => 4300000,
+                'basic' => 3500000,
+                'reseller' => 3300000,
+                'order_qty_3' => 3200000,
+                'order_qty_6' => 3100000,
             ],
             'stock' => 5,
         ]);
 
         ProductVariant::create([
             'product_id' => $product2->id,
-            'sku' => 'GUCCI-MAR-RED',
+            'sku' => 'GUCCIMARRED',
             'attributes' => [
                 'color' => 'Red',
                 'material' => 'Leather',
             ],
             'price_criteria' => [
-                'basic' => 5200000,
-                'reseller' => 4900000,
-                'order_qty_3' => 4700000,
-                'order_qty_6' => 4500000,
+                'basic' => 3700000,
+                'reseller' => 3500000,
+                'order_qty_3' => 3400000,
+                'order_qty_6' => 3300000,
             ],
             'stock' => 3,
         ]);
@@ -113,32 +113,32 @@ class ProductSeed extends Seeder
 
         ProductVariant::create([
             'product_id' => $product3->id,
-            'sku' => 'ADIDAS-UB22-BLK-42',
+            'sku' => 'ADIDASUB22BLK42',
             'attributes' => [
                 'color' => 'Black',
                 'size' => 42,
             ],
             'price_criteria' => [
-                'basic' => 1500000,
-                'reseller' => 1400000,
-                'order_qty_3' => 1350000,
-                'order_qty_6' => 1300000,
+                'basic' => 1100000,
+                'reseller' => 1050000,
+                'order_qty_3' => 1020000,
+                'order_qty_6' => 1000000,
             ],
             'stock' => 12,
         ]);
 
         ProductVariant::create([
             'product_id' => $product3->id,
-            'sku' => 'ADIDAS-UB22-WHT-43',
+            'sku' => 'ADIDASUB22WHT43',
             'attributes' => [
                 'color' => 'White',
                 'size' => 43,
             ],
             'price_criteria' => [
-                'basic' => 1500000,
-                'reseller' => 1400000,
-                'order_qty_3' => 1350000,
-                'order_qty_6' => 1300000,
+                'basic' => 1100000,
+                'reseller' => 1050000,
+                'order_qty_3' => 1020000,
+                'order_qty_6' => 1000000,
             ],
             'stock' => 20,
         ]);
@@ -151,16 +151,16 @@ class ProductSeed extends Seeder
 
         ProductVariant::create([
             'product_id' => $product4->id,
-            'sku' => 'LV-WALLET-BRN',
+            'sku' => 'LVWALLETBRN',
             'attributes' => [
                 'color' => 'Brown',
                 'material' => 'Canvas',
             ],
             'price_criteria' => [
-                'basic' => 3000000,
-                'reseller' => 2800000,
-                'order_qty_3' => 2700000,
-                'order_qty_6' => 2600000,
+                'basic' => 2100000,
+                'reseller' => 2000000,
+                'order_qty_3' => 1950000,
+                'order_qty_6' => 1900000,
             ],
             'stock' => 7,
         ]);
@@ -173,32 +173,32 @@ class ProductSeed extends Seeder
 
         ProductVariant::create([
             'product_id' => $product5->id,
-            'sku' => 'CONV-CT-BLK-39',
+            'sku' => 'CONVCTBLK39',
             'attributes' => [
                 'color' => 'Black',
                 'size' => 39,
             ],
             'price_criteria' => [
-                'basic' => 600000,
-                'reseller' => 550000,
-                'order_qty_3' => 520000,
-                'order_qty_6' => 500000,
+                'basic' => 400000,
+                'reseller' => 370000,
+                'order_qty_3' => 350000,
+                'order_qty_6' => 340000,
             ],
             'stock' => 25,
         ]);
 
         ProductVariant::create([
             'product_id' => $product5->id,
-            'sku' => 'CONV-CT-WHT-40',
+            'sku' => 'CONVCTWHT40',
             'attributes' => [
                 'color' => 'White',
                 'size' => 40,
             ],
             'price_criteria' => [
-                'basic' => 600000,
-                'reseller' => 550000,
-                'order_qty_3' => 520000,
-                'order_qty_6' => 500000,
+                'basic' => 400000,
+                'reseller' => 370000,
+                'order_qty_3' => 350000,
+                'order_qty_6' => 340000,
             ],
             'stock' => 30,
         ]);

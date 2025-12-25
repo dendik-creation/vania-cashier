@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AppLayout from "@/partials/AppLayout";
 import { PageTitle, PageTitleProps } from "@/partials/PageTitle";
-import { TransactionCreateProps } from "@/types/transaction";
+import { Transaction, TransactionCreateProps } from "@/types/transaction";
 import { useForm } from "@inertiajs/react";
 import { FormEvent, useEffect, useMemo } from "react";
 import {
@@ -36,15 +36,20 @@ import axios from "axios";
 import { Badge } from "@/components/ui/badge";
 import { floatToIdCurrency, humanCustType } from "@/components/helper/helper";
 import { Card, CardContent } from "@/components/ui/card";
-type Props = PageTitleProps & TransactionCreateProps;
 
-const AdminTransactionCreate = ({
+type Props = PageTitleProps &
+    TransactionCreateProps & {
+        transaction: Transaction;
+    };
+
+const AdminTransactionEdit = ({
     eligible_point_minimum,
     idr_point_value,
     admin_fee_criteria,
     minimum_point_can_used,
     title,
     description,
+    transaction,
 }: Props) => {
     const {
         data: form,
@@ -52,63 +57,70 @@ const AdminTransactionCreate = ({
         processing: formProcessing,
         errors: formErrors,
         setError: setFormError,
-        post: formPost,
+        put: formPut,
         clearErrors: clearFormErrors,
     } = useForm({
-        is_new_customer: true,
-        customer_id: "",
-        customer_type: "",
+        is_new_customer: false,
+        customer_id: transaction.customer_id || "",
+        customer_type: transaction.customer_type,
         register_customer: {
             name: "",
             phone: "",
             address: "",
             type: "member",
         },
-        payment_method: "",
-        items: [] as {
-            id: string;
-            sku: string;
-            product_name: string;
-            attributes: {
-                size: string;
-                color: string;
-            };
-            price_applied: number;
-            price_criteria: {
-                basic: number;
-                reseller: number;
-                order_qty_3: number;
-                order_qty_6: number;
-            };
-            product_type: string;
-            qty: number;
-        }[],
-        subtotal: 0,
-        point_used: 0,
-        point_earned: 0,
-        discount: 0,
-        admin_fee: 0,
-        total: 0,
+        payment_method: transaction.payment_method,
+        items: transaction.items.map((item) => ({
+            id: item.variant_id,
+            sku: item.variant?.sku || "",
+            product_name: item.variant?.product?.name || "",
+            attributes: item.variant?.attributes || {},
+            price_applied: item.price_per_item,
+            price_criteria: item.variant?.price_criteria || {
+                basic: 0,
+                reseller: 0,
+                order_qty_3: 0,
+                order_qty_6: 0,
+            },
+            product_type: item.variant?.product?.type || "package",
+            qty: item.quantity,
+        })),
+        subtotal: transaction.subtotal,
+        point_used: transaction.point_used,
+        point_earned: transaction.point_earned,
+        discount: transaction.discount,
+        admin_fee: transaction.admin_fee,
+        total: transaction.total,
     });
+
     const { data: skuFinder, setData: setSkuFinder } = useForm({
         sku: "",
     });
     const { data: customerFinder, setData: setCustomerFinder } = useForm({
-        customer_phone: "",
-        is_found: false,
-        customer_found: {
-            id: null,
-            name: "",
-            phone: "",
-            address: "",
-            type: "",
-            points: 0,
-        },
+        customer_phone: transaction.customer?.phone || "",
+        is_found: !!transaction.customer,
+        customer_found: transaction.customer
+            ? {
+                  id: transaction.customer.id,
+                  name: transaction.customer.name,
+                  phone: transaction.customer.phone,
+                  address: transaction.customer.address,
+                  type: transaction.customer.type,
+                  points: transaction.customer.points,
+              }
+            : {
+                  id: null,
+                  name: "",
+                  phone: "",
+                  address: "",
+                  type: "",
+                  points: 0,
+              },
     });
 
     const { data: pointUsedPlaceholder, setData: setPointUsedPlaceholder } =
         useForm({
-            point_used_placeholder: 0,
+            point_used_placeholder: transaction.point_used,
         });
 
     const renderProductIcon = ({
@@ -325,8 +337,7 @@ const AdminTransactionCreate = ({
             BlastToaster("error", "Lengkapi seluruh form yang diwajibkan");
             return;
         }
-        formPost("/admin/transactions", {
-            replace: true,
+        formPut(`/admin/transactions/${transaction.id}`, {
             preserveState: true,
             onError: (err) => {
                 console.log(err);
@@ -614,6 +625,11 @@ const AdminTransactionCreate = ({
                                                 setCustomerFinder(
                                                     "customer_phone",
                                                     ""
+                                                );
+                                                setForm("customer_id", "");
+                                                setForm(
+                                                    "customer_type",
+                                                    "general"
                                                 );
                                             }}
                                         >
@@ -1006,7 +1022,7 @@ const AdminTransactionCreate = ({
                             <Loader className="animate-spin" />
                         ) : (
                             <div className="flex items-center gap-2">
-                                <Save /> <span>Simpan Transaksi</span>
+                                <Save /> <span>Update Transaksi</span>
                             </div>
                         )}
                     </Button>
@@ -1016,4 +1032,4 @@ const AdminTransactionCreate = ({
     );
 };
 
-export default AdminTransactionCreate;
+export default AdminTransactionEdit;

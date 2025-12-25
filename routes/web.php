@@ -127,5 +127,17 @@ Route::prefix("admin")
                 AdminTransactionController::class,
                 "show",
             ])->name("admin.transactions.show");
+            Route::put("/{id}", [
+                AdminTransactionController::class,
+                "update",
+            ])->name("admin.transactions.update");
+            Route::get("/{id}/edit", [
+                AdminTransactionController::class,
+                "edit",
+            ])->name("admin.transactions.edit");
+            Route::delete("/{id}", [
+                AdminTransactionController::class,
+                "destroy",
+            ])->name("admin.transactions.destroy");
         });
     });

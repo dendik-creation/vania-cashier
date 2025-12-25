@@ -140,13 +140,13 @@ const AdminProductIndex = ({
                             className="relative py-3 overflow-hidden"
                         >
                             {/*Icon*/}
-                            <div className="absolute -top-4 -right-4 text-slate-300">
+                            <div className="absolute -top-4 -right-4 text-slate-200">
                                 {renderIconByType({
                                     type: product.type,
                                     size: 75,
                                 })}
                             </div>
-                            <CardContent className="px-3">
+                            <CardContent className="px-3 z-10">
                                 {/*Product Name*/}
                                 <div className="flex flex-col mb-3">
                                     <h3 className="font-semibold text-md">
@@ -217,7 +217,7 @@ const AdminProductIndex = ({
                 </div>
             )}
 
-            {products.data.length > 0 && (
+            {products.data.length > products.per_page && (
                 <PaginatorBuilder
                     prevUrl={products.prev_page_url || ""}
                     nextUrl={products.next_page_url || ""}
