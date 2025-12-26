@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
 use App\Http\Controllers\Admin\ProductRejectController as AdminProductRejectController;
+use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 
 Route::get("/", [AuthController::class, "signedInStatus"])->name("login");
 Route::prefix("auth")->group(function () {
@@ -160,5 +161,15 @@ Route::prefix("admin")
                 AdminTransactionController::class,
                 "destroy",
             ])->name("admin.transactions.destroy");
+        });
+
+        // App Settings Routes
+        Route::prefix("settings")->group(function () {
+            Route::get("/", [AdminSettingController::class, "index"])->name(
+                "admin.settings.index",
+            );
+            Route::put("/", [AdminSettingController::class, "update"])->name(
+                "admin.settings.update",
+            );
         });
     });

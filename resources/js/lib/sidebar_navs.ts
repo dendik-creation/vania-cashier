@@ -3,10 +3,12 @@ import {
     LucideProps,
     Package,
     PackageX,
+    Printer,
     ScanBarcode,
     ShoppingBag,
     Users,
     Users2,
+    Wrench,
 } from "lucide-react";
 import { ForwardRefExoticComponent, RefAttributes } from "react";
 
@@ -57,7 +59,7 @@ const adminNavs: NavItems = [
     },
     {
         type: "splitter",
-        title: "Aktivitas Sistem",
+        title: "Aktivitas Produk",
         url: "#",
     },
     {
@@ -71,6 +73,23 @@ const adminNavs: NavItems = [
         title: "Data Transaksi",
         url: "/transactions/records",
         icon: ShoppingBag,
+    },
+    {
+        type: "splitter",
+        title: "Lainnya",
+        url: "#",
+    },
+    {
+        type: "item",
+        title: "Pengaturan Aplikasi",
+        url: "/settings",
+        icon: Wrench,
+    },
+    {
+        type: "item",
+        title: "Perangkat Kasir",
+        url: "/settings/cashier-devices",
+        icon: Printer,
     },
 ];
 

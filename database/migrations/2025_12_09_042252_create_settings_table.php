@@ -13,8 +13,8 @@ return new class extends Migration {
         Schema::create("settings", function (Blueprint $table) {
             $table->id();
             $table->string("app_name");
-            $table->string("app_logo")->nullable();
-            $table->string("app_address")->nullable();
+            $table->string("app_logo");
+            $table->string("app_address");
             $table->integer("eligible_point_minimum")->default(50000);
             $table->integer("idr_point_value")->default(2500);
             $table->integer("minimum_point_can_used")->default(10);

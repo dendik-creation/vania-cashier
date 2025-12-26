@@ -37,6 +37,7 @@
         "date-fns": "^4.1.0",
         "filepond": "^4.32.10",
         "filepond-plugin-file-validate-type": "^1.2.9",
+        "filepond-plugin-image-preview": "^4.6.12",
         "lucide-react": "^0.554.0",
         "quill": "^2.0.3",
         "react-apexcharts": "^1.8.0",

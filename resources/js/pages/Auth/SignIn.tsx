@@ -51,7 +51,7 @@ export default function SignIn({ app_name }: { app_name: string }) {
                 {/* Kiri: Gambar */}
                 <div className="w-full flex flex-1 items-center justify-center dark:bg-muted rounded-t-md md:rounded-l-md md:rounded-tr-none p-6">
                     <img
-                        src="https://placehold.co/600x400"
+                        src="/icon.png"
                         alt="Icon Image"
                         className="mx-auto bg-cover object-center"
                     />

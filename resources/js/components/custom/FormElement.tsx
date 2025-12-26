@@ -25,14 +25,9 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Calendar } from "@/components/ui/calendar";
-import { registerPlugin } from "react-filepond";
-import "filepond/dist/filepond.min.css";
-import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
 import { SelectOption } from "@/types/global";
 import { ymdToIdDate } from "../helper/helper";
 import { Link } from "@inertiajs/react";
-
-registerPlugin(FilePondPluginFileValidateType);
 
 type ErrorInputProps = {
     error?: string | null;

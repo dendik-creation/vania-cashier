@@ -13,9 +13,12 @@ class SettingSeed extends Seeder
     public function run(): void
     {
         Setting::create([
-            "app_name" => "Toko Sepatu & Tas Vania",
-            "app_logo" => null,
-            "app_address" => "Jl. Raya Contoh No. 123, Jakarta Selatan",
+            "app_name" => "Kasir Vania Shop",
+            "app_logo" => "/icon.png",
+            "app_address" => "Jl. Raya Kudus - Colo Panjang, Bae, Kudus",
+            "idr_point_value" => 2500,
+            "minimum_point_can_used" => 10,
+            "eligible_point_minimum" => 50000,
             "admin_fee_criteria" => [
                 [
                     "payment_method" => "qris",
