@@ -1,0 +1,215 @@
+import React, { useEffect } from "react";
+import { Head } from "@inertiajs/react";
+import { floatToIdCurrency, ymdToIdDate } from "@/components/helper/helper";
+
+type Transaction = {
+    id: number;
+    invoice_code: string;
+    customer_type: string;
+    customer?: { name: string };
+    cashier: { name: string };
+    total: number;
+    payment_method: string;
+    transaction_time: string;
+    items: {
+        id: number;
+        variant: {
+            product: { name: string };
+            color: string;
+            size: string;
+        };
+        quantity: number;
+        subtotal: number;
+    }[];
+};
+
+type ExportProps = {
+    title: string;
+    transactions: Transaction[];
+    summary: {
+        total_revenue: number;
+        total_transactions: number;
+        total_items_sold: number;
+    };
+    filters: {
+        start_date: string;
+        end_date: string;
+    };
+    print_date: string;
+};
+
+const AdminReportExport = ({
+    title,
+    transactions,
+    summary,
+    filters,
+    print_date,
+}: ExportProps) => {
+    useEffect(() => {
+        if (navigator.userAgent.toLowerCase().indexOf("chrome") > -1) {
+            (function () {
+                const realPrintFunc = window.print;
+                const interval = 1000;
+                let nextAvailableTime = +new Date();
+
+                window.print = function () {
+                    const now = +new Date();
+                    if (now > nextAvailableTime) {
+                        realPrintFunc();
+                        nextAvailableTime = now + interval;
+                    } else {
+                        setTimeout(realPrintFunc, nextAvailableTime - now);
+                        nextAvailableTime += interval;
+                    }
+                };
+            })();
+        }
+
+        let printStartTime: number;
+        let isProcessingPrint = false;
+        let hasNavigatedBack = false;
+
+        const handleBeforePrint = () => {
+            printStartTime = Date.now();
+            isProcessingPrint = true;
+        };
+
+        const handleAfterPrint = () => {
+            isProcessingPrint = false;
+
+            if (hasNavigatedBack) return;
+            hasNavigatedBack = true;
+
+            window.close();
+        };
+
+        const triggerPrint = () => {
+            if (isProcessingPrint) return;
+            if (document.hidden) return;
+
+            window.print();
+        };
+
+        window.addEventListener("beforeprint", handleBeforePrint);
+        window.addEventListener("afterprint", handleAfterPrint);
+
+        const printTimeout = setTimeout(() => {
+            triggerPrint();
+        }, 100);
+
+        return () => {
+            clearTimeout(printTimeout);
+            window.removeEventListener("beforeprint", handleBeforePrint);
+            window.removeEventListener("afterprint", handleAfterPrint);
+        };
+    }, []);
+
+    return (
+        <div className="p-8 bg-white min-h-screen text-black font-sans">
+            <Head title={title} />
+
+            <div className="text-center mb-8">
+                <h1 className="text-2xl font-bold uppercase mb-2">{title}</h1>
+                <p className="text-sm text-gray-600">
+                    Periode: {ymdToIdDate(filters.start_date)} -{" "}
+                    {ymdToIdDate(filters.end_date)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                    Dicetak pada: {ymdToIdDate(print_date, true)}
+                </p>
+            </div>
+
+            {/* Summary */}
+            <div className="grid grid-cols-3 gap-4 mb-8 border border-gray-300 p-4 rounded-lg">
+                <div className="text-center">
+                    <div className="text-sm text-gray-500 mb-1">
+                        Total Pendapatan
+                    </div>
+                    <div className="text-xl font-bold">
+                        {floatToIdCurrency(summary.total_revenue)}
+                    </div>
+                </div>
+                <div className="text-center border-l border-gray-300">
+                    <div className="text-sm text-gray-500 mb-1">
+                        Total Transaksi
+                    </div>
+                    <div className="text-xl font-bold">
+                        {summary.total_transactions}
+                    </div>
+                </div>
+                <div className="text-center border-l border-gray-300">
+                    <div className="text-sm text-gray-500 mb-1">
+                        Item Terjual
+                    </div>
+                    <div className="text-xl font-bold">
+                        {summary.total_items_sold}
+                    </div>
+                </div>
+            </div>
+
+            {/* Table */}
+            <table className="w-full text-sm border-collapse border border-gray-300">
+                <thead>
+                    <tr className="bg-gray-100">
+                        <th className="border border-gray-300 p-2 text-left w-12">
+                            No
+                        </th>
+                        <th className="border border-gray-300 p-2 text-left">
+                            Invoice
+                        </th>
+                        <th className="border border-gray-300 p-2 text-left">
+                            Waktu
+                        </th>
+                        <th className="border border-gray-300 p-2 text-left">
+                            Pelanggan
+                        </th>
+                        <th className="border border-gray-300 p-2 text-left">
+                            Item
+                        </th>
+                        <th className="border border-gray-300 p-2 text-right">
+                            Total
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {transactions.map((t, i) => (
+                        <tr key={t.id}>
+                            <td className="border border-gray-300 p-2 text-center align-top">
+                                {i + 1}
+                            </td>
+                            <td className="border border-gray-300 p-2 align-top">
+                                {t.invoice_code}
+                            </td>
+                            <td className="border border-gray-300 p-2 align-top">
+                                {ymdToIdDate(t.transaction_time, true)}
+                            </td>
+                            <td className="border border-gray-300 p-2 align-top">
+                                <div>
+                                    {t.customer ? t.customer.name : "Umum"}
+                                </div>
+                                <div className="text-xs text-gray-500 capitalize">
+                                    {t.customer_type}
+                                </div>
+                            </td>
+                            <td className="border border-gray-300 p-2 align-top">
+                                <ul className="list-disc list-inside text-xs">
+                                    {t.items.map((item) => (
+                                        <li key={item.id}>
+                                            {item.variant.product.name} (
+                                            {item.quantity}x)
+                                        </li>
+                                    ))}
+                                </ul>
+                            </td>
+                            <td className="border border-gray-300 p-2 text-right align-top">
+                                {floatToIdCurrency(t.total)}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
+export default AdminReportExport;

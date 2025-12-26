@@ -1,4 +1,5 @@
 import {
+    BadgePoundSterling,
     Grid2X2,
     LucideProps,
     Package,
@@ -73,6 +74,12 @@ const adminNavs: NavItems = [
         title: "Data Transaksi",
         url: "/transactions/records",
         icon: ShoppingBag,
+    },
+    {
+        type: "item",
+        title: "Laporan Penjualan",
+        url: "/reports",
+        icon: BadgePoundSterling,
     },
     {
         type: "splitter",

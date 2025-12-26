@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
 use App\Http\Controllers\Admin\ProductRejectController as AdminProductRejectController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
 
 Route::get("/", [AuthController::class, "signedInStatus"])->name("login");
 Route::prefix("auth")->group(function () {
@@ -165,6 +166,18 @@ Route::prefix("admin")
                 AdminTransactionController::class,
                 "destroy",
             ])->name("admin.transactions.destroy");
+        });
+
+        // Sales Reports Routes
+        Route::prefix("reports")->group(function () {
+            Route::get("/", [
+                AdminReportController::class,
+                "index",
+            ])->name("admin.reports.index");
+            Route::get("/export", [
+                AdminReportController::class,
+                "export",
+            ])->name("admin.reports.export");
         });
 
         // App Settings Routes
