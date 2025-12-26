@@ -89,10 +89,11 @@ export function SearchInput({
 
 export function SelectSearchInput({
     value,
-    options,
+    options: optionsProp,
     onChange,
     placeholder,
     removeValue,
+    onFinding,
     className,
     tabIndex = 0,
 }: {
@@ -101,11 +102,31 @@ export function SelectSearchInput({
     onChange: (value: string | number) => void;
     placeholder?: string;
     removeValue?: () => void;
+    onFinding?: (
+        value: string,
+        setOptions: (opts: SelectOption[]) => void
+    ) => void;
     className?: string;
     tabIndex?: number;
 }) {
+    const [search, setSearch] = useState("");
     const [open, setOpen] = useState(false);
+    const [options, setOptions] = useState<SelectOption[]>(optionsProp);
     const triggerRef = React.useRef<HTMLDivElement>(null);
+
+    React.useEffect(() => {
+        setOptions(optionsProp);
+    }, [optionsProp]);
+
+    const handleFinding = (val: string) => {
+        setSearch(val);
+        if (onFinding) {
+            onFinding(val, (opts: SelectOption[]) => {
+                setOptions(opts);
+            });
+        }
+    };
+
     React.useEffect(() => {
         if (!open) return;
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -165,8 +186,12 @@ export function SelectSearchInput({
                 </div>
             </PopoverTrigger>
             <PopoverContent className="min-w-[400px] p-0" align="start">
-                <Command>
-                    <CommandInput placeholder="Cari pilihan..." />
+                <Command shouldFilter={!onFinding}>
+                    <CommandInput
+                        value={search}
+                        onValueChange={handleFinding}
+                        placeholder="Cari pilihan..."
+                    />
                     <CommandList>
                         <CommandEmpty>Pilihan tidak ada</CommandEmpty>
                         <CommandGroup>
@@ -174,7 +199,8 @@ export function SelectSearchInput({
                                 options.map((option) => (
                                     <CommandItem
                                         key={option.value}
-                                        value={option.value}
+                                        value={String(option.value)}
+                                        keywords={[option.label]}
                                         onSelect={() => {
                                             onChange(option.value);
                                             setOpen(false);

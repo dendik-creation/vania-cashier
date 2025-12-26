@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
+use App\Http\Controllers\Admin\ProductRejectController as AdminProductRejectController;
 
 Route::get("/", [AuthController::class, "signedInStatus"])->name("login");
 Route::prefix("auth")->group(function () {
@@ -102,6 +103,26 @@ Route::prefix("admin")
             ])->name("admin.products.destroy");
         });
 
+        // Route product rejects
+        Route::prefix("product-rejects")->group(function(){
+            Route::get("/", [AdminProductRejectController::class, "index"])->name(
+                "admin.product-rejects.index",
+            );
+            Route::get("/find-variant", [AdminProductRejectController::class, "getProductVariantsOptions"])->name(
+                "admin.product-rejects.find-variant",
+            );
+            Route::post("/", [AdminProductRejectController::class, "store"])->name(
+                "admin.product-rejects.store",
+            );
+            Route::put("/{id}", [AdminProductRejectController::class, "update"])->name(
+                "admin.product-rejects.update",
+            );
+            Route::delete("/{id}", [AdminProductRejectController::class, "destroy"])->name(
+                "admin.product-rejects.destroy",
+            );
+        });
+
+        // Route transactions
         Route::prefix("transactions")->group(function () {
             Route::get("/find/customer", [
                 AdminTransactionController::class,

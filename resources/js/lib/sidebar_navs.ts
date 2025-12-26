@@ -2,6 +2,7 @@ import {
     Grid2X2,
     LucideProps,
     Package,
+    PackageX,
     ScanBarcode,
     ShoppingBag,
     Users,
@@ -58,6 +59,12 @@ const adminNavs: NavItems = [
         type: "splitter",
         title: "Aktivitas Sistem",
         url: "#",
+    },
+    {
+        type: "item",
+        title: "Produk Reject",
+        url: "/product-rejects",
+        icon: PackageX,
     },
     {
         type: "item",
