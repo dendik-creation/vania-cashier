@@ -87,6 +87,10 @@ Route::prefix("admin")
             Route::post("/", [AdminProductController::class, "store"])->name(
                 "admin.products.store",
             );
+            Route::post("/import", [
+                AdminProductController::class,
+                "import",
+            ])->name("admin.products.import");
             Route::get("/{id}", [AdminProductController::class, "show"])->name(
                 "admin.products.show",
             );

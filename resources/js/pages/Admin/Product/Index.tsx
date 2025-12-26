@@ -19,13 +19,17 @@ import {
     Package,
     Tags,
     PackageSearch,
+    FileUp,
+    Upload,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { FormEvent, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import EmptyCard from "@/components/custom/EmptyCard";
 import { AdminProductIndexProps } from "@/types/product";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
+import ModalImport from "@/components/custom/ModalImport";
+import BlastToaster from "@/components/custom/BlastToaster";
 
 const AdminProductIndex = ({
     title,
@@ -37,6 +41,15 @@ const AdminProductIndex = ({
     const { data: filterData, setData: setFilterData } = useForm({
         search: filters.search || "",
         type: filters.type || "",
+    });
+    const {
+        data: importData,
+        setData: setImportData,
+        processing: isImporting,
+        post: postImport,
+    } = useForm({
+        xlsx_file: null as File | null,
+        openDialog: false as boolean,
     });
 
     const handleFilter = (key: keyof typeof filterData, value: string) => {
@@ -62,6 +75,25 @@ const AdminProductIndex = ({
         }
     };
 
+    const handleImport = (e: FormEvent) => {
+        e.preventDefault();
+        if (!importData.xlsx_file) return;
+        postImport(`/admin/products/import`, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+            preserveScroll: true,
+            replace: true,
+            onError: (error: any) => {
+                BlastToaster("error", error.message || "Gagal mengimpor data");
+            },
+            onFinish: () => {
+                setImportData("xlsx_file", null);
+                setImportData("openDialog", false);
+            },
+        });
+    };
+
     const debounceSearch = inputDebounce((data: typeof filterData) => {
         router.get(
             "/admin/products",
@@ -73,7 +105,7 @@ const AdminProductIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["products"],
-            },
+            }
         );
     });
 
@@ -121,12 +153,41 @@ const AdminProductIndex = ({
                         />
                     </div>
                 </div>
-                <Link href={"/admin/products/create"}>
-                    <Button variant={"yellow"} className="w-full lg:w-fit">
-                        <CircleFadingPlus />
-                        Tambah Produk
-                    </Button>
-                </Link>
+                <div className="flex flex-col lg:flex-row w-full lg:w-fit items-center gap-3">
+                    <ModalImport
+                        description="Silakan download contoh file untuk mengisi data produk"
+                        isImporting={isImporting}
+                        file={importData.xlsx_file}
+                        onFileChange={(file: File | null) =>
+                            setImportData("xlsx_file", file)
+                        }
+                        onSubmit={handleImport}
+                        exampleFile="/assets/xlsx-format/import-produk.xlsx"
+                        title="Import Produk"
+                        triggerNode={
+                            <Button
+                                variant={"green"}
+                                className="cursor-pointer w-full lg:w-fit"
+                            >
+                                <Upload />
+                                <span>Import Produk</span>
+                            </Button>
+                        }
+                        open={importData.openDialog}
+                        onOpenChange={(open: boolean) =>
+                            setImportData("openDialog", open)
+                        }
+                    />
+                    <Link
+                        className="w-full lg:w-fit"
+                        href={"/admin/products/create"}
+                    >
+                        <Button variant={"yellow"} className="w-full lg:w-fit">
+                            <CircleFadingPlus />
+                            Tambah Produk
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             {products.data.length === 0 ? (

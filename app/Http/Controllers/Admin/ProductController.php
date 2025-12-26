@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Imports\ProductImport;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
 {
@@ -208,6 +210,21 @@ class ProductController extends Controller
         $product->delete();
 
         Session::flash('success', 'Produk berhasil dihapus');
+        return Inertia::location(route('admin.products.index'));
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'xlsx_file' => 'required|file|mimes:xlsx',
+        ]);
+        $file = $request->file('xlsx_file');
+        try {
+            Excel::import(new ProductImport(), $file);
+            Session::flash('success', 'Data produk berhasil diimpor');
+        } catch (\Exception $e) {
+            Session::flash('error', $e->getMessage());
+        }
         return Inertia::location(route('admin.products.index'));
     }
 }

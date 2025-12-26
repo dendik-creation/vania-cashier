@@ -12,12 +12,22 @@ import {
 } from "@/Components/ui/table";
 import { Badge } from "@/Components/ui/badge";
 import { Separator } from "@/Components/ui/separator";
-import { User, Calendar, FileText, MapPin, Phone } from "lucide-react";
+import {
+    User,
+    Calendar,
+    FileText,
+    MapPin,
+    Phone,
+    ArrowLeft,
+    Edit,
+} from "lucide-react";
 import {
     floatToIdCurrency,
     humanPaymentMethod,
     ymdToIdDate,
 } from "@/components/helper/helper";
+import { Button } from "@/components/ui/button";
+import { Link } from "@inertiajs/react";
 
 type PageProps = PageTitleProps & {
     transaction: Transaction;
@@ -30,7 +40,23 @@ const AdminTransactionShow = ({
 }: PageProps) => {
     return (
         <AppLayout>
-            <PageTitle title={title} description={description} />
+            <div className="flex items-center justify-between">
+                <PageTitle title={title} description={description} />
+                <div className="flex items-center gap-3">
+                    <Button variant="outline" asChild>
+                        <Link href={"/admin/transactions/records"}>
+                            <ArrowLeft className="w-4 h-4 mr-2" /> Kembali
+                        </Link>
+                    </Button>
+                    <Button variant="yellow" asChild>
+                        <Link
+                            href={`/admin/transactions/${transaction.id}/edit`}
+                        >
+                            <Edit className="w-4 h-4 mr-2" /> Edit Transaksi
+                        </Link>
+                    </Button>
+                </div>
+            </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {/* Card Customer */}
