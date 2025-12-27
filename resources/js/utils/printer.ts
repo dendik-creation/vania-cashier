@@ -1,8 +1,4 @@
 import { floatToIdCurrency, ymdToIdDate } from "@/components/helper/helper";
-import {
-    getFromLocalStorage,
-    saveToLocalStorage,
-} from "@/components/helper/local_storage";
 import { Setting } from "@/types/setting";
 import { Transaction, TransactionItem } from "@/types/transaction";
 import EscPosEncoder from "esc-pos-encoder";
@@ -18,61 +14,6 @@ export const PRINTERS = {
         service: "000018f0-0000-1000-8000-00805f9b34fb",
         characteristic: "00002af1-0000-1000-8000-00805f9b34fb",
     },
-};
-
-let cachedDevice: any = null;
-
-export const connectPrinter = async () => {
-    const nav = navigator as any;
-    if (!nav.bluetooth) throw new Error("Web Bluetooth tidak tersedia.");
-
-    const device = await nav.bluetooth.requestDevice({
-        filters: [{ name: PRINTERS.RECEIPT.name }],
-        optionalServices: [PRINTERS.RECEIPT.service],
-    });
-
-    if (device) {
-        cachedDevice = device;
-        saveToLocalStorage("default_receipt_printer", device.id);
-
-        // Set expired at 00:00 AM next day
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
-        saveToLocalStorage("printer_expired_at", tomorrow.getTime());
-
-        return true;
-    }
-    return false;
-};
-
-export const checkPrinterConnection = async () => {
-    const nav = navigator as any;
-    if (!nav.bluetooth) return false;
-
-    const deviceId = getFromLocalStorage("default_receipt_printer");
-    const expiredAt = getFromLocalStorage("printer_expired_at");
-    const now = new Date().getTime();
-
-    if (!deviceId || !expiredAt || now > expiredAt) {
-        return false;
-    }
-
-    if (cachedDevice && cachedDevice.id === deviceId) {
-        return true;
-    }
-
-    // Try to retrieve from allowed devices
-    if (nav.bluetooth.getDevices) {
-        const devices = await nav.bluetooth.getDevices();
-        const device = devices.find((d: any) => d.id === deviceId);
-        if (device) {
-            cachedDevice = device;
-            return true;
-        }
-    }
-
-    return false;
 };
 
 export class ReceiptPrinter {
@@ -184,23 +125,20 @@ export class ReceiptPrinter {
         bytes: Uint8Array,
         printerConfig: typeof PRINTERS.RECEIPT
     ) {
-        if (!cachedDevice) {
-            // Try to reconnect if not cached
-            const isConnected = await checkPrinterConnection();
-            if (!isConnected) {
-                throw new Error(
-                    "Printer belum terhubung. Silakan hubungkan printer terlebih dahulu."
-                );
-            }
+        const nav = navigator as any;
+        if (!nav.bluetooth) {
+            throw new Error(
+                "Web Bluetooth tidak tersedia. Pastikan akses menggunakan HTTPS atau Localhost."
+            );
         }
 
         try {
-            const device = cachedDevice;
-            if (!device.gatt.connected) {
-                await device.gatt.connect();
-            }
+            const device = await nav.bluetooth.requestDevice({
+                filters: [{ name: printerConfig.name }],
+                optionalServices: [printerConfig.service],
+            });
 
-            const server = device.gatt;
+            const server = await device.gatt.connect();
             const service = await server.getPrimaryService(
                 printerConfig.service
             );
@@ -215,16 +153,12 @@ export class ReceiptPrinter {
                 await characteristic.writeValue(chunk);
             }
 
-            // Keep connection alive for session or disconnect?
-            // User wants "next transaction not required to search", so keeping it connected or reconnecting via ID is fine.
-            // We won't disconnect explicitly to allow faster subsequent prints,
-            // or we can disconnect and rely on cachedDevice to reconnect quickly.
-            // Let's disconnect to save battery/resources, since we have the device object to reconnect.
+            // Disconnect after a short delay
             setTimeout(() => {
                 if (device.gatt.connected) {
                     device.gatt.disconnect();
                 }
-            }, 2000);
+            }, 1000);
         } catch (error) {
             console.error("Bluetooth Print Error:", error);
             throw error;

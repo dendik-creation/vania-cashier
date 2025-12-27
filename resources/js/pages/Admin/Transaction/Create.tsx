@@ -27,7 +27,9 @@ import {
     Loader2,
     Package,
     Phone,
+    Printer,
     Save,
+    Scan,
     Sparkles,
     TicketPercent,
     X,
@@ -38,6 +40,10 @@ import axios from "axios";
 import { Badge } from "@/components/ui/badge";
 import { floatToIdCurrency, humanCustType } from "@/components/helper/helper";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+    saveToLocalStorage,
+    getFromLocalStorage,
+} from "@/components/helper/local_storage";
 type Props = PageTitleProps & TransactionCreateProps;
 
 const AdminTransactionCreate = ({
@@ -48,9 +54,6 @@ const AdminTransactionCreate = ({
     title,
     description,
 }: Props) => {
-    const [isPrinting, setIsPrinting] = useState(false);
-    const [printStatus, setPrintStatus] = useState("");
-
     const {
         data: form,
         setData: setForm,
@@ -217,8 +220,8 @@ const AdminTransactionCreate = ({
             });
             admin_fee = matchedFee;
         }
-        const discount = form.point_used * idr_point_value;
-        const total = subtotal + admin_fee - form.discount;
+        const discount = Number(form.point_used) * Number(idr_point_value);
+        const total = Number(subtotal) + Number(admin_fee) - Number(discount);
 
         setForm("subtotal", subtotal);
         setForm("admin_fee", admin_fee);
@@ -262,7 +265,7 @@ const AdminTransactionCreate = ({
             existingItem?.qty >= existingItem.stock_remaining!
         ) {
             BlastToaster("error", `Stok tidak mencukupi untuk SKU: ${sku}`);
-            resetSkuFinder();
+            setSkuFinder("sku", "");
             return;
         }
 
@@ -361,21 +364,16 @@ const AdminTransactionCreate = ({
             return;
         }
 
-        setIsPrinting(true);
-        setPrintStatus("Menyimpan transaksi...");
-
         try {
             const response = await axios.post("/admin/transactions", form);
             const { transaction_id, message } = response.data;
 
-            setPrintStatus("Mengambil data struk...");
             const printResponse = await axios.get(
                 `/admin/transactions/print/${transaction_id}`
             );
             const { transaction: trxData, setting: settingData } =
                 printResponse.data;
 
-            setPrintStatus("Pilih printer tujuan...");
             const printer = new ReceiptPrinter();
             const bytes = printer.generateReceipt(trxData, settingData);
 
@@ -386,7 +384,7 @@ const AdminTransactionCreate = ({
                 "success",
                 message || "Transaksi berhasil & Struk dicetak"
             );
-            resetForm();
+            handleResetAll();
         } catch (error: any) {
             console.error(error);
             if (error.response?.status === 422) {
@@ -412,11 +410,9 @@ const AdminTransactionCreate = ({
                         "Terjadi kesalahan"
                 );
             }
-        } finally {
-            setIsPrinting(false);
-            setPrintStatus("");
         }
     };
+
     return (
         <AppLayout>
             <div className="mb-4">
@@ -1095,20 +1091,6 @@ const AdminTransactionCreate = ({
                     </Button>
                 </div>
             </div>
-
-            {isPrinting && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
-                    <div className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center gap-4 max-w-sm w-full">
-                        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-                        <div className="text-center">
-                            <h3 className="font-bold text-lg text-gray-900">
-                                Memproses Transaksi
-                            </h3>
-                            <p className="text-gray-500 mt-1">{printStatus}</p>
-                        </div>
-                    </div>
-                </div>
-            )}
         </AppLayout>
     );
 };
