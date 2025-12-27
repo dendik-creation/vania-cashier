@@ -5,7 +5,7 @@ import AppLayout from "@/partials/AppLayout";
 import { PageTitle, PageTitleProps } from "@/partials/PageTitle";
 import { TransactionCreateProps } from "@/types/transaction";
 import { useForm } from "@inertiajs/react";
-import { FormEvent, useEffect, useMemo } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -17,12 +17,14 @@ import {
     DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ReceiptPrinter } from "@/utils/printer";
 import {
     CircleFadingPlus,
     Coins,
     Footprints,
     Handbag,
     Loader,
+    Loader2,
     Package,
     Phone,
     Save,
@@ -46,14 +48,17 @@ const AdminTransactionCreate = ({
     title,
     description,
 }: Props) => {
+    const [isPrinting, setIsPrinting] = useState(false);
+    const [printStatus, setPrintStatus] = useState("");
+
     const {
         data: form,
         setData: setForm,
         processing: formProcessing,
         errors: formErrors,
         setError: setFormError,
-        post: formPost,
         clearErrors: clearFormErrors,
+        reset: resetForm,
     } = useForm({
         is_new_customer: true,
         customer_id: "",
@@ -73,6 +78,7 @@ const AdminTransactionCreate = ({
                 size: string;
                 color: string;
             };
+            stock_remaining: number;
             price_applied: number;
             price_criteria: {
                 basic: number;
@@ -90,10 +96,18 @@ const AdminTransactionCreate = ({
         admin_fee: 0,
         total: 0,
     });
-    const { data: skuFinder, setData: setSkuFinder } = useForm({
+    const {
+        data: skuFinder,
+        setData: setSkuFinder,
+        reset: resetSkuFinder,
+    } = useForm({
         sku: "",
     });
-    const { data: customerFinder, setData: setCustomerFinder } = useForm({
+    const {
+        data: customerFinder,
+        setData: setCustomerFinder,
+        reset: resetCustomerFinder,
+    } = useForm({
         customer_phone: "",
         is_found: false,
         customer_found: {
@@ -106,10 +120,20 @@ const AdminTransactionCreate = ({
         },
     });
 
-    const { data: pointUsedPlaceholder, setData: setPointUsedPlaceholder } =
-        useForm({
-            point_used_placeholder: 0,
-        });
+    const {
+        data: pointUsedPlaceholder,
+        setData: setPointUsedPlaceholder,
+        reset: resetPointUsedPlaceholder,
+    } = useForm({
+        point_used_placeholder: 0,
+    });
+
+    const handleResetAll = () => {
+        resetForm();
+        resetSkuFinder();
+        resetCustomerFinder();
+        resetPointUsedPlaceholder();
+    };
 
     const renderProductIcon = ({
         type,
@@ -232,6 +256,16 @@ const AdminTransactionCreate = ({
             });
     };
     const handleFindSKU = (sku: string) => {
+        const existingItem = form.items.find((item) => item.sku === sku);
+        if (
+            existingItem &&
+            existingItem?.qty >= existingItem.stock_remaining!
+        ) {
+            BlastToaster("error", `Stok tidak mencukupi untuk SKU: ${sku}`);
+            resetSkuFinder();
+            return;
+        }
+
         axios
             .get("/admin/transactions/find/sku", {
                 params: { sku },
@@ -257,6 +291,7 @@ const AdminTransactionCreate = ({
                         price_applied: productVariantData.price_applied,
                         price_criteria: productVariantData.price_criteria,
                         product_type: productVariantData.product_type,
+                        stock_remaining: productVariantData.stock_remaining,
                         qty: 1,
                     });
                 }
@@ -319,20 +354,68 @@ const AdminTransactionCreate = ({
 
         return isValid;
     };
-    const handleSubmitForm = (e: FormEvent) => {
+    const handleSubmitForm = async (e: FormEvent) => {
         e.preventDefault();
         if (!validateForm()) {
             BlastToaster("error", "Lengkapi seluruh form yang diwajibkan");
             return;
         }
-        formPost("/admin/transactions", {
-            replace: true,
-            preserveState: true,
-            onError: (err) => {
-                console.log(err);
-                BlastToaster("error", "Terjadi kesalahan pada pengisian form");
-            },
-        });
+
+        setIsPrinting(true);
+        setPrintStatus("Menyimpan transaksi...");
+
+        try {
+            const response = await axios.post("/admin/transactions", form);
+            const { transaction_id, message } = response.data;
+
+            setPrintStatus("Mengambil data struk...");
+            const printResponse = await axios.get(
+                `/admin/transactions/print/${transaction_id}`
+            );
+            const { transaction: trxData, setting: settingData } =
+                printResponse.data;
+
+            setPrintStatus("Pilih printer tujuan...");
+            const printer = new ReceiptPrinter();
+            const bytes = printer.generateReceipt(trxData, settingData);
+
+            // Direct Bluetooth Print
+            await printer.printReceipt(bytes);
+
+            BlastToaster(
+                "success",
+                message || "Transaksi berhasil & Struk dicetak"
+            );
+            resetForm();
+        } catch (error: any) {
+            console.error(error);
+            if (error.response?.status === 422) {
+                const errors = error.response.data.errors;
+                Object.keys(errors).forEach((key) => {
+                    setFormError(key as any, errors[key][0]);
+                });
+                BlastToaster("error", "Periksa kembali inputan anda");
+            } else if (
+                error.name === "NotFoundError" ||
+                error.name === "SecurityError"
+            ) {
+                BlastToaster(
+                    "warning",
+                    "Transaksi tersimpan, tapi cetak dibatalkan/gagal."
+                );
+                handleResetAll();
+            } else {
+                BlastToaster(
+                    "error",
+                    error.response?.data?.message ||
+                        error.message ||
+                        "Terjadi kesalahan"
+                );
+            }
+        } finally {
+            setIsPrinting(false);
+            setPrintStatus("");
+        }
     };
     return (
         <AppLayout>
@@ -1012,6 +1095,20 @@ const AdminTransactionCreate = ({
                     </Button>
                 </div>
             </div>
+
+            {isPrinting && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
+                    <div className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center gap-4 max-w-sm w-full">
+                        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+                        <div className="text-center">
+                            <h3 className="font-bold text-lg text-gray-900">
+                                Memproses Transaksi
+                            </h3>
+                            <p className="text-gray-500 mt-1">{printStatus}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AppLayout>
     );
 };

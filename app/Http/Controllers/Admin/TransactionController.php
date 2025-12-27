@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
 class TransactionController extends Controller
@@ -68,6 +69,7 @@ class TransactionController extends Controller
                     "price_criteria" => $product_variant->price_criteria,
                     "price_applied" => 0,
                     "product_type" => $product_variant->product->type,
+                    "stock_remaining" => $product_variant->stock,
                 ],
             ],
             200,
@@ -333,8 +335,10 @@ class TransactionController extends Controller
             }
         }
 
-        Session::flash("success", "Transaksi berhasil disimpan");
-        return Inertia::location("/admin/transactions/create");
+        return response()->json([
+            "message" => "Transaksi berhasil disimpan",
+            "transaction_id" => $transaction->id,
+        ]);
     }
 
     public function show($id)
@@ -554,5 +558,15 @@ class TransactionController extends Controller
         $transaction->delete();
         Session::flash("success", "Transaksi berhasil dihapus");
         return Inertia::location("/admin/transactions/records");
+    }
+
+    public function findTrxForPrint($id)
+    {
+        $transaction = Transaction::with(['items.variant.product', 'customer', 'cashier'])->find($id);
+        $setting = Setting::first();
+        return response()->json([
+            'transaction' => $transaction,
+            'setting' => $setting,
+        ]);
     }
 }

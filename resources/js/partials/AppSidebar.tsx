@@ -18,7 +18,10 @@ export default function AppSidebar({ role }: { role: string }) {
     const pathname = window.location.pathname;
     const { toggleSidebar } = useSidebar();
     useEffect(() => {
-        if (pathname.includes("transactions/create")) {
+        if (
+            pathname.includes("transactions/create") ||
+            /transactions\/.*\/edit/.test(pathname)
+        ) {
             toggleSidebar();
         }
     }, [pathname]);

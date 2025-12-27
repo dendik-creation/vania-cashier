@@ -146,6 +146,10 @@ Route::prefix("admin")
                 AdminTransactionController::class,
                 "create",
             ])->name("admin.transactions.create");
+            Route::get("/print/{id}", [
+                AdminTransactionController::class,
+                "findTrxForPrint",
+            ])->name("admin.transactions.findTrxForPrint");
             Route::post("/", [
                 AdminTransactionController::class,
                 "store",

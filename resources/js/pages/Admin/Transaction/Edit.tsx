@@ -82,6 +82,7 @@ const AdminTransactionEdit = ({
                 order_qty_3: 0,
                 order_qty_6: 0,
             },
+            stock_remaining: item.variant?.stock || 0,
             product_type: item.variant?.product?.type || "package",
             qty: item.quantity,
         })),
@@ -244,6 +245,15 @@ const AdminTransactionEdit = ({
             });
     };
     const handleFindSKU = (sku: string) => {
+        const existingItem = form.items.find((item) => item.sku === sku);
+        if (
+            existingItem &&
+            existingItem?.qty >= existingItem.stock_remaining!
+        ) {
+            BlastToaster("error", `Stok tidak mencukupi untuk SKU: ${sku}`);
+            setSkuFinder("sku", "");
+            return;
+        }
         axios
             .get("/admin/transactions/find/sku", {
                 params: { sku },
@@ -269,6 +279,7 @@ const AdminTransactionEdit = ({
                         price_applied: productVariantData.price_applied,
                         price_criteria: productVariantData.price_criteria,
                         product_type: productVariantData.product_type,
+                        stock_remaining: productVariantData.stock_remaining,
                         qty: 1,
                     });
                 }

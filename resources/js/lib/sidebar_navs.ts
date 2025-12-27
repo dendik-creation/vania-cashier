@@ -92,12 +92,6 @@ const adminNavs: NavItems = [
         url: "/settings",
         icon: Wrench,
     },
-    {
-        type: "item",
-        title: "Perangkat Kasir",
-        url: "/settings/cashier-devices",
-        icon: Printer,
-    },
 ];
 
 const cashierNavs: NavItems = [
