@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Global;
 
-use App\Http\Controllers\Controller;
+use Carbon\Carbon;
+use Inertia\Inertia;
 use App\Models\Customer;
 use App\Models\Transaction;
-use App\Models\TransactionItem;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Models\TransactionItem;
 use Illuminate\Support\Facades\DB;
-use Inertia\Inertia;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
@@ -95,12 +96,77 @@ class DashboardController extends Controller
             "recent_transactions" => $recentTransactions
         ]);
     }
-
-    public function cashierDashboard()
+public function cashierDashboard()
     {
+        $cashierId = Auth::id();
+        $today = Carbon::today();
+        
+        // 1. Summary Cards (Fokus Hari Ini)
+        $todayTransactions = Transaction::where('cashier_id', $cashierId)
+            ->whereDate('transaction_time', $today);
+
+        $summary = [
+            'revenue_today' => $todayTransactions->sum('total'),
+            'transaction_count' => $todayTransactions->count(),
+            // Hitung item terjual hari ini oleh kasir ini
+            'items_sold' => TransactionItem::whereHas('transaction', function($q) use ($cashierId, $today) {
+                $q->where('cashier_id', $cashierId)
+                  ->whereDate('transaction_time', $today);
+            })->sum('quantity'),
+        ];
+
+        // 2. Chart: Hourly Sales Trend (Tren Penjualan Per Jam Hari Ini)
+        $hourlyTrend = [];
+        for ($i = 0; $i <= 23; $i++) {
+            $startTime = $today->copy()->setTime($i, 0, 0);
+            $endTime = $today->copy()->setTime($i, 59, 59);
+
+            $hourRevenue = Transaction::where('cashier_id', $cashierId)
+                ->whereBetween('transaction_time', [$startTime, $endTime])
+                ->sum('total');
+            
+            $hourCount = Transaction::where('cashier_id', $cashierId)
+                ->whereBetween('transaction_time', [$startTime, $endTime])
+                ->count();
+
+             $hourlyTrend[] = [
+                'hour' => $startTime->format('H:00'),
+                'revenue' => $hourRevenue,
+                'count' => $hourCount
+            ];
+        }
+
+        // 3. Chart: Payment Method Distribution (Metode Pembayaran)
+        $paymentMethods = Transaction::where('cashier_id', $cashierId)
+            ->whereDate('transaction_time', $today)
+            ->select('payment_method', DB::raw('count(*) as total_trx'), DB::raw('sum(total) as total_amount'))
+            ->groupBy('payment_method')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'method' => strtoupper($item->payment_method),
+                    'total_trx' => $item->total_trx,
+                    'total_amount' => $item->total_amount
+                ];
+            });
+
+        // 4. Recent Transactions (Transaksi Terakhir Kasir Ini)
+        $recentTransactions = Transaction::with(['customer'])
+            ->where('cashier_id', $cashierId)
+            ->whereDate('transaction_time', $today)
+            ->latest('transaction_time')
+            ->limit(5)
+            ->get();
+
         return Inertia::render("Cashier/Dashboard", [
-            "title" => "Dashboard",
-            "description" => "Ringkasan informasi penjualan dan aktivitas toko",
+            "title" => "Dashboard Kasir",
+            "description" => "Ringkasan penjualan Anda hari ini (" . $today->translatedFormat('d F Y') . ")",
+            "summary" => $summary,
+            "charts" => [
+                "hourly_trend" => $hourlyTrend,
+                "payment_methods" => $paymentMethods
+            ],
+            "recent_transactions" => $recentTransactions
         ]);
     }
 }
