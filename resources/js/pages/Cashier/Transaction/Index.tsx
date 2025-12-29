@@ -12,7 +12,7 @@ import {
     ymdToIdDate,
 } from "@/components/helper/helper";
 import { Button } from "@/components/ui/button";
-import AppLayout from "@/partials/AppLayout";
+import AppLayout, { useInertiaShared } from "@/partials/AppLayout";
 import { PageTitle, PageTitleProps } from "@/partials/PageTitle";
 import { PaginationData } from "@/types/global";
 import { Transaction } from "@/types/transaction";
@@ -71,13 +71,14 @@ const paymentMethodOptions = [
     },
 ];
 
-const AdminTransactionIndex = ({
+const CashierTransactionIndex = ({
     title,
     description,
     transactions,
     filters,
 }: PageProps) => {
     const firstRender = useRef(true);
+    const { flash } = useInertiaShared();
     const { data: filterData, setData: setFilterData } = useForm({
         search: filters.search || "",
         customer_type: filters.customer_type || "",
@@ -92,7 +93,7 @@ const AdminTransactionIndex = ({
 
     const debounceSearch = inputDebounce((data: typeof filterData) => {
         router.get(
-            "/admin/transactions/records",
+            "/cashier/transactions/records",
             {
                 ...data,
             },
@@ -105,7 +106,7 @@ const AdminTransactionIndex = ({
     });
 
     const handleDelete = (trxId: number) => {
-        router.delete("/admin/transactions/" + trxId, {
+        router.delete("/cashier/transactions/" + trxId, {
             preserveScroll: true,
             replace: true,
         });
@@ -179,7 +180,7 @@ const AdminTransactionIndex = ({
                     />
                 </div>
                 <div className="col-span-2">
-                    <Link href={"/admin/transactions/create"}>
+                    <Link href={"/cashier/transactions/create"}>
                         <Button variant={"yellow"} className="w-full">
                             <CircleFadingPlus />
                             Transaksi Baru
@@ -251,37 +252,41 @@ const AdminTransactionIndex = ({
                                 </div>
                                 <div className="flex items-center justify-end gap-2 mt-4">
                                     <Link
-                                        href={`/admin/transactions/${trx.id}`}
+                                        href={`/cashier/transactions/${trx.id}`}
                                     >
                                         <Button variant="outline">
                                             <Eye className="h-4 w-4" />
                                         </Button>
                                     </Link>
-                                    <Link
-                                        href={`/admin/transactions/${trx.id}/edit`}
-                                    >
-                                        <Button variant="outline">
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                    </Link>
-                                    <ConfirmDialog
-                                        triggerNode={
-                                            <div>
-                                                <Button
-                                                    variant="outline"
-                                                    className="text-destructive hover:text-destructive"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        }
-                                        title="Hapus Transaksi"
-                                        description="Menghapus transaksi akan mengakibatkan hilanganya informasi transaksi termasuk poin pelanggan. Apakah anda yakin ?"
-                                        type="danger"
-                                        confirmAction={() =>
-                                            handleDelete(trx.id)
-                                        }
-                                    />
+                                    {flash.user.id === trx.cashier_id && (
+                                        <Link
+                                            href={`/cashier/transactions/${trx.id}/edit`}
+                                        >
+                                            <Button variant="outline">
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                        </Link>
+                                    )}
+                                    {flash.user.id === trx.cashier_id && (
+                                        <ConfirmDialog
+                                            triggerNode={
+                                                <div>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="text-destructive hover:text-destructive"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            }
+                                            title="Hapus Transaksi"
+                                            description="Menghapus transaksi akan mengakibatkan hilanganya informasi transaksi termasuk poin pelanggan. Apakah anda yakin ?"
+                                            type="danger"
+                                            confirmAction={() =>
+                                                handleDelete(trx.id)
+                                            }
+                                        />
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -300,4 +305,4 @@ const AdminTransactionIndex = ({
         </AppLayout>
     );
 };
-export default AdminTransactionIndex;
+export default CashierTransactionIndex;

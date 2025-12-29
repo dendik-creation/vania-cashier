@@ -101,6 +101,40 @@ const cashierNavs: NavItems = [
         url: "/dashboard",
         icon: Grid2X2,
     },
+    {
+        type: "item",
+        title: "Transaksi Baru",
+        url: "/transactions/create",
+        icon: ScanBarcode,
+    },
+    {
+        type: "splitter",
+        title: "Data Master",
+        url: "#",
+    },
+    {
+        type: "item",
+        title: "Data Pelanggan",
+        url: "/customers",
+        icon: Users,
+    },
+    {
+        type: "item",
+        title: "Data Produk",
+        url: "/products",
+        icon: Package,
+    },
+    {
+        type: "splitter",
+        title: "Aktivitas Produk",
+        url: "#",
+    },
+    {
+        type: "item",
+        title: "Data Transaksi",
+        url: "/transactions/records",
+        icon: ShoppingBag,
+    },
 ];
 
 const addPrefixByRole = (role: string, menus: NavItems) => {

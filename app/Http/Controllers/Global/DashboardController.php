@@ -95,4 +95,12 @@ class DashboardController extends Controller
             "recent_transactions" => $recentTransactions
         ]);
     }
+
+    public function cashierDashboard()
+    {
+        return Inertia::render("Cashier/Dashboard", [
+            "title" => "Dashboard",
+            "description" => "Ringkasan informasi penjualan dan aktivitas toko",
+        ]);
+    }
 }

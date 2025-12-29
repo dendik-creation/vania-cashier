@@ -39,7 +39,7 @@ import { floatToIdCurrency, humanCustType } from "@/components/helper/helper";
 import { Card, CardContent } from "@/components/ui/card";
 type Props = PageTitleProps & TransactionCreateProps;
 
-const AdminTransactionCreate = ({
+const CashierTransactionCreate = ({
     eligible_point_minimum,
     idr_point_value,
     admin_fee_criteria,
@@ -237,7 +237,7 @@ const AdminTransactionCreate = ({
 
     const handleFindCustomer = (phone: string) => {
         axios
-            .get("/admin/transactions/find/customer", {
+            .get("/cashier/transactions/find/customer", {
                 params: { phone },
             })
             .then((response) => {
@@ -264,7 +264,7 @@ const AdminTransactionCreate = ({
         }
 
         axios
-            .get("/admin/transactions/find/sku", {
+            .get("/cashier/transactions/find/sku", {
                 params: { sku },
             })
             .then((response) => {
@@ -360,11 +360,11 @@ const AdminTransactionCreate = ({
 
         try {
             setForm("on_scanning_printer", true);
-            const response = await axios.post("/admin/transactions", form);
+            const response = await axios.post("/cashier/transactions", form);
             const { transaction_id, message } = response.data;
 
             const printResponse = await axios.get(
-                `/admin/transactions/print/${transaction_id}`
+                `/cashier/transactions/print/${transaction_id}`
             );
             const { transaction: trxData, setting: settingData } =
                 printResponse.data;
@@ -425,11 +425,11 @@ const AdminTransactionCreate = ({
                         </Label>
                         <form onSubmit={handleSubmitSKU}>
                             <Input
+                                disabled={form.on_scanning_printer}
                                 autoFocus
                                 type="text"
                                 placeholder="Masukkan Barcode"
                                 className="w-full"
-                                disabled={form.on_scanning_printer}
                                 value={skuFinder.sku || ""}
                                 onChange={(e) =>
                                     setSkuFinder("sku", e.target.value)
@@ -475,12 +475,12 @@ const AdminTransactionCreate = ({
                                             className="w-full"
                                         >
                                             <Input
-                                                type="text"
-                                                placeholder="Cari No. Telepon"
-                                                className="w-full"
                                                 disabled={
                                                     form.on_scanning_printer
                                                 }
+                                                type="text"
+                                                placeholder="Cari No. Telepon"
+                                                className="w-full"
                                                 value={
                                                     customerFinder.customer_phone ||
                                                     ""
@@ -493,9 +493,6 @@ const AdminTransactionCreate = ({
                                                 }
                                             />
                                             <button
-                                                disabled={
-                                                    form.on_scanning_printer
-                                                }
                                                 type="submit"
                                                 style={{ display: "none" }}
                                             />
@@ -505,11 +502,11 @@ const AdminTransactionCreate = ({
                                             <DialogTrigger asChild>
                                                 <div className="w-full">
                                                     <Button
-                                                        className="w-full"
-                                                        variant={"yellow"}
                                                         disabled={
                                                             form.on_scanning_printer
                                                         }
+                                                        className="w-full"
+                                                        variant={"yellow"}
                                                     >
                                                         <CircleFadingPlus />
                                                         <span>
@@ -536,14 +533,14 @@ const AdminTransactionCreate = ({
                                                                 type="text"
                                                                 placeholder="Masukkan Nama Lengkap"
                                                                 className="w-full"
-                                                                disabled={
-                                                                    form.on_scanning_printer
-                                                                }
                                                                 value={
                                                                     form
                                                                         .register_customer
                                                                         .name ||
                                                                     ""
+                                                                }
+                                                                disabled={
+                                                                    form.on_scanning_printer
                                                                 }
                                                                 onChange={(e) =>
                                                                     setForm(
@@ -575,11 +572,11 @@ const AdminTransactionCreate = ({
                                                             </label>
                                                             <Input
                                                                 type="tel"
-                                                                placeholder="Masukkan No Telp"
-                                                                className="w-full"
                                                                 disabled={
                                                                     form.on_scanning_printer
                                                                 }
+                                                                placeholder="Masukkan No Telp"
+                                                                className="w-full"
                                                                 value={
                                                                     form
                                                                         .register_customer
@@ -615,10 +612,10 @@ const AdminTransactionCreate = ({
                                                                 Alamat
                                                             </label>
                                                             <Textarea
-                                                                placeholder="Masukkan Alamat"
                                                                 disabled={
                                                                     form.on_scanning_printer
                                                                 }
+                                                                placeholder="Masukkan Alamat"
                                                                 value={
                                                                     form
                                                                         .register_customer
@@ -644,10 +641,10 @@ const AdminTransactionCreate = ({
                                                 <DialogFooter className="mt-9">
                                                     <DialogClose asChild>
                                                         <Button
-                                                            variant="yellow"
                                                             disabled={
                                                                 form.on_scanning_printer
                                                             }
+                                                            variant="yellow"
                                                             className="flex items-center gap-2"
                                                         >
                                                             <Save /> Simpan
@@ -851,8 +848,8 @@ const AdminTransactionCreate = ({
                         </div>
                         <div className="flex gap-2">
                             <Button
-                                type="button"
                                 disabled={form.on_scanning_printer}
+                                type="button"
                                 variant={
                                     form.payment_method === "cash"
                                         ? "pink"
@@ -917,6 +914,9 @@ const AdminTransactionCreate = ({
                                     >
                                         <div className="w-full">
                                             <Button
+                                                disabled={
+                                                    form.on_scanning_printer
+                                                }
                                                 onClick={() => {
                                                     if (
                                                         pointUsedPlaceholder.point_used_placeholder >
@@ -935,9 +935,6 @@ const AdminTransactionCreate = ({
                                                 }}
                                                 className="w-full"
                                                 variant={"green"}
-                                                disabled={
-                                                    form.on_scanning_printer
-                                                }
                                             >
                                                 <Coins />
                                                 <span>Gunakan Poin</span>
@@ -1010,11 +1007,11 @@ const AdminTransactionCreate = ({
                                         <DialogFooter className="mt-9">
                                             <DialogClose asChild>
                                                 <Button
-                                                    variant="red"
-                                                    type="button"
                                                     disabled={
                                                         form.on_scanning_printer
                                                     }
+                                                    variant="red"
+                                                    type="button"
                                                     className="flex items-center gap-2"
                                                     onClick={() => {
                                                         setPointUsedPlaceholder(
@@ -1032,10 +1029,10 @@ const AdminTransactionCreate = ({
                                             </DialogClose>
                                             <DialogClose asChild>
                                                 <Button
-                                                    variant="yellow"
                                                     disabled={
                                                         form.on_scanning_printer
                                                     }
+                                                    variant="yellow"
                                                     type="button"
                                                     onClick={() => {
                                                         const input =
@@ -1119,7 +1116,7 @@ const AdminTransactionCreate = ({
                     <Button
                         variant={"yellow"}
                         size={"lg"}
-                        disabled={form.on_scanning_printer || formProcessing}
+                        disabled={formProcessing || form.on_scanning_printer}
                         onClick={handleSubmitForm}
                     >
                         {formProcessing || form.on_scanning_printer ? (
@@ -1136,4 +1133,4 @@ const AdminTransactionCreate = ({
     );
 };
 
-export default AdminTransactionCreate;
+export default CashierTransactionCreate;

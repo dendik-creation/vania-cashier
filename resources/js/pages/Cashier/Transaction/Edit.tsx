@@ -3,9 +3,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AppLayout from "@/partials/AppLayout";
 import { PageTitle, PageTitleProps } from "@/partials/PageTitle";
-import { TransactionCreateProps } from "@/types/transaction";
+import { Transaction, TransactionCreateProps } from "@/types/transaction";
 import { useForm } from "@inertiajs/react";
-import { FormEvent, useEffect } from "react";
+import { FormEvent, useEffect, useMemo } from "react";
 import {
     Dialog,
     DialogContent,
@@ -17,7 +17,6 @@ import {
     DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ReceiptPrinter } from "@/utils/printer";
 import {
     CircleFadingPlus,
     Coins,
@@ -37,15 +36,20 @@ import axios from "axios";
 import { Badge } from "@/components/ui/badge";
 import { floatToIdCurrency, humanCustType } from "@/components/helper/helper";
 import { Card, CardContent } from "@/components/ui/card";
-type Props = PageTitleProps & TransactionCreateProps;
 
-const AdminTransactionCreate = ({
+type Props = PageTitleProps &
+    TransactionCreateProps & {
+        transaction: Transaction;
+    };
+
+const CashierTransactionEdit = ({
     eligible_point_minimum,
     idr_point_value,
     admin_fee_criteria,
     minimum_point_can_used,
     title,
     description,
+    transaction,
 }: Props) => {
     const {
         data: form,
@@ -53,84 +57,72 @@ const AdminTransactionCreate = ({
         processing: formProcessing,
         errors: formErrors,
         setError: setFormError,
+        put: formPut,
         clearErrors: clearFormErrors,
-        reset: resetForm,
     } = useForm({
-        is_new_customer: true,
-        customer_id: "",
-        customer_type: "",
+        is_new_customer: false,
+        customer_id: transaction.customer_id || "",
+        customer_type: transaction.customer_type,
         register_customer: {
             name: "",
             phone: "",
             address: "",
             type: "member",
         },
-        payment_method: "",
-        items: [] as {
-            id: string;
-            sku: string;
-            product_name: string;
-            attributes: {
-                size: string;
-                color: string;
-            };
-            stock_remaining: number;
-            price_applied: number;
-            price_criteria: {
-                basic: number;
-                reseller: number;
-                order_qty_3: number;
-                order_qty_6: number;
-            };
-            product_type: string;
-            qty: number;
-        }[],
-        subtotal: 0,
-        point_used: 0,
-        point_earned: 0,
-        discount: 0,
-        admin_fee: 0,
-        total: 0,
-        on_scanning_printer: false,
+        payment_method: transaction.payment_method,
+        items: transaction.items.map((item) => ({
+            id: item.variant_id,
+            sku: item.variant?.sku || "",
+            product_name: item.variant?.product?.name || "",
+            attributes: item.variant?.attributes || {},
+            price_applied: item.price_per_item,
+            price_criteria: item.variant?.price_criteria || {
+                basic: 0,
+                reseller: 0,
+                order_qty_3: 0,
+                order_qty_6: 0,
+            },
+            stock_remaining: item.variant?.stock || 0,
+            product_type: item.variant?.product?.type || "package",
+            qty: item.quantity,
+        })),
+        subtotal: transaction.subtotal,
+        point_used: transaction.point_used,
+        point_earned: transaction.point_earned,
+        discount: transaction.discount,
+        admin_fee: transaction.admin_fee,
+        total: transaction.total,
     });
-    const {
-        data: skuFinder,
-        setData: setSkuFinder,
-        reset: resetSkuFinder,
-    } = useForm({
+
+    const { data: skuFinder, setData: setSkuFinder } = useForm({
         sku: "",
     });
-    const {
-        data: customerFinder,
-        setData: setCustomerFinder,
-        reset: resetCustomerFinder,
-    } = useForm({
-        customer_phone: "",
-        is_found: false,
-        customer_found: {
-            id: null,
-            name: "",
-            phone: "",
-            address: "",
-            type: "",
-            points: 0,
-        },
+    const { data: customerFinder, setData: setCustomerFinder } = useForm({
+        customer_phone: transaction.customer?.phone || "",
+        is_found: !!transaction.customer,
+        customer_found: transaction.customer
+            ? {
+                  id: transaction.customer.id,
+                  name: transaction.customer.name,
+                  phone: transaction.customer.phone,
+                  address: transaction.customer.address,
+                  type: transaction.customer.type,
+                  points: transaction.customer.points,
+              }
+            : {
+                  id: null,
+                  name: "",
+                  phone: "",
+                  address: "",
+                  type: "",
+                  points: 0,
+              },
     });
 
-    const {
-        data: pointUsedPlaceholder,
-        setData: setPointUsedPlaceholder,
-        reset: resetPointUsedPlaceholder,
-    } = useForm({
-        point_used_placeholder: 0,
-    });
-
-    const handleResetAll = () => {
-        resetForm();
-        resetSkuFinder();
-        resetCustomerFinder();
-        resetPointUsedPlaceholder();
-    };
+    const { data: pointUsedPlaceholder, setData: setPointUsedPlaceholder } =
+        useForm({
+            point_used_placeholder: transaction.point_used,
+        });
 
     const renderProductIcon = ({
         type,
@@ -214,8 +206,8 @@ const AdminTransactionCreate = ({
             });
             admin_fee = matchedFee;
         }
-        const discount = Number(form.point_used) * Number(idr_point_value);
-        const total = Number(subtotal) + Number(admin_fee) - Number(discount);
+        const discount = form.point_used * idr_point_value;
+        const total = subtotal + admin_fee - form.discount;
 
         setForm("subtotal", subtotal);
         setForm("admin_fee", admin_fee);
@@ -237,7 +229,7 @@ const AdminTransactionCreate = ({
 
     const handleFindCustomer = (phone: string) => {
         axios
-            .get("/admin/transactions/find/customer", {
+            .get("/cashier/transactions/find/customer", {
                 params: { phone },
             })
             .then((response) => {
@@ -262,9 +254,8 @@ const AdminTransactionCreate = ({
             setSkuFinder("sku", "");
             return;
         }
-
         axios
-            .get("/admin/transactions/find/sku", {
+            .get("/cashier/transactions/find/sku", {
                 params: { sku },
             })
             .then((response) => {
@@ -351,65 +342,20 @@ const AdminTransactionCreate = ({
 
         return isValid;
     };
-    const handleSubmitForm = async (e: FormEvent) => {
+    const handleSubmitForm = (e: FormEvent) => {
         e.preventDefault();
         if (!validateForm()) {
             BlastToaster("error", "Lengkapi seluruh form yang diwajibkan");
             return;
         }
-
-        try {
-            setForm("on_scanning_printer", true);
-            const response = await axios.post("/admin/transactions", form);
-            const { transaction_id, message } = response.data;
-
-            const printResponse = await axios.get(
-                `/admin/transactions/print/${transaction_id}`
-            );
-            const { transaction: trxData, setting: settingData } =
-                printResponse.data;
-
-            const printer = new ReceiptPrinter();
-            const bytes = printer.generateReceipt(trxData, settingData);
-
-            // Direct Bluetooth Print
-            await printer.printReceipt(bytes);
-
-            BlastToaster(
-                "success",
-                message || "Transaksi berhasil & Struk dicetak"
-            );
-            handleResetAll();
-        } catch (error: any) {
-            console.error(error);
-            if (error.response?.status === 422) {
-                const errors = error.response.data.errors;
-                Object.keys(errors).forEach((key) => {
-                    setFormError(key as any, errors[key][0]);
-                });
-                BlastToaster("error", "Periksa kembali inputan anda");
-            } else if (
-                error.name === "NotFoundError" ||
-                error.name === "SecurityError"
-            ) {
-                BlastToaster(
-                    "success",
-                    "Transaksi Berhasil Tanpa Cetak Struk."
-                );
-                handleResetAll();
-            } else {
-                BlastToaster(
-                    "error",
-                    error.response?.data?.message ||
-                        error.message ||
-                        "Terjadi kesalahan"
-                );
-            }
-        } finally {
-            setForm("on_scanning_printer", false);
-        }
+        formPut(`/cashier/transactions/${transaction.id}`, {
+            preserveState: true,
+            onError: (err) => {
+                console.log(err);
+                BlastToaster("error", "Terjadi kesalahan pada pengisian form");
+            },
+        });
     };
-
     return (
         <AppLayout>
             <div className="mb-4">
@@ -429,7 +375,6 @@ const AdminTransactionCreate = ({
                                 type="text"
                                 placeholder="Masukkan Barcode"
                                 className="w-full"
-                                disabled={form.on_scanning_printer}
                                 value={skuFinder.sku || ""}
                                 onChange={(e) =>
                                     setSkuFinder("sku", e.target.value)
@@ -478,9 +423,6 @@ const AdminTransactionCreate = ({
                                                 type="text"
                                                 placeholder="Cari No. Telepon"
                                                 className="w-full"
-                                                disabled={
-                                                    form.on_scanning_printer
-                                                }
                                                 value={
                                                     customerFinder.customer_phone ||
                                                     ""
@@ -493,9 +435,6 @@ const AdminTransactionCreate = ({
                                                 }
                                             />
                                             <button
-                                                disabled={
-                                                    form.on_scanning_printer
-                                                }
                                                 type="submit"
                                                 style={{ display: "none" }}
                                             />
@@ -507,9 +446,6 @@ const AdminTransactionCreate = ({
                                                     <Button
                                                         className="w-full"
                                                         variant={"yellow"}
-                                                        disabled={
-                                                            form.on_scanning_printer
-                                                        }
                                                     >
                                                         <CircleFadingPlus />
                                                         <span>
@@ -536,9 +472,6 @@ const AdminTransactionCreate = ({
                                                                 type="text"
                                                                 placeholder="Masukkan Nama Lengkap"
                                                                 className="w-full"
-                                                                disabled={
-                                                                    form.on_scanning_printer
-                                                                }
                                                                 value={
                                                                     form
                                                                         .register_customer
@@ -577,9 +510,6 @@ const AdminTransactionCreate = ({
                                                                 type="tel"
                                                                 placeholder="Masukkan No Telp"
                                                                 className="w-full"
-                                                                disabled={
-                                                                    form.on_scanning_printer
-                                                                }
                                                                 value={
                                                                     form
                                                                         .register_customer
@@ -616,9 +546,6 @@ const AdminTransactionCreate = ({
                                                             </label>
                                                             <Textarea
                                                                 placeholder="Masukkan Alamat"
-                                                                disabled={
-                                                                    form.on_scanning_printer
-                                                                }
                                                                 value={
                                                                     form
                                                                         .register_customer
@@ -645,9 +572,6 @@ const AdminTransactionCreate = ({
                                                     <DialogClose asChild>
                                                         <Button
                                                             variant="yellow"
-                                                            disabled={
-                                                                form.on_scanning_printer
-                                                            }
                                                             className="flex items-center gap-2"
                                                         >
                                                             <Save /> Simpan
@@ -704,7 +628,6 @@ const AdminTransactionCreate = ({
                                         <Button
                                             variant="red"
                                             size="icon"
-                                            disabled={form.on_scanning_printer}
                                             onClick={() => {
                                                 setCustomerFinder(
                                                     "is_found",
@@ -713,6 +636,11 @@ const AdminTransactionCreate = ({
                                                 setCustomerFinder(
                                                     "customer_phone",
                                                     ""
+                                                );
+                                                setForm("customer_id", "");
+                                                setForm(
+                                                    "customer_type",
+                                                    "general"
                                                 );
                                             }}
                                         >
@@ -802,9 +730,6 @@ const AdminTransactionCreate = ({
                                                             index
                                                         );
                                                     }}
-                                                    disabled={
-                                                        form.on_scanning_printer
-                                                    }
                                                     aria-label="Kurangi Qty"
                                                 >
                                                     -
@@ -821,9 +746,6 @@ const AdminTransactionCreate = ({
                                                             index
                                                         );
                                                     }}
-                                                    disabled={
-                                                        form.on_scanning_printer
-                                                    }
                                                     aria-label="Tambah Qty"
                                                 >
                                                     +
@@ -852,7 +774,6 @@ const AdminTransactionCreate = ({
                         <div className="flex gap-2">
                             <Button
                                 type="button"
-                                disabled={form.on_scanning_printer}
                                 variant={
                                     form.payment_method === "cash"
                                         ? "pink"
@@ -867,7 +788,6 @@ const AdminTransactionCreate = ({
                             </Button>
                             <Button
                                 type="button"
-                                disabled={form.on_scanning_printer}
                                 variant={
                                     form.payment_method === "transfer"
                                         ? "pink"
@@ -882,7 +802,6 @@ const AdminTransactionCreate = ({
                             </Button>
                             <Button
                                 type="button"
-                                disabled={form.on_scanning_printer}
                                 variant={
                                     form.payment_method === "qris"
                                         ? "pink"
@@ -935,9 +854,6 @@ const AdminTransactionCreate = ({
                                                 }}
                                                 className="w-full"
                                                 variant={"green"}
-                                                disabled={
-                                                    form.on_scanning_printer
-                                                }
                                             >
                                                 <Coins />
                                                 <span>Gunakan Poin</span>
@@ -964,9 +880,6 @@ const AdminTransactionCreate = ({
                                                     </label>
                                                     <Input
                                                         type="number"
-                                                        disabled={
-                                                            form.on_scanning_printer
-                                                        }
                                                         placeholder="Masukkan poin"
                                                         className="w-full"
                                                         id="input_point_used"
@@ -1012,9 +925,6 @@ const AdminTransactionCreate = ({
                                                 <Button
                                                     variant="red"
                                                     type="button"
-                                                    disabled={
-                                                        form.on_scanning_printer
-                                                    }
                                                     className="flex items-center gap-2"
                                                     onClick={() => {
                                                         setPointUsedPlaceholder(
@@ -1033,9 +943,6 @@ const AdminTransactionCreate = ({
                                             <DialogClose asChild>
                                                 <Button
                                                     variant="yellow"
-                                                    disabled={
-                                                        form.on_scanning_printer
-                                                    }
                                                     type="button"
                                                     onClick={() => {
                                                         const input =
@@ -1119,14 +1026,14 @@ const AdminTransactionCreate = ({
                     <Button
                         variant={"yellow"}
                         size={"lg"}
-                        disabled={form.on_scanning_printer || formProcessing}
+                        disabled={formProcessing}
                         onClick={handleSubmitForm}
                     >
-                        {formProcessing || form.on_scanning_printer ? (
+                        {formProcessing ? (
                             <Loader className="animate-spin" />
                         ) : (
                             <div className="flex items-center gap-2">
-                                <Save /> <span>Simpan Transaksi</span>
+                                <Save /> <span>Update Transaksi</span>
                             </div>
                         )}
                     </Button>
@@ -1136,4 +1043,4 @@ const AdminTransactionCreate = ({
     );
 };
 
-export default AdminTransactionCreate;
+export default CashierTransactionEdit;

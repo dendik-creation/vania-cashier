@@ -11,6 +11,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import SignoutMenu from "@/components/custom/SignoutMenu";
+import { humanRole } from "@/components/helper/helper";
 
 interface AppHeaderProps {
     classNames?: string;
@@ -23,7 +24,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ classNames, name, role }) => {
         <header
             className={cn(
                 "w-full h-14 md:h-16 lg:h-16 flex items-center justify-between px-4 md:px-6 lg:px-8 bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10",
-                classNames,
+                classNames
             )}
         >
             <div className="flex items-center gap-3 md:gap-4">
@@ -38,7 +39,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ classNames, name, role }) => {
                                 {name}
                             </span>
                             <span className="text-[10px] md:text-xs font-semibold text-slate-600 uppercase">
-                                {role}
+                                {humanRole(role)}
                             </span>
                         </div>
                         <Avatar className="border-2 border-solid transition-all border-pink-500 w-8 h-8 md:w-10 md:h-10">

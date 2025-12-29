@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
 class TransactionController extends Controller
@@ -90,6 +89,7 @@ class TransactionController extends Controller
                     ->where("invoice_code", "like", "%{$by_search}%")
                     ->orWhereHas("customer", function ($q) use ($by_search) {
                         $q->where("name", "like", "%{$by_search}%");
+                        $q->orWhere("phone", "like", "%{$by_search}%");
                     });
             })
             ->when($by_customer_type, function ($query, $by_customer_type) {
@@ -167,10 +167,10 @@ class TransactionController extends Controller
                 "created_at",
                 now()->toDateString(),
             )->count() + 1;
-        return "INV-" .
+        return "TRX-" .
             $datePart .
             "-" .
-            str_pad($countInvoiceToday, 3, "0", STR_PAD_LEFT);
+            str_pad($countInvoiceToday, 4, "0", STR_PAD_LEFT);
     }
 
     private function recalculateSubtotal($items)

@@ -10,6 +10,7 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar";
 import { sidebarNavs } from "@/lib/sidebar_navs";
+import { cn } from "@/lib/utils";
 import { Link } from "@inertiajs/react";
 import { ArrowBigRightDash } from "lucide-react";
 import { useEffect } from "react";
@@ -29,7 +30,12 @@ export default function AppSidebar({ role }: { role: string }) {
         role == "admin" ? sidebarNavs.adminNavs : sidebarNavs.cashierNavs;
     return (
         <Sidebar>
-            <SidebarContent className="bg-pink-900 min-h-full relative h-full flex flex-col">
+            <SidebarContent
+                className={cn(
+                    "min-h-full relative h-full flex flex-col",
+                    role == "admin" ? "bg-pink-900" : "bg-sky-900"
+                )}
+            >
                 <SidebarHeader className="mt-3 ms-3 gap-0">
                     <span className="text-white/80 font-bold">Vania Shop</span>
                     <span className="text-white/60 text-sm font-normal">
