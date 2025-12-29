@@ -1,3 +1,4 @@
+import { TriangleAlert } from "lucide-react";
 import toast from "react-hot-toast";
 
 const BlastToaster = (
@@ -36,6 +37,7 @@ const BlastToaster = (
                 border: "1px solid #FFCC80",
                 zIndex: 1000,
             },
+            icon: <TriangleAlert className="text-yellow-600" />,
         });
     }
 };

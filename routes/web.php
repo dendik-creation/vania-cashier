@@ -78,6 +78,11 @@ Route::prefix("admin")
 
         // Master Products
         Route::prefix("products")->group(function () {
+            // Label
+            Route::get("/label", [AdminProductController::class, "labelView"])->name(
+                "admin.products.labelView",
+            );
+            
             Route::get("/", [AdminProductController::class, "index"])->name(
                 "admin.products.index",
             );

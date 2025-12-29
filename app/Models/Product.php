@@ -21,6 +21,8 @@ class Product extends Model
         'type' => 'string',
     ];
 
+    protected $hidden = ['created_at', 'updated_at'];
+
     // Relationships
     public function variants()
     {

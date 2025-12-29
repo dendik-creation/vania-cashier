@@ -20,6 +20,8 @@ class ProductVariant extends Model
         'stock' => 'integer',
     ];
 
+    protected $hidden = ['created_at', 'updated_at'];
+
     // Relationships
     public function product()
     {

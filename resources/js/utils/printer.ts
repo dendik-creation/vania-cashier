@@ -1,6 +1,7 @@
 import { floatToIdCurrency, ymdToIdDate } from "@/components/helper/helper";
 import { Setting } from "@/types/setting";
 import { Transaction, TransactionItem } from "@/types/transaction";
+import { ProductVariant } from "@/types/product";
 import EscPosEncoder from "esc-pos-encoder";
 
 export const PRINTERS = {
@@ -33,12 +34,13 @@ export class ReceiptPrinter {
             .line(app_setting.app_name)
             .bold(false)
             .line(app_setting.app_address)
+            .size("small")
             .line(ymdToIdDate(transaction.transaction_time, true))
+            .line(`#${transaction.invoice_code}`)
             .line("-".repeat(this.width));
 
         // Info
         e.align("left")
-            .line(`INV : ${transaction.invoice_code}`)
             .line(`Kasir : ${transaction.cashier?.name || "-"}`)
             .line(`Pelanggan : ${transaction.customer?.name || "Umum"}`);
         if (
@@ -117,8 +119,159 @@ export class ReceiptPrinter {
         return this.printToBluetooth(bytes, PRINTERS.RECEIPT);
     }
 
-    async printLabel(bytes: Uint8Array) {
+    async printLabel(
+        variants: (ProductVariant & { copies?: number })[],
+        itemPerRow: number = 1
+    ) {
+        const bytes = this.generateTSPLCommands(variants, itemPerRow);
         return this.printToBluetooth(bytes, PRINTERS.LABEL);
+    }
+
+    private generateTSPLCommands(
+        variants: (ProductVariant & { copies?: number })[],
+        itemPerRow: number
+    ): Uint8Array {
+        let commands = "";
+
+        // Constants for 203 DPI (8 dots/mm)
+        const dpi = 8;
+        const labelWidthMm = 40;
+        const labelHeightMm = 30;
+        const gapMm = 3;
+        const horizontalGapMm = 5;
+
+        // Calculate total width based on itemPerRow
+        const totalWidthMm =
+            labelWidthMm * itemPerRow + horizontalGapMm * (itemPerRow - 1);
+
+        // Setup Label Size
+        commands += `SIZE ${totalWidthMm} mm,${labelHeightMm} mm\r\n`;
+        commands += `GAP ${gapMm} mm,0 mm\r\n`;
+        commands += `DIRECTION 1\r\n`;
+        commands += `CLS\r\n`;
+
+        // Flatten variants
+        const itemsToPrint: ProductVariant[] = [];
+        variants.forEach((v) => {
+            const copies = v.copies || 1;
+            for (let i = 0; i < copies; i++) {
+                itemsToPrint.push(v);
+            }
+        });
+
+        // Process by rows
+        for (let i = 0; i < itemsToPrint.length; i += itemPerRow) {
+            const rowItems = itemsToPrint.slice(i, i + itemPerRow);
+
+            commands += `CLS\r\n`;
+
+            rowItems.forEach((item, index) => {
+                // Calculate X offset for this column
+                const xOffsetDots =
+                    index * (labelWidthMm * dpi + horizontalGapMm * dpi);
+
+                // Label dimensions in dots
+                const labelWidthDots = labelWidthMm * dpi; // 320
+                const paddingDots = 16; // 2mm padding
+
+                // Center of the label (relative to xOffset)
+                const labelCenterDots = xOffsetDots + labelWidthDots / 2;
+
+                // 1. Title: VANIASHOP
+                // Using Font "0" (Triumvirate) for better look.
+                // x_mul=1, y_mul=1. Approx width 12 dots/char?
+                // "VANIASHOP" (9 chars) -> ~110 dots.
+                // Centered.
+                const titleText = "VANIASHOP";
+                const titleWidthEst = titleText.length * 12;
+                const titleX = Math.floor(labelCenterDots - titleWidthEst / 2);
+                // TEXT x,y,"font",rotation,x_mul,y_mul,"content"
+                commands += `TEXT ${titleX},10,"0",0,12,12,"${titleText}"\r\n`;
+
+                // 2. Barcode
+                // Code128.
+                // Try narrow=2 first for better visibility.
+                const sku = item.sku;
+                // Width check: (10 * (len + 2) + 2) * 2.5
+                const barcodeWidthWide = (10 * (sku.length + 2) + 2) * 2.5;
+                let narrow = 2;
+                let barcodeWidth = barcodeWidthWide;
+
+                if (barcodeWidthWide > labelWidthDots - 2 * paddingDots) {
+                    narrow = 1;
+                    barcodeWidth = (10 * (sku.length + 2) + 2) * 1;
+                }
+
+                const barcodeX = Math.floor(labelCenterDots - barcodeWidth / 2);
+                const finalBarcodeX = Math.max(
+                    xOffsetDots + paddingDots,
+                    barcodeX
+                );
+
+                // Y=50, Height=60.
+                commands += `BARCODE ${finalBarcodeX},50,"128",60,1,0,${narrow},${
+                    narrow * 2
+                },"${sku}"\r\n`;
+
+                // 3. Details
+                // Start Y after barcode. 50 + 60 + 20 (text) = 130.
+                // Add gap -> 140.
+                let currentY = 140;
+                const lineHeight = 30;
+
+                const leftX = xOffsetDots + paddingDots;
+                const rightX = xOffsetDots + labelWidthDots - paddingDots;
+
+                const formatPrice = (val: number) => {
+                    return Math.floor(val / 1000) + "K";
+                };
+
+                const printRow = (
+                    leftText: string,
+                    rightText: string,
+                    y: number
+                ) => {
+                    // Left Text
+                    commands += `TEXT ${leftX},${y},"0",0,9,9,"${leftText}"\r\n`;
+
+                    // Right Text
+                    // Estimate width: chars * 12 dots (safe for longer text)
+                    const rightTextWidth = rightText.length * 12;
+                    const rightTextX = rightX - rightTextWidth;
+                    commands += `TEXT ${rightTextX},${y},"0",0,9,9,"${rightText}"\r\n`;
+                };
+
+                // Row 1: Name | (Beli 1) Harga
+                const name = (item.product_name || "Item").substring(0, 12);
+                const priceBasic = `(Beli 1) ${formatPrice(
+                    item.price_criteria.basic
+                )}`;
+                printRow(name, priceBasic, currentY);
+
+                // Row 2: Color | (Beli 3) Harga
+                currentY += lineHeight;
+                const color = (item.attributes.color || "-").substring(0, 12);
+                const price3 = `(Beli 3) ${formatPrice(
+                    item.price_criteria.order_qty_3
+                )}`;
+                printRow(color, price3, currentY);
+
+                // Row 3: Size | (Beli 6) Harga
+                currentY += lineHeight;
+                const size = String(item.attributes.size || "-").substring(
+                    0,
+                    12
+                );
+                const price6 = `(Beli 6) ${formatPrice(
+                    item.price_criteria.order_qty_6
+                )}`;
+                printRow(size, price6, currentY);
+            });
+
+            commands += `PRINT 1\r\n`;
+        }
+
+        return new TextEncoder().encode(commands);
     }
 
     private async printToBluetooth(

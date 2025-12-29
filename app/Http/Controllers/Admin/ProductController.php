@@ -227,4 +227,27 @@ class ProductController extends Controller
         }
         return Inertia::location(route('admin.products.index'));
     }
+
+    public function labelView()
+    {
+        $product_variants = ProductVariant::with('product')
+            ->orderBy('sku', 'asc')
+            ->get()->map(function ($variant) {
+            return [
+                'id' => $variant->id,
+                'sku' => $variant->sku,
+                'product_id' => $variant->product_id,
+                'stock' => $variant->stock,
+                'product_name' => $variant->product->name,
+                'product_type' => $variant->product->type,
+                'attributes' => $variant->attributes,
+                'price_criteria' => $variant->price_criteria,
+            ];
+        });
+        return Inertia::render('Admin/Product/Label/Index', [
+            'title' => 'Cetak Label Produk',
+            'description' => 'Cetak sekaligus label produk yang diinginkan',
+            'product_variants' => $product_variants,
+        ]);
+    }
 }

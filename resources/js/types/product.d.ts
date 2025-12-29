@@ -15,6 +15,8 @@ export type Product = {
 export type ProductVariant = {
     id: number;
     product_id: number;
+    product_name?: string;
+    product_type?: string;
     sku: string;
     attributes: {
         size?: string | number;

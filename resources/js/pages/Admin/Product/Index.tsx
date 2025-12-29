@@ -180,6 +180,15 @@ const AdminProductIndex = ({
                     />
                     <Link
                         className="w-full lg:w-fit"
+                        href={"/admin/products/label"}
+                    >
+                        <Button variant={"pink"} className="w-full lg:w-fit">
+                            <Tags />
+                            Label Produk
+                        </Button>
+                    </Link>
+                    <Link
+                        className="w-full lg:w-fit"
                         href={"/admin/products/create"}
                     >
                         <Button variant={"yellow"} className="w-full lg:w-fit">

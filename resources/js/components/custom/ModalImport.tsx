@@ -99,7 +99,7 @@ const ModalImport = ({
     };
     return (
         <Dialog open={open || isImporting} onOpenChange={onOpenChange}>
-            <DialogTrigger>
+            <DialogTrigger className="w-full">
                 <span>{triggerNode}</span>
             </DialogTrigger>
             <DialogContent className="sm:max-w-4xl">

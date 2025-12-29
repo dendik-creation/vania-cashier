@@ -53,6 +53,7 @@ type SearchInputProps = {
     onChange: (e: ChangeEvent<HTMLInputElement>) => void;
     placeholder?: string;
     className?: string;
+    disabled?: boolean;
 };
 
 export function SearchInput({
@@ -60,6 +61,7 @@ export function SearchInput({
     onChange,
     placeholder = "Cari...",
     className,
+    disabled = false,
 }: SearchInputProps) {
     return (
         <div className={`relative w-full ${className}`}>
@@ -73,6 +75,7 @@ export function SearchInput({
                 autoCorrect="off"
                 autoCapitalize="none"
                 spellCheck="false"
+                disabled={disabled}
             />
             <Search
                 className="absolute top-2.5 right-2 text-gray-500"
