@@ -1,0 +1,15 @@
+{
+    "name": "Kasir Vania Shop",
+    "short_name": "Kasir",
+    "start_url": "/",
+    "display": "standalone",
+    "theme_color": "#e5e5e5",
+    "background_color": "#ffffff",
+    "icons": [
+        {
+            "src": "/icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

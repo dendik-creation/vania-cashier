@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 // Global Controllers
 use App\Http\Controllers\Global\AuthController;
 use App\Http\Controllers\Global\DashboardController;
-use App\Http\Controllers\global\ProfileController;
+use App\Http\Controllers\Global\ProfileController;
 // Admin Controllers
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
