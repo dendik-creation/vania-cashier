@@ -16,6 +16,9 @@ use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Cashier\CustomerController as CashierCustomerController;
 use App\Http\Controllers\Cashier\ProductController as CashierProductController;
 use App\Http\Controllers\Cashier\TransactionController as CashierTransactionController;
+// Middlewares
+use App\Http\Middleware\adminAccess;
+use App\Http\Middleware\cashierAccess;
 
 Route::get('/', [AuthController::class, 'signedInStatus'])->name('login');
 Route::prefix('auth')->group(function () {
@@ -33,7 +36,7 @@ Route::post('/auth/signout', [AuthController::class, 'signOut'])
 
 // Admin Routes
 Route::prefix('admin')
-    ->middleware('auth')
+    ->middleware('auth', adminAccess::class)
     ->group(function () {
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
@@ -109,7 +112,7 @@ Route::prefix('admin')
 
 // Cashier Routes
 Route::prefix('cashier')
-    ->middleware('auth')
+    ->middleware('auth', cashierAccess::class)
     ->group(function () {
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'cashierDashboard'])->name('cashier.dashboard');
