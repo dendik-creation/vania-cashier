@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +18,7 @@ class adminAccess
     public function handle(Request $request, Closure $next): Response
     {
         $auth = Auth::user();
-        if(!$auth || $auth->role !== 'admin'){
+        if(!$auth || $auth->role !== User::ROLE_ADMIN){
             return back()->with('error', 'Kamu tidak memiliki akses untuk itu');
         }
         return $next($request);
