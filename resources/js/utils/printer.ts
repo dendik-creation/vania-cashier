@@ -48,7 +48,7 @@ export class ReceiptPrinter {
             transaction.customer_type != "general"
         ) {
             e.line(
-                `Poin : +${transaction.point_earned} / -${transaction.point_used}`
+                `Poin : +${transaction.point_earned} / -${transaction.point_used}`,
             );
         }
         e.line("-".repeat(this.width));
@@ -121,7 +121,7 @@ export class ReceiptPrinter {
 
     async printLabel(
         variants: (ProductVariant & { copies?: number })[],
-        itemPerRow: number = 1
+        itemPerRow: number = 1,
     ) {
         const bytes = this.generateTSPLCommands(variants, itemPerRow);
         return this.printToBluetooth(bytes, PRINTERS.LABEL);
@@ -129,7 +129,7 @@ export class ReceiptPrinter {
 
     private generateTSPLCommands(
         variants: (ProductVariant & { copies?: number })[],
-        itemPerRow: number
+        itemPerRow: number,
     ): Uint8Array {
         let commands = "";
 
@@ -205,7 +205,7 @@ export class ReceiptPrinter {
                 const barcodeX = Math.floor(labelCenterDots - barcodeWidth / 2);
                 const finalBarcodeX = Math.max(
                     xOffsetDots + paddingDots,
-                    barcodeX
+                    barcodeX,
                 );
 
                 // Y=50, Height=60.
@@ -229,7 +229,7 @@ export class ReceiptPrinter {
                 const printRow = (
                     leftText: string,
                     rightText: string,
-                    y: number
+                    y: number,
                 ) => {
                     // Left Text
                     commands += `TEXT ${leftX},${y},"0",0,9,9,"${leftText}"\r\n`;
@@ -244,7 +244,7 @@ export class ReceiptPrinter {
                 // Row 1: Name | (Beli 1) Harga
                 const name = (item.product_name || "Item").substring(0, 12);
                 const priceBasic = `(Beli 1) ${formatPrice(
-                    item.price_criteria.basic
+                    item.price_criteria.basic,
                 )}`;
                 printRow(name, priceBasic, currentY);
 
@@ -252,7 +252,7 @@ export class ReceiptPrinter {
                 currentY += lineHeight;
                 const color = (item.attributes.color || "-").substring(0, 12);
                 const price3 = `(Beli 3) ${formatPrice(
-                    item.price_criteria.order_qty_3
+                    item.price_criteria.order_qty_3,
                 )}`;
                 printRow(color, price3, currentY);
 
@@ -260,10 +260,10 @@ export class ReceiptPrinter {
                 currentY += lineHeight;
                 const size = String(item.attributes.size || "-").substring(
                     0,
-                    12
+                    12,
                 );
                 const price6 = `(Beli 6) ${formatPrice(
-                    item.price_criteria.order_qty_6
+                    item.price_criteria.order_qty_6,
                 )}`;
                 printRow(size, price6, currentY);
             });
@@ -276,44 +276,60 @@ export class ReceiptPrinter {
 
     private async printToBluetooth(
         bytes: Uint8Array,
-        printerConfig: typeof PRINTERS.RECEIPT
+        printerConfig: typeof PRINTERS.RECEIPT,
     ) {
         const nav = navigator as any;
         if (!nav.bluetooth) {
-            throw new Error(
-                "Web Bluetooth tidak tersedia. Pastikan akses menggunakan HTTPS atau Localhost."
-            );
+            throw new Error("Web Bluetooth tidak didukung di browser ini.");
         }
 
         try {
+            console.log("Mencari perangkat...");
+
             const device = await nav.bluetooth.requestDevice({
-                filters: [{ name: printerConfig.name }],
+                acceptAllDevices: true,
                 optionalServices: [printerConfig.service],
             });
 
+            console.log(
+                `Perangkat dipilih: ${device.name}. Menghubungkan GATT...`,
+            );
+
             const server = await device.gatt.connect();
+            console.log("GATT Terhubung.");
+
             const service = await server.getPrimaryService(
-                printerConfig.service
+                printerConfig.service,
             );
             const characteristic = await service.getCharacteristic(
-                printerConfig.characteristic
+                printerConfig.characteristic,
             );
 
-            // Send data in chunks
-            const chunkSize = 512;
-            for (let i = 0; i < bytes.length; i += chunkSize) {
-                const chunk = bytes.slice(i, i + chunkSize);
+            console.log("Characteristic ditemukan. Memulai transfer data...");
+            const CHUNK_SIZE = 50;
+
+            const delay = (ms: number) =>
+                new Promise((resolve) => setTimeout(resolve, ms));
+
+            for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+                const chunk = bytes.slice(i, i + CHUNK_SIZE);
+
                 await characteristic.writeValue(chunk);
+                await delay(60);
             }
 
-            // Disconnect after a short delay
-            setTimeout(() => {
-                if (device.gatt.connected) {
-                    device.gatt.disconnect();
-                }
-            }, 1000);
+            console.log("Semua data terkirim.");
+
+            await delay(1000);
+
+            if (device.gatt.connected) {
+                device.gatt.disconnect();
+                console.log("Koneksi ditutup.");
+            }
+
+            return true;
         } catch (error) {
-            console.error("Bluetooth Print Error:", error);
+            console.error("Bluetooth Error:", error);
             throw error;
         }
     }

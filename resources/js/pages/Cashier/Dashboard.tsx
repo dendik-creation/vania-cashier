@@ -83,7 +83,8 @@ const CashierDashboard = ({
         tooltip: {
             y: [
                 {
-                    formatter: (value: number) => floatToIdCurrency(value),
+                    formatter: (value: number) =>
+                        floatToIdCurrency(Number(value)),
                 },
                 {
                     formatter: (value: number) => `${value} Trx`,
@@ -95,22 +96,21 @@ const CashierDashboard = ({
     const hourlyTrendSeries = [
         {
             name: "Pendapatan",
-            data: charts.hourly_trend.map((item) => item.revenue),
+            data: charts.hourly_trend.map((item) => Number(item.revenue)),
         },
         {
             name: "Transaksi",
-            data: charts.hourly_trend.map((item) => item.count),
+            data: charts.hourly_trend.map((item) => Number(item.count)),
         },
     ];
 
     // 2. Chart Options: Payment Methods (Donut Chart)
-    // Penting buat kasir untuk rekap uang fisik vs digital
     const paymentMethodOptions = {
         chart: {
             type: "donut" as const,
         },
         labels: charts.payment_methods.map((item) =>
-            humanPaymentMethod(item.method.toLowerCase())
+            humanPaymentMethod(item.method.toLowerCase()),
         ),
         colors: ["#10b981", "#3b82f6", "#f59e0b"], // Green, Blue, Amber
         plotOptions: {
@@ -124,8 +124,9 @@ const CashierDashboard = ({
                             label: "Total Trx",
                             formatter: () =>
                                 `${charts.payment_methods.reduce(
-                                    (sum, item) => sum + item.total_trx,
-                                    0
+                                    (sum, item) =>
+                                        Number(sum) + Number(item.total_trx),
+                                    0,
                                 )}`,
                         },
                     },
@@ -143,8 +144,8 @@ const CashierDashboard = ({
         },
     };
 
-    const paymentMethodSeries = charts.payment_methods.map(
-        (item) => item.total_trx
+    const paymentMethodSeries = charts.payment_methods.map((item) =>
+        Number(item.total_trx),
     );
 
     return (
@@ -174,9 +175,8 @@ const CashierDashboard = ({
             </div>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                {/* Hourly Trend - Lebar 2 kolom */}
-                <Card className="lg:col-span-2">
+            <div className="grid grid-cols-1 gap-6 mb-6">
+                <Card className="">
                     <CardHeader>
                         <CardTitle>Aktivitas Penjualan (Per Jam)</CardTitle>
                     </CardHeader>
@@ -190,7 +190,6 @@ const CashierDashboard = ({
                     </CardContent>
                 </Card>
 
-                {/* Payment Methods - Lebar 1 kolom */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Metode Pembayaran</CardTitle>
@@ -210,7 +209,7 @@ const CashierDashboard = ({
                                 >
                                     <span className="font-medium text-gray-600">
                                         {humanPaymentMethod(
-                                            pm.method.toLowerCase()
+                                            pm.method.toLowerCase(),
                                         )}
                                     </span>
                                     <div className="text-right">
@@ -257,7 +256,7 @@ const CashierDashboard = ({
                                             {/* Ambil jam saja karena ini dashboard harian */}
                                             {ymdToIdDate(
                                                 trx.transaction_time,
-                                                true
+                                                true,
                                             )}
                                         </TableCell>
                                         <TableCell>
@@ -268,7 +267,7 @@ const CashierDashboard = ({
                                         <TableCell>
                                             <span className="">
                                                 {humanPaymentMethod(
-                                                    trx.payment_method.toLowerCase()
+                                                    trx.payment_method.toLowerCase(),
                                                 )}
                                             </span>
                                         </TableCell>

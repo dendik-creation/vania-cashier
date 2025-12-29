@@ -77,7 +77,7 @@ const AdminDashboard = ({
                 title: { text: "Pendapatan" },
                 labels: {
                     formatter: (value: number) =>
-                        `${(value / 1000).toFixed(0)}k`,
+                        `${(Number(value) / 1000).toFixed(0)}k`,
                 },
             },
             {
@@ -88,10 +88,11 @@ const AdminDashboard = ({
         tooltip: {
             y: [
                 {
-                    formatter: (value: number) => floatToIdCurrency(value),
+                    formatter: (value: number) =>
+                        floatToIdCurrency(Number(value)),
                 },
                 {
-                    formatter: (value: number) => `${value} Trx`,
+                    formatter: (value: number) => `${Number(value)} Trx`,
                 },
             ],
         },
@@ -100,11 +101,11 @@ const AdminDashboard = ({
     const salesTrendSeries = [
         {
             name: "Pendapatan",
-            data: charts.sales_trend.map((item) => item.revenue),
+            data: charts.sales_trend.map((item) => Number(item.revenue)),
         },
         {
             name: "Transaksi",
-            data: charts.sales_trend.map((item) => item.count),
+            data: charts.sales_trend.map((item) => Number(item.count)),
         },
     ];
 
@@ -127,9 +128,10 @@ const AdminDashboard = ({
                             formatter: () =>
                                 floatToIdCurrency(
                                     charts.sales_by_type.reduce(
-                                        (sum, item) => sum + item.total,
-                                        0
-                                    )
+                                        (sum, item) =>
+                                            Number(sum) + Number(item.total),
+                                        0,
+                                    ),
                                 ),
                         },
                     },
@@ -138,12 +140,14 @@ const AdminDashboard = ({
         },
         tooltip: {
             y: {
-                formatter: (value: number) => floatToIdCurrency(value),
+                formatter: (value: number) => floatToIdCurrency(Number(value)),
             },
         },
     };
 
-    const salesByTypeSeries = charts.sales_by_type.map((item) => item.total);
+    const salesByTypeSeries = charts.sales_by_type.map((item) =>
+        Number(item.total),
+    );
 
     return (
         <AppLayout>
@@ -178,8 +182,8 @@ const AdminDashboard = ({
             </div>
 
             {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                <Card className="lg:col-span-2">
+            <div className="grid grid-cols-1 gap-6 mb-6">
+                <Card className="">
                     <CardHeader>
                         <CardTitle>Tren Penjualan (7 Hari Terakhir)</CardTitle>
                     </CardHeader>
@@ -237,7 +241,7 @@ const AdminDashboard = ({
                                         </TableCell>
                                         <TableCell className="text-right">
                                             {floatToIdCurrency(
-                                                product.total_revenue
+                                                product.total_revenue,
                                             )}
                                         </TableCell>
                                     </TableRow>
@@ -272,7 +276,7 @@ const AdminDashboard = ({
                                             <div className="text-xs text-muted-foreground">
                                                 {ymdToIdDate(
                                                     trx.transaction_time,
-                                                    true
+                                                    true,
                                                 )}
                                             </div>
                                         </TableCell>
