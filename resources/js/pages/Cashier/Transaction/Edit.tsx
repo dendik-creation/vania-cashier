@@ -5,7 +5,7 @@ import AppLayout from "@/partials/AppLayout";
 import { PageTitle, PageTitleProps } from "@/partials/PageTitle";
 import { Transaction, TransactionCreateProps } from "@/types/transaction";
 import { useForm } from "@inertiajs/react";
-import { FormEvent, useEffect, useMemo } from "react";
+import { FormEvent, useEffect, useMemo, useRef } from "react";
 import {
     Dialog,
     DialogContent,
@@ -51,6 +51,8 @@ const CashierTransactionEdit = ({
     description,
     transaction,
 }: Props) => {
+    const lastKeyTime = useRef(Date.now());
+    const scannerTimer = useRef(null);
     const {
         data: form,
         setData: setForm,
@@ -147,8 +149,8 @@ const CashierTransactionEdit = ({
         const currentCustomerType = form.is_new_customer
             ? form.register_customer.type
             : customerFinder.is_found
-            ? customerFinder.customer_found.type
-            : "member";
+              ? customerFinder.customer_found.type
+              : "member";
 
         const updatedItems = form.items.map((item) => {
             let price = item.price_criteria.basic;
@@ -171,7 +173,7 @@ const CashierTransactionEdit = ({
 
         const isChanged = updatedItems.some(
             (item, index) =>
-                item.price_applied !== form.items[index].price_applied
+                item.price_applied !== form.items[index].price_applied,
         );
 
         if (isChanged) {
@@ -182,7 +184,7 @@ const CashierTransactionEdit = ({
     const recalculateTransactionPayment = () => {
         const subtotal = form.items.reduce(
             (total, item) => total + item.price_applied * item.qty,
-            0
+            0,
         );
 
         let point_earned = 0;
@@ -261,7 +263,7 @@ const CashierTransactionEdit = ({
             .then((response) => {
                 const productVariantData = response.data.product_variant;
                 const existingItemIndex = form.items.findIndex(
-                    (item) => item.id === productVariantData.id
+                    (item) => item.id === productVariantData.id,
                 );
                 let updatedItems = [...form.items];
                 if (existingItemIndex !== -1) {
@@ -376,9 +378,25 @@ const CashierTransactionEdit = ({
                                 placeholder="Masukkan Barcode"
                                 className="w-full"
                                 value={skuFinder.sku || ""}
-                                onChange={(e) =>
-                                    setSkuFinder("sku", e.target.value)
-                                }
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    const currentTime = Date.now();
+
+                                    const timeDiff =
+                                        currentTime - lastKeyTime.current;
+                                    setSkuFinder("sku", value);
+                                    lastKeyTime.current = currentTime;
+                                    if (scannerTimer.current)
+                                        clearTimeout(scannerTimer.current);
+                                    if (timeDiff < 60 && value.length > 2) {
+                                        scannerTimer.current = setTimeout(
+                                            () => {
+                                                handleFindSKU(value);
+                                            },
+                                            200,
+                                        ) as unknown as null;
+                                    }
+                                }}
                             />
                             <button type="submit" style={{ display: "none" }} />
                         </form>
@@ -397,7 +415,7 @@ const CashierTransactionEdit = ({
                                             onChange={(value) =>
                                                 setForm(
                                                     "is_new_customer",
-                                                    value === "1"
+                                                    value === "1",
                                                 )
                                             }
                                             className="w-full"
@@ -430,7 +448,7 @@ const CashierTransactionEdit = ({
                                                 onChange={(e) =>
                                                     setCustomerFinder(
                                                         "customer_phone",
-                                                        e.target.value
+                                                        e.target.value,
                                                     )
                                                 }
                                             />
@@ -486,7 +504,7 @@ const CashierTransactionEdit = ({
                                                                             name: e
                                                                                 .target
                                                                                 .value,
-                                                                        }
+                                                                        },
                                                                     )
                                                                 }
                                                             />
@@ -524,7 +542,7 @@ const CashierTransactionEdit = ({
                                                                             phone: e
                                                                                 .target
                                                                                 .value,
-                                                                        }
+                                                                        },
                                                                     )
                                                                 }
                                                             />
@@ -561,7 +579,7 @@ const CashierTransactionEdit = ({
                                                                                 e
                                                                                     .target
                                                                                     .value,
-                                                                        }
+                                                                        },
                                                                     )
                                                                 }
                                                             />
@@ -597,7 +615,8 @@ const CashierTransactionEdit = ({
                                                 <Badge>
                                                     {humanCustType(
                                                         customerFinder
-                                                            .customer_found.type
+                                                            .customer_found
+                                                            .type,
                                                     )}
                                                 </Badge>
                                             </div>
@@ -631,16 +650,16 @@ const CashierTransactionEdit = ({
                                             onClick={() => {
                                                 setCustomerFinder(
                                                     "is_found",
-                                                    false
+                                                    false,
                                                 );
                                                 setCustomerFinder(
                                                     "customer_phone",
-                                                    ""
+                                                    "",
                                                 );
                                                 setForm("customer_id", "");
                                                 setForm(
                                                     "customer_type",
-                                                    "general"
+                                                    "general",
                                                 );
                                             }}
                                         >
@@ -716,7 +735,7 @@ const CashierTransactionEdit = ({
                                                 </div>
                                                 <p className="font-semibold">
                                                     {floatToIdCurrency(
-                                                        item.price_applied
+                                                        item.price_applied,
                                                     )}
                                                 </p>
                                             </div>
@@ -727,7 +746,7 @@ const CashierTransactionEdit = ({
                                                     onClick={() => {
                                                         handleQtyAction(
                                                             "MIN",
-                                                            index
+                                                            index,
                                                         );
                                                     }}
                                                     aria-label="Kurangi Qty"
@@ -743,7 +762,7 @@ const CashierTransactionEdit = ({
                                                     onClick={() => {
                                                         handleQtyAction(
                                                             "ADD",
-                                                            index
+                                                            index,
                                                         );
                                                     }}
                                                     aria-label="Tambah Qty"
@@ -843,12 +862,12 @@ const CashierTransactionEdit = ({
                                                     ) {
                                                         setPointUsedPlaceholder(
                                                             "point_used_placeholder",
-                                                            form.point_used
+                                                            form.point_used,
                                                         );
                                                     } else {
                                                         setPointUsedPlaceholder(
                                                             "point_used_placeholder",
-                                                            minimum_point_can_used
+                                                            minimum_point_can_used,
                                                         );
                                                     }
                                                 }}
@@ -869,7 +888,7 @@ const CashierTransactionEdit = ({
                                                 Gunakan poin sebagai diskon
                                                 senilai{" "}
                                                 {floatToIdCurrency(
-                                                    idr_point_value
+                                                    idr_point_value,
                                                 )}
                                             </DialogDescription>
                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -894,7 +913,7 @@ const CashierTransactionEdit = ({
                                                         }
                                                         onChange={(e) => {
                                                             let val = Number(
-                                                                e.target.value
+                                                                e.target.value,
                                                             );
                                                             const min =
                                                                 minimum_point_can_used;
@@ -910,7 +929,7 @@ const CashierTransactionEdit = ({
                                                                 val = max;
                                                             setPointUsedPlaceholder(
                                                                 "point_used_placeholder",
-                                                                val
+                                                                val,
                                                             );
                                                         }}
                                                         value={
@@ -929,11 +948,11 @@ const CashierTransactionEdit = ({
                                                     onClick={() => {
                                                         setPointUsedPlaceholder(
                                                             "point_used_placeholder",
-                                                            0
+                                                            0,
                                                         );
                                                         setForm(
                                                             "point_used",
-                                                            0
+                                                            0,
                                                         );
                                                     }}
                                                 >
@@ -947,13 +966,13 @@ const CashierTransactionEdit = ({
                                                     onClick={() => {
                                                         const input =
                                                             document.getElementById(
-                                                                "input_point_used"
+                                                                "input_point_used",
                                                             ) as HTMLInputElement | null;
                                                         if (input) {
                                                             savePointUsed(
                                                                 Number(
-                                                                    input.value
-                                                                )
+                                                                    input.value,
+                                                                ),
                                                             );
                                                         }
                                                     }}
