@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create("products", function (Blueprint $table) {
             $table->id();
             $table->string("name");
-            $table->enum("type", ["shoes", "bag", "accessory"]);
+            $table->string("type"); //such as bag, shoes, accessory in indonesian lang
             $table->string("brand")->nullable();
             $table->timestamps();
         });

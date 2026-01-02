@@ -4,7 +4,7 @@ import { PaginationData } from "./global";
 export type Product = {
     id: number;
     name: string;
-    type: "shoes" | "bag" | "accessory";
+    type: string;
     brand?: string | null;
     created_at?: string;
     updated_at?: string;
@@ -53,16 +53,20 @@ export type VariantFormData = {
 
 export type AdminProductIndexProps = PageTitleProps & {
     products: PaginationData<Product>;
+    available_types: string[];
     filters: {
         search?: string;
         type?: string;
     };
 };
 
-export type AdminProductCreateProps = PageTitleProps;
+export type AdminProductCreateProps = PageTitleProps & {
+    available_types: string[];
+};
 
 export type AdminProductEditProps = PageTitleProps & {
     product: Product;
+    available_types: string[];
 };
 
 export type AdminProductShowProps = PageTitleProps & {

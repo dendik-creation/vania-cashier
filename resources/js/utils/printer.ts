@@ -177,12 +177,12 @@ export class ReceiptPrinter {
                 // Center of the label (relative to xOffset)
                 const labelCenterDots = xOffsetDots + labelWidthDots / 2;
 
-                // 1. Title: VANIASHOP
-                // Using Font "0" (Triumvirate) for better look.
-                // x_mul=1, y_mul=1. Approx width 12 dots/char?
-                // "VANIASHOP" (9 chars) -> ~110 dots.
-                // Centered.
-                const titleText = "VANIASHOP";
+                // 1. Title: item.product_name
+                // Menggunakan Font "0" (Triumvirate) agar lebih bagus.
+                // x_mul=12, y_mul=12. Estimasi lebar 12 dots/char.
+                const titleText = item.product_name
+                    ? item.product_name
+                    : "Item";
                 const titleWidthEst = titleText.length * 12;
                 const titleX = Math.floor(labelCenterDots - titleWidthEst / 2);
                 // TEXT x,y,"font",rotation,x_mul,y_mul,"content"
@@ -241,31 +241,30 @@ export class ReceiptPrinter {
                     commands += `TEXT ${rightTextX},${y},"0",0,9,9,"${rightText}"\r\n`;
                 };
 
-                // Row 1: Name | (Beli 1) Harga
-                const name = (item.product_name || "Item").substring(0, 12);
+                // Row 1: Color | (Beli 1) Harga
+                const color = (item.attributes.color || "").substring(0, 12);
                 const priceBasic = `(Beli 1) ${formatPrice(
                     item.price_criteria.basic,
                 )}`;
-                printRow(name, priceBasic, currentY);
+                printRow(color, priceBasic, currentY);
 
-                // Row 2: Color | (Beli 3) Harga
+                // Row 2: Size | (Beli 3) Harga
                 currentY += lineHeight;
-                const color = (item.attributes.color || "-").substring(0, 12);
-                const price3 = `(Beli 3) ${formatPrice(
-                    item.price_criteria.order_qty_3,
-                )}`;
-                printRow(color, price3, currentY);
-
-                // Row 3: Size | (Beli 6) Harga
-                currentY += lineHeight;
-                const size = String(item.attributes.size || "-").substring(
+                const size = String(item.attributes.size || "").substring(
                     0,
                     12,
                 );
+                const price3 = `(Beli 3) ${formatPrice(
+                    item.price_criteria.order_qty_3,
+                )}`;
+                printRow(size, price3, currentY);
+
+                // Row 3: (empty left) | (Beli 6) Harga
+                currentY += lineHeight;
                 const price6 = `(Beli 6) ${formatPrice(
                     item.price_criteria.order_qty_6,
                 )}`;
-                printRow(size, price6, currentY);
+                printRow("", price6, currentY);
             });
 
             commands += `PRINT 1\r\n`;

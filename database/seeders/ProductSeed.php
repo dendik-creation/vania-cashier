@@ -14,57 +14,57 @@ class ProductSeed extends Seeder
     public function run(): void
     {
         $product1 = Product::create([
-            'name' => 'Contoh 1',
-            'type' => Product::TYPE_SHOES,
-            'brand' => 'Nike',
+            "name" => "Contoh 1",
+            "type" => "sepatu",
+            "brand" => "Nike",
         ]);
 
         ProductVariant::create([
-            'product_id' => $product1->id,
-            'sku' => 'EXAMPL01',
-            'attributes' => [
-                'color' => 'Black',
-                'size' => 40,
+            "product_id" => $product1->id,
+            "sku" => "EXAMPL01",
+            "attributes" => [
+                "color" => "Black",
+                "size" => 40,
             ],
-            'price_criteria' => [
-                'basic' => 900000,
-                'reseller' => 850000,
-                'order_qty_3' => 820000,
-                'order_qty_6' => 800000,
+            "price_criteria" => [
+                "basic" => 900000,
+                "reseller" => 850000,
+                "order_qty_3" => 820000,
+                "order_qty_6" => 800000,
             ],
-            'stock' => 10,
+            "stock" => 10,
         ]);
 
         ProductVariant::create([
-            'product_id' => $product1->id,
-            'sku' => 'EXAMPL02',
-            'attributes' => [
-                'color' => 'White',
-                'size' => 41,
+            "product_id" => $product1->id,
+            "sku" => "EXAMPL02",
+            "attributes" => [
+                "color" => "White",
+                "size" => 41,
             ],
-            'price_criteria' => [
-                'basic' => 900000,
-                'reseller' => 850000,
-                'order_qty_3' => 820000,
-                'order_qty_6' => 800000,
+            "price_criteria" => [
+                "basic" => 900000,
+                "reseller" => 850000,
+                "order_qty_3" => 820000,
+                "order_qty_6" => 800000,
             ],
-            'stock' => 10,
+            "stock" => 10,
         ]);
 
         ProductVariant::create([
-            'product_id' => $product1->id,
-            'sku' => 'EXAMPL03',
-            'attributes' => [
-                'color' => 'Blue',
-                'size' => 40,
+            "product_id" => $product1->id,
+            "sku" => "EXAMPL03",
+            "attributes" => [
+                "color" => "Blue",
+                "size" => 40,
             ],
-            'price_criteria' => [
-                'basic' => 900000,
-                'reseller' => 850000,
-                'order_qty_3' => 820000,
-                'order_qty_6' => 800000,
+            "price_criteria" => [
+                "basic" => 900000,
+                "reseller" => 850000,
+                "order_qty_3" => 820000,
+                "order_qty_6" => 800000,
             ],
-            'stock' => 10,
+            "stock" => 10,
         ]);
     }
 }

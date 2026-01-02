@@ -3,15 +3,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ErrorInput, SelectSearchInput } from "@/components/custom/FormElement";
 import AppLayout from "@/partials/AppLayout";
-import { PageTitle } from "@/Partials/PageTitle";
+import { PageTitle } from "@/partials/PageTitle";
 import { Link, useForm } from "@inertiajs/react";
 import { Plus, Trash2, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminProductCreateProps, VariantFormData } from "@/types/product";
+import { humanProductType } from "@/components/helper/helper";
 
 const AdminProductCreate = ({
     title,
     description,
+    available_types,
 }: AdminProductCreateProps) => {
     const { data, setData, post, processing, errors, clearErrors, setError } =
         useForm({
@@ -112,20 +114,20 @@ const AdminProductCreate = ({
             ) {
                 setError(
                     `variants.${index}.attributes.color`,
-                    "Warna wajib diisi"
+                    "Warna wajib diisi",
                 );
                 isValid = false;
             }
 
             // Ukuran wajib untuk sepatu
             if (
-                data.type === "shoes" &&
+                data.type === "sepatu" &&
                 (!variant.attributes.size ||
                     variant.attributes.size.trim() === "")
             ) {
                 setError(
                     `variants.${index}.attributes.size`,
-                    "Ukuran wajib diisi untuk sepatu"
+                    "Ukuran wajib diisi untuk sepatu",
                 );
                 isValid = false;
             }
@@ -137,13 +139,13 @@ const AdminProductCreate = ({
             ) {
                 setError(
                     `variants.${index}.price_criteria.basic`,
-                    "Harga dasar wajib diisi"
+                    "Harga dasar wajib diisi",
                 );
                 isValid = false;
             } else if (Number(variant.price_criteria.basic) <= 0) {
                 setError(
                     `variants.${index}.price_criteria.basic`,
-                    "Harga dasar harus lebih dari 0"
+                    "Harga dasar harus lebih dari 0",
                 );
                 isValid = false;
             }
@@ -155,13 +157,13 @@ const AdminProductCreate = ({
             ) {
                 setError(
                     `variants.${index}.price_criteria.reseller`,
-                    "Harga reseller wajib diisi"
+                    "Harga reseller wajib diisi",
                 );
                 isValid = false;
             } else if (Number(variant.price_criteria.reseller) <= 0) {
                 setError(
                     `variants.${index}.price_criteria.reseller`,
-                    "Harga reseller harus lebih dari 0"
+                    "Harga reseller harus lebih dari 0",
                 );
                 isValid = false;
             }
@@ -173,13 +175,13 @@ const AdminProductCreate = ({
             ) {
                 setError(
                     `variants.${index}.price_criteria.order_qty_3`,
-                    "Harga qty 3+ wajib diisi"
+                    "Harga qty 3+ wajib diisi",
                 );
                 isValid = false;
             } else if (Number(variant.price_criteria.order_qty_3) <= 0) {
                 setError(
                     `variants.${index}.price_criteria.order_qty_3`,
-                    "Harga qty 3+ harus lebih dari 0"
+                    "Harga qty 3+ harus lebih dari 0",
                 );
                 isValid = false;
             }
@@ -191,13 +193,13 @@ const AdminProductCreate = ({
             ) {
                 setError(
                     `variants.${index}.price_criteria.order_qty_6`,
-                    "Harga qty 6+ wajib diisi"
+                    "Harga qty 6+ wajib diisi",
                 );
                 isValid = false;
             } else if (Number(variant.price_criteria.order_qty_6) <= 0) {
                 setError(
                     `variants.${index}.price_criteria.order_qty_6`,
-                    "Harga qty 6+ harus lebih dari 0"
+                    "Harga qty 6+ harus lebih dari 0",
                 );
                 isValid = false;
             }
@@ -266,11 +268,12 @@ const AdminProductCreate = ({
                                 onChange={(val) =>
                                     setData("type", val.toString())
                                 }
-                                options={[
-                                    { label: "Sepatu", value: "shoes" },
-                                    { label: "Tas", value: "bag" },
-                                    { label: "Aksesoris", value: "accessory" },
-                                ]}
+                                options={available_types.map(
+                                    (type: string) => ({
+                                        label: humanProductType(type),
+                                        value: type,
+                                    }),
+                                )}
                                 placeholder="Pilih Tipe"
                             />
                             <ErrorInput error={errors.type} />
@@ -328,7 +331,7 @@ const AdminProductCreate = ({
                                                             updateVariant(
                                                                 index,
                                                                 "sku",
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                         placeholder="Masukkan SKU"
@@ -367,7 +370,7 @@ const AdminProductCreate = ({
                                                         updateVariant(
                                                             index,
                                                             "color",
-                                                            e.target.value
+                                                            e.target.value,
                                                         )
                                                     }
                                                     placeholder="Masukkan warna"
@@ -381,7 +384,7 @@ const AdminProductCreate = ({
                                                 />
                                             </div>
 
-                                            {data.type === "shoes" && (
+                                            {data.type === "sepatu" && (
                                                 <div className="space-y-1">
                                                     <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
                                                         Ukuran
@@ -395,7 +398,7 @@ const AdminProductCreate = ({
                                                             updateVariant(
                                                                 index,
                                                                 "size",
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                         placeholder="Masukkan ukuran"
@@ -421,7 +424,7 @@ const AdminProductCreate = ({
                                                         updateVariant(
                                                             index,
                                                             "stock",
-                                                            e.target.value
+                                                            e.target.value,
                                                         )
                                                     }
                                                     placeholder="0"
@@ -457,7 +460,7 @@ const AdminProductCreate = ({
                                                             updateVariant(
                                                                 index,
                                                                 "basic",
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                     />
@@ -485,7 +488,7 @@ const AdminProductCreate = ({
                                                             updateVariant(
                                                                 index,
                                                                 "reseller",
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                     />
@@ -513,7 +516,7 @@ const AdminProductCreate = ({
                                                             updateVariant(
                                                                 index,
                                                                 "order_qty_3",
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                     />
@@ -541,7 +544,7 @@ const AdminProductCreate = ({
                                                             updateVariant(
                                                                 index,
                                                                 "order_qty_6",
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                     />

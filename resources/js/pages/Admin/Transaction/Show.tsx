@@ -1,7 +1,7 @@
 import AppLayout from "@/partials/AppLayout";
-import { PageTitle, PageTitleProps } from "@/Partials/PageTitle";
+import { PageTitle, PageTitleProps } from "@/partials/PageTitle";
 import { Transaction } from "@/types/transaction";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Table,
     TableBody,
@@ -9,9 +9,9 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/Components/ui/table";
-import { Badge } from "@/Components/ui/badge";
-import { Separator } from "@/Components/ui/separator";
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
     User,
     Calendar,
@@ -152,7 +152,7 @@ const AdminTransactionShow = ({
                                         <span>
                                             {ymdToIdDate(
                                                 transaction.transaction_time,
-                                                true
+                                                true,
                                             )}
                                         </span>
                                     </div>
@@ -170,7 +170,7 @@ const AdminTransactionShow = ({
                                     <div className="flex items-center gap-2">
                                         <span>
                                             {humanPaymentMethod(
-                                                transaction.payment_method
+                                                transaction.payment_method,
                                             )}
                                         </span>
                                     </div>
@@ -184,7 +184,7 @@ const AdminTransactionShow = ({
                                     </span>
                                     <span>
                                         {floatToIdCurrency(
-                                            transaction.subtotal
+                                            transaction.subtotal,
                                         )}
                                     </span>
                                 </div>
@@ -210,7 +210,7 @@ const AdminTransactionShow = ({
                                         <span>
                                             -
                                             {floatToIdCurrency(
-                                                transaction.discount
+                                                transaction.discount,
                                             )}
                                         </span>
                                     </div>
@@ -222,7 +222,7 @@ const AdminTransactionShow = ({
                                         </span>
                                         <span>
                                             {floatToIdCurrency(
-                                                transaction.admin_fee
+                                                transaction.admin_fee,
                                             )}
                                         </span>
                                     </div>
@@ -274,7 +274,7 @@ const AdminTransactionShow = ({
                                             <div className="text-xs text-muted-foreground">
                                                 {item.variant?.attributes &&
                                                     Object.entries(
-                                                        item.variant.attributes
+                                                        item.variant.attributes,
                                                     ).map(([key, value]) => (
                                                         <span
                                                             key={key}
@@ -291,7 +291,7 @@ const AdminTransactionShow = ({
                                         </TableCell>
                                         <TableCell className="text-right">
                                             {floatToIdCurrency(
-                                                item.price_per_item
+                                                item.price_per_item,
                                             )}
                                         </TableCell>
                                         <TableCell className="text-center">

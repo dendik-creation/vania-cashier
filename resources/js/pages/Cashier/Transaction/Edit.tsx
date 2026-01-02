@@ -134,7 +134,7 @@ const CashierTransactionEdit = ({
         size?: number;
     }) => {
         switch (type) {
-            case "shoes":
+            case "sepatu":
                 return <Footprints size={size} />;
             case "bag":
                 return <Handbag size={size} />;
@@ -723,7 +723,7 @@ const CashierTransactionEdit = ({
                                                         {item.attributes.color}
                                                     </span>
                                                     {item.product_type ==
-                                                        "shoes" && (
+                                                        "sepatu" && (
                                                         <span className="text-xs">
                                                             {" | "}
                                                             {

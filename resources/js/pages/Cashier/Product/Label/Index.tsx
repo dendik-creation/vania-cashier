@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogFooter, DialogHeader } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import AppLayout from "@/partials/AppLayout";
-import { PageTitle, PageTitleProps } from "@/Partials/PageTitle";
+import { PageTitle, PageTitleProps } from "@/partials/PageTitle";
 import { ProductVariant } from "@/types/product";
 import { useForm } from "@inertiajs/react";
 import {
@@ -67,7 +67,7 @@ const CashierProductLabelIndex = ({
 
     const handleFilterChange = (
         field: keyof typeof filterData,
-        value: string
+        value: string,
     ) => {
         setFilterData(field, value);
     };
@@ -80,11 +80,11 @@ const CashierProductLabelIndex = ({
         size: number;
     }) => {
         switch (type) {
-            case "shoes":
+            case "sepatu":
                 return <Footprints size={size} />;
-            case "bag":
+            case "tas":
                 return <Handbag size={size} />;
-            case "accessory":
+            case "aksesoris":
                 return <Sparkles size={size} />;
             default:
                 return <Package size={size} />;
@@ -124,11 +124,11 @@ const CashierProductLabelIndex = ({
         let selectedVariants = form.selected_variants || [];
         if (selectedVariants.some((variant) => variant.sku === sku)) {
             selectedVariants = selectedVariants.filter(
-                (variant) => variant.sku !== sku
+                (variant) => variant.sku !== sku,
             );
         } else {
             const variantToAdd = variantList.find(
-                (variant) => variant.sku === sku
+                (variant) => variant.sku === sku,
             );
             if (variantToAdd) {
                 selectedVariants.push(variantToAdd);
@@ -159,7 +159,7 @@ const CashierProductLabelIndex = ({
             const printer = new ReceiptPrinter();
             await printer.printLabel(
                 form.filtered_selected_variants,
-                form.item_per_row
+                form.item_per_row,
             );
             BlastToaster("success", "Label berhasil dicetak");
         } catch (error: any) {
@@ -273,7 +273,7 @@ const CashierProductLabelIndex = ({
                                                         .value as unknown as
                                                         | 1
                                                         | 2
-                                                        | 3
+                                                        | 3,
                                                 )
                                             }
                                         />
@@ -370,7 +370,7 @@ const CashierProductLabelIndex = ({
                                                     {item.attributes?.color}
                                                 </span>
                                             </div>
-                                            {item.product_type == "shoes" && (
+                                            {item.product_type == "sepatu" && (
                                                 <div className="flex items-center gap-2">
                                                     <RulerDimensionLine
                                                         size={16}
@@ -440,7 +440,7 @@ const CashierProductLabelIndex = ({
                                                     </span>
                                                 </div>
                                                 {item.product_type ==
-                                                    "shoes" && (
+                                                    "sepatu" && (
                                                     <div className="flex items-center gap-2">
                                                         <RulerDimensionLine
                                                             size={16}
@@ -468,15 +468,15 @@ const CashierProductLabelIndex = ({
                                                                     1,
                                                                     parseInt(
                                                                         e.target
-                                                                            .value
-                                                                    )
+                                                                            .value,
+                                                                    ),
                                                                 );
                                                             const updatedVariants =
                                                                 [
                                                                     ...form.selected_variants,
                                                                 ].map(
                                                                     (
-                                                                        variant
+                                                                        variant,
                                                                     ) => {
                                                                         if (
                                                                             variant.sku ===
@@ -491,7 +491,7 @@ const CashierProductLabelIndex = ({
                                                                             ) {
                                                                                 BlastToaster(
                                                                                     "warning",
-                                                                                    `Copies melebihi stok tersedia (${maxCopies})`
+                                                                                    `Copies melebihi stok tersedia (${maxCopies})`,
                                                                                 );
                                                                                 return {
                                                                                     ...variant,
@@ -504,15 +504,15 @@ const CashierProductLabelIndex = ({
                                                                             };
                                                                         }
                                                                         return variant;
-                                                                    }
+                                                                    },
                                                                 );
                                                             setForm(
                                                                 "filtered_selected_variants",
-                                                                updatedVariants
+                                                                updatedVariants,
                                                             );
                                                             setForm(
                                                                 "selected_variants",
-                                                                updatedVariants
+                                                                updatedVariants,
                                                             );
                                                         }}
                                                     />
@@ -520,7 +520,7 @@ const CashierProductLabelIndex = ({
                                             </div>
                                         </CardContent>
                                     </Card>
-                                )
+                                ),
                             )}
                         </div>
                     )}

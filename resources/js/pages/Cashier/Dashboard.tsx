@@ -1,5 +1,5 @@
 import AppLayout from "@/partials/AppLayout";
-import { PageTitle, PageTitleProps } from "@/Partials/PageTitle";
+import { PageTitle, PageTitleProps } from "@/partials/PageTitle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Table,

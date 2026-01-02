@@ -24,6 +24,7 @@ import {
     Edit,
     Eye,
     Package,
+    ReceiptText,
     Trash2,
     Users,
 } from "lucide-react";
@@ -32,6 +33,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import EmptyCard from "@/components/custom/EmptyCard";
 import { Badge } from "@/components/ui/badge";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
+import axios from "axios";
+import { ReceiptPrinter } from "@/utils/printer";
+import BlastToaster from "@/components/custom/BlastToaster";
 type PageProps = PageTitleProps & {
     transactions: PaginationData<Transaction>;
     filters: {
@@ -101,7 +105,7 @@ const CashierTransactionIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["transactions"],
-            }
+            },
         );
     });
 
@@ -110,6 +114,25 @@ const CashierTransactionIndex = ({
             preserveScroll: true,
             replace: true,
         });
+    };
+
+    const readyPrintReceipt = async (trxId: number) => {
+        try {
+            const printResponse = await axios.get(
+                `/cashier/transactions/print/${trxId}`,
+            );
+            const { transaction: trxData, setting: settingData } =
+                printResponse.data;
+
+            const printer = new ReceiptPrinter();
+            const bytes = printer.generateReceipt(trxData, settingData);
+            // Direct Bluetooth Print
+            await printer.printReceipt(bytes);
+            BlastToaster("success", "Transaksi berhasil dicetak");
+        } catch (error: any) {
+            console.error(error);
+            BlastToaster("error", "Cetak transaksi dibatalkan");
+        }
     };
 
     useEffect(() => {
@@ -234,7 +257,7 @@ const CashierTransactionIndex = ({
                                         <BanknoteArrowUp size={16} />
                                         <span className="text-sm">
                                             {humanPaymentMethod(
-                                                trx.payment_method
+                                                trx.payment_method,
                                             )}{" "}
                                             - {floatToIdCurrency(trx.total)}
                                         </span>
@@ -245,7 +268,7 @@ const CashierTransactionIndex = ({
                                         <span className="text-sm">
                                             {ymdToIdDate(
                                                 trx.transaction_time,
-                                                true
+                                                true,
                                             )}
                                         </span>
                                     </div>
@@ -267,6 +290,14 @@ const CashierTransactionIndex = ({
                                             </Button>
                                         </Link>
                                     )}
+                                    <Button
+                                        variant="outline"
+                                        onClick={() =>
+                                            readyPrintReceipt(trx.id)
+                                        }
+                                    >
+                                        <ReceiptText className="h-4 w-4" />
+                                    </Button>
                                     {flash.user.id === trx.cashier_id && (
                                         <ConfirmDialog
                                             triggerNode={

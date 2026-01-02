@@ -14,7 +14,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AdminProductShowProps } from "@/types/product";
-import { floatToIdCurrency } from "@/components/helper/helper";
+import {
+    floatToIdCurrency,
+    humanProductType,
+} from "@/components/helper/helper";
 
 const CashierProductShow = ({
     title,
@@ -31,14 +34,14 @@ const CashierProductShow = ({
                         <CardTitle>Informasi Produk</CardTitle>
                         <div className="flex gap-2">
                             <Button variant="outline" asChild>
-                                <Link href={"/admin/products"}>
+                                <Link href={"/cashier/products"}>
                                     <ArrowLeft className="w-4 h-4 mr-2" />{" "}
                                     Kembali
                                 </Link>
                             </Button>
                             <Button variant="yellow" asChild>
                                 <Link
-                                    href={`/admin/products/${product.id}/edit`}
+                                    href={`/cashier/products/${product.id}/edit`}
                                 >
                                     <Edit className="w-4 h-4 mr-2" /> Edit
                                     Produk
@@ -63,11 +66,7 @@ const CashierProductShow = ({
                                 variant="secondary"
                                 className="mt-1 capitalize"
                             >
-                                {product.type === "shoes"
-                                    ? "Sepatu"
-                                    : product.type === "bag"
-                                    ? "Tas"
-                                    : "Aksesoris"}
+                                {humanProductType(product.type)}
                             </Badge>
                         </div>
                         <div>
@@ -94,7 +93,7 @@ const CashierProductShow = ({
                                         <TableHead className="min-w-[100px]">
                                             Warna
                                         </TableHead>
-                                        {product.type === "shoes" && (
+                                        {product.type === "sepatu" && (
                                             <TableHead className="min-w-20">
                                                 Ukuran
                                             </TableHead>
@@ -122,7 +121,7 @@ const CashierProductShow = ({
                                         <TableRow>
                                             <TableCell
                                                 colSpan={
-                                                    product.type === "shoes"
+                                                    product.type === "sepatu"
                                                         ? 8
                                                         : 7
                                                 }
@@ -141,7 +140,7 @@ const CashierProductShow = ({
                                                     {variant.attributes
                                                         ?.color || "-"}
                                                 </TableCell>
-                                                {product.type === "shoes" && (
+                                                {product.type === "sepatu" && (
                                                     <TableCell>
                                                         {variant.attributes
                                                             ?.size || "-"}
@@ -152,7 +151,7 @@ const CashierProductShow = ({
                                                         {floatToIdCurrency(
                                                             variant
                                                                 .price_criteria
-                                                                ?.basic || 0
+                                                                ?.basic || 0,
                                                         )}
                                                     </span>
                                                 </TableCell>
@@ -161,7 +160,7 @@ const CashierProductShow = ({
                                                         {floatToIdCurrency(
                                                             variant
                                                                 .price_criteria
-                                                                ?.reseller || 0
+                                                                ?.reseller || 0,
                                                         )}
                                                     </span>
                                                 </TableCell>
@@ -171,7 +170,7 @@ const CashierProductShow = ({
                                                             variant
                                                                 .price_criteria
                                                                 ?.order_qty_3 ||
-                                                                0
+                                                                0,
                                                         )}
                                                     </span>
                                                 </TableCell>
@@ -181,7 +180,7 @@ const CashierProductShow = ({
                                                             variant
                                                                 .price_criteria
                                                                 ?.order_qty_6 ||
-                                                                0
+                                                                0,
                                                         )}
                                                     </span>
                                                 </TableCell>

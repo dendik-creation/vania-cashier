@@ -2,7 +2,7 @@ import { ErrorInput, SelectSearchInput } from "@/components/custom/FormElement";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AppLayout from "@/partials/AppLayout";
-import { PageTitle, PageTitleProps } from "@/Partials/PageTitle";
+import { PageTitle, PageTitleProps } from "@/partials/PageTitle";
 import { Setting } from "@/types/setting";
 import { useForm } from "@inertiajs/react";
 import { FilePond, registerPlugin } from "react-filepond";
@@ -38,6 +38,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
             idr_point_value: setting.idr_point_value || 0,
             minimum_point_can_used: setting.minimum_point_can_used || 0,
             admin_fee_criteria: setting.admin_fee_criteria || [],
+            product_types: setting.product_types || "",
         });
     const handleChangeInput = (field: keyof typeof data, value: any) => {
         setData(field, value);
@@ -108,22 +109,26 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
         if (!data.eligible_point_minimum || data.eligible_point_minimum < 0) {
             setError(
                 "eligible_point_minimum",
-                "Nominal minimum syarat dapat poin wajib diisi dan tidak boleh negatif."
+                "Nominal minimum syarat dapat poin wajib diisi dan tidak boleh negatif.",
             );
             isValid = false;
         }
         if (!data.idr_point_value || data.idr_point_value < 0) {
             setError(
                 "idr_point_value",
-                "Nilai tukar setiap poin wajib diisi dan tidak boleh negatif."
+                "Nilai tukar setiap poin wajib diisi dan tidak boleh negatif.",
             );
             isValid = false;
         }
         if (!data.minimum_point_can_used || data.minimum_point_can_used < 0) {
             setError(
                 "minimum_point_can_used",
-                "Minimal poin yang dapat digunakan wajib diisi dan tidak boleh negatif."
+                "Minimal poin yang dapat digunakan wajib diisi dan tidak boleh negatif.",
             );
+            isValid = false;
+        }
+        if (!data.product_types || data.product_types.trim() === "") {
+            setError("product_types", "Tipe produk wajib diisi.");
             isValid = false;
         }
         return isValid;
@@ -216,7 +221,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                         onChange={(e) =>
                             handleChangeInput(
                                 "eligible_point_minimum",
-                                e.target.value
+                                e.target.value,
                             )
                         }
                     />
@@ -255,7 +260,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                         onChange={(e) =>
                             handleChangeInput(
                                 "minimum_point_can_used",
-                                e.target.value
+                                e.target.value,
                             )
                         }
                     />
@@ -342,12 +347,12 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                                             updated[idx] = {
                                                 ...updated[idx],
                                                 admin_fee: Number(
-                                                    e.target.value
+                                                    e.target.value,
                                                 ),
                                             };
                                             setData(
                                                 "admin_fee_criteria",
-                                                updated
+                                                updated,
                                             );
                                         }}
                                     />
@@ -367,6 +372,24 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                     ))}
                     {errors.admin_fee_criteria && (
                         <ErrorInput error={errors.admin_fee_criteria} />
+                    )}
+                </div>
+                <div className="flex flex-col w-full lg:col-span-3">
+                    <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
+                        Tipe produk yanga ada (dipisah dengan koma)
+                    </Label>
+                    <Input
+                        type="text"
+                        placeholder="Pisahkan tipe produk dengan koma"
+                        className="w-full"
+                        disabled={processing}
+                        value={data.product_types || ""}
+                        onChange={(e) =>
+                            handleChangeInput("product_types", e.target.value)
+                        }
+                    />
+                    {errors.product_types && (
+                        <ErrorInput error={errors.product_types} />
                     )}
                 </div>
             </div>

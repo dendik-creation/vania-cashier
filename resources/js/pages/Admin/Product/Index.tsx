@@ -36,6 +36,7 @@ const AdminProductIndex = ({
     description,
     products,
     filters,
+    available_types,
 }: AdminProductIndexProps) => {
     const firstRender = useRef(true);
     const { data: filterData, setData: setFilterData } = useForm({
@@ -64,11 +65,11 @@ const AdminProductIndex = ({
         size: number;
     }) => {
         switch (type) {
-            case "shoes":
+            case "sepatu":
                 return <Footprints size={size} />;
-            case "bag":
+            case "tas":
                 return <Handbag size={size} />;
-            case "accessory":
+            case "aksesoris":
                 return <Sparkles size={size} />;
             default:
                 return <Package size={size} />;
@@ -105,7 +106,7 @@ const AdminProductIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["products"],
-            }
+            },
         );
     });
 
@@ -141,10 +142,10 @@ const AdminProductIndex = ({
                             placeholder="Pilih Tipe"
                             value={filterData.type || ""}
                             options={[
-                                { label: "Semua Tipe", value: "" },
-                                { label: "Sepatu", value: "shoes" },
-                                { label: "Tas", value: "bag" },
-                                { label: "Aksesoris", value: "accessory" },
+                                ...available_types.map((type: string) => ({
+                                    label: humanProductType(type),
+                                    value: type,
+                                })),
                             ]}
                             onChange={(val) =>
                                 handleFilter("type", val.toString())

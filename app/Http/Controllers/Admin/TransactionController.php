@@ -411,14 +411,14 @@ class TransactionController extends Controller
         ]);
         try {
             DB::transaction(function () use ($validated, $id) {
-                $transaction = Transaction::with('items')->findOrFail($id);
+                $transaction = Transaction::with("items")->findOrFail($id);
 
                 // 1. Revert Old State
                 // Revert Stock
                 foreach ($transaction->items as $item) {
                     $variant = ProductVariant::find($item->variant_id);
                     if ($variant) {
-                        $variant->increment('stock', $item->quantity);
+                        $variant->increment("stock", $item->quantity);
                     }
                 }
 
@@ -427,10 +427,16 @@ class TransactionController extends Controller
                     $oldCustomer = Customer::find($transaction->customer_id);
                     if ($oldCustomer) {
                         if ($transaction->point_used > 0) {
-                            $oldCustomer->increment('points', $transaction->point_used);
+                            $oldCustomer->increment(
+                                "points",
+                                $transaction->point_used,
+                            );
                         }
                         if ($transaction->point_earned > 0) {
-                            $oldCustomer->decrement('points', $transaction->point_earned);
+                            $oldCustomer->decrement(
+                                "points",
+                                $transaction->point_earned,
+                            );
                         }
                     }
                 }
@@ -464,7 +470,8 @@ class TransactionController extends Controller
                         "name" => $validated["register_customer"]["name"],
                         "phone" => $validated["register_customer"]["phone"],
                         "address" => $validated["register_customer"]["address"],
-                        "type" => $validated["register_customer"]["type"] ?? "member",
+                        "type" =>
+                            $validated["register_customer"]["type"] ?? "member",
                         "points" => 0,
                     ]);
                     $validated["customer_id"] = $customer->id;
@@ -476,10 +483,18 @@ class TransactionController extends Controller
                 foreach ($validated["items"] as $item) {
                     $product_variant = ProductVariant::find($item["id"]);
                     if (!$product_variant) {
-                        throw new \Exception("Produk dengan SKU " . $item["sku"] . " tidak ditemukan");
+                        throw new \Exception(
+                            "Produk dengan SKU " .
+                                $item["sku"] .
+                                " tidak ditemukan",
+                        );
                     }
                     if ($product_variant->stock < $item["qty"]) {
-                        throw new \Exception("Stok produk dengan SKU " . $item["sku"] . " tidak mencukupi");
+                        throw new \Exception(
+                            "Stok produk dengan SKU " .
+                                $item["sku"] .
+                                " tidak mencukupi",
+                        );
                     }
                     $items[] = $item;
                 }
@@ -490,7 +505,11 @@ class TransactionController extends Controller
                 $point_used = $validated["point_used"];
                 $admin_fee = $validated["admin_fee"];
                 $discount = $this->discountInDecimal($point_used);
-                $total = $this->recalculateTotal($subtotal, $discount, $admin_fee);
+                $total = $this->recalculateTotal(
+                    $subtotal,
+                    $discount,
+                    $admin_fee,
+                );
 
                 // 3. Update Transaction
                 $transaction->update([
@@ -507,7 +526,7 @@ class TransactionController extends Controller
 
                 // Update Items (Delete old, create new)
                 $transaction->items()->delete();
-                
+
                 $transaction_items = collect($items)
                     ->map(function ($item) use ($transaction) {
                         return [
@@ -542,7 +561,7 @@ class TransactionController extends Controller
                 }
             });
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => $e->getMessage()]);
+            return back()->withErrors(["error" => $e->getMessage()]);
         }
 
         Session::flash("success", "Transaksi berhasil diperbarui");
@@ -555,6 +574,34 @@ class TransactionController extends Controller
         if (!$transaction) {
             return back()->with("error", "Transaksi tidak ditemukan");
         }
+        // Revert product variant stock
+        $transaction->load("items.variant");
+        foreach ($transaction->items as $item) {
+            if ($item->variant) {
+                $item->variant->increment("stock", $item->quantity);
+            }
+        }
+        // Revert customer points
+        if (
+            $transaction->customer_id &&
+            $transaction->customer_type != "general"
+        ) {
+            $customer = Customer::find($transaction->customer_id);
+            if ($customer) {
+                if ($transaction->point_used > 0) {
+                    $customer->increment("points", $transaction->point_used);
+                }
+                if ($transaction->point_earned > 0) {
+                    $newPoints = max(
+                        0,
+                        $customer->points - $transaction->point_earned,
+                    );
+                    $customer->points = $newPoints;
+                    $customer->save();
+                }
+            }
+        }
+
         $transaction->delete();
         Session::flash("success", "Transaksi berhasil dihapus");
         return Inertia::location("/admin/transactions/records");
@@ -562,11 +609,15 @@ class TransactionController extends Controller
 
     public function findTrxForPrint($id)
     {
-        $transaction = Transaction::with(['items.variant.product', 'customer', 'cashier'])->find($id);
+        $transaction = Transaction::with([
+            "items.variant.product",
+            "customer",
+            "cashier",
+        ])->find($id);
         $setting = Setting::first();
         return response()->json([
-            'transaction' => $transaction,
-            'setting' => $setting,
+            "transaction" => $transaction,
+            "setting" => $setting,
         ]);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Setting;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToCollection;
@@ -16,12 +17,15 @@ class ProductImport implements ToCollection
             $currentProduct = null;
             $expectingProductData = false;
             $variantHeaderMap = [];
+            $collected_product_types = []; // as string[]
 
             foreach ($rows as $row) {
                 $rowArray = $row->toArray();
-                $firstCell = isset($rowArray[0]) ? trim((string)$rowArray[0]) : '';
+                $firstCell = isset($rowArray[0])
+                    ? trim((string) $rowArray[0])
+                    : "";
 
-                if (strcasecmp($firstCell, 'Nama Produk') === 0) {
+                if (strcasecmp($firstCell, "Nama Produk") === 0) {
                     $expectingProductData = true;
                     $currentProduct = null;
                     $variantHeaderMap = [];
@@ -29,92 +33,132 @@ class ProductImport implements ToCollection
                 }
 
                 if ($expectingProductData) {
-                    if ($firstCell === '') {
+                    if ($firstCell === "") {
                         continue;
                     }
 
                     $name = $firstCell;
-                    $typeRaw = isset($rowArray[1]) ? trim((string)$rowArray[1]) : '';
-                    $brand = isset($rowArray[2]) ? trim((string)$rowArray[2]) : null;
-
-                    $type = $this->mapType($typeRaw);
+                    $type = isset($rowArray[1])
+                        ? trim((string) $rowArray[1])
+                        : "";
+                    $brand = isset($rowArray[2])
+                        ? trim((string) $rowArray[2])
+                        : null;
 
                     $currentProduct = Product::firstOrCreate(
-                        ['name' => $name],
+                        ["name" => $name],
                         [
-                            'type' => $type,
-                            'brand' => $brand
-                        ]
+                            "type" => $type,
+                            "brand" => $brand,
+                        ],
                     );
 
                     $expectingProductData = false;
                     continue;
                 }
 
-                if (strcasecmp($firstCell, 'sku') === 0) {
+                if (strcasecmp($firstCell, "sku") === 0) {
                     // example: [0 => 'sku', 1 => 'color', 2 => 'size', ...]
-                    $variantHeaderMap = array_map(function($val) {
-                        return strtolower(trim((string)$val));
+                    $variantHeaderMap = array_map(function ($val) {
+                        return strtolower(trim((string) $val));
                     }, $rowArray);
                     continue;
                 }
 
-                if ($currentProduct && $firstCell !== '') {
+                if ($currentProduct && $firstCell !== "") {
                     $sku = $firstCell;
 
-                    if (ProductVariant::where('sku', $sku)->exists()) {
-                        continue; 
+                    if (ProductVariant::where("sku", $sku)->exists()) {
+                        continue;
                     }
 
-                    $color = $this->getValue($rowArray, $variantHeaderMap, 'color');
-                    $size = $this->getValue($rowArray, $variantHeaderMap, 'size');
-                    
-                    $priceBasic = $this->getValue($rowArray, $variantHeaderMap, 'harga_normal');
-                    $priceReseller = $this->getValue($rowArray, $variantHeaderMap, 'harga_reseller');
-                    $priceQty3 = $this->getValue($rowArray, $variantHeaderMap, 'harga_3qty');
-                    $priceQty6 = $this->getValue($rowArray, $variantHeaderMap, 'harga_6qty');
-                    
-                    $stock = $this->getValue($rowArray, $variantHeaderMap, 'stok') ?? 0;
+                    $color = $this->getValue(
+                        $rowArray,
+                        $variantHeaderMap,
+                        "color",
+                    );
+                    $size = $this->getValue(
+                        $rowArray,
+                        $variantHeaderMap,
+                        "size",
+                    );
+
+                    $priceBasic = $this->getValue(
+                        $rowArray,
+                        $variantHeaderMap,
+                        "harga_normal",
+                    );
+                    $priceReseller = $this->getValue(
+                        $rowArray,
+                        $variantHeaderMap,
+                        "harga_reseller",
+                    );
+                    $priceQty3 = $this->getValue(
+                        $rowArray,
+                        $variantHeaderMap,
+                        "harga_3qty",
+                    );
+                    $priceQty6 = $this->getValue(
+                        $rowArray,
+                        $variantHeaderMap,
+                        "harga_6qty",
+                    );
+
+                    $stock =
+                        $this->getValue($rowArray, $variantHeaderMap, "stok") ??
+                        0;
 
                     ProductVariant::create([
-                        'product_id'     => $currentProduct->id,
-                        'sku'            => $sku,
-                        'attributes'     => [
-                            'color' => $color,
-                            'size'  => $size,
+                        "product_id" => $currentProduct->id,
+                        "sku" => $sku,
+                        "attributes" => [
+                            "color" => $color,
+                            "size" => $size,
                         ],
-                        'price_criteria' => [
-                            'basic'       => (int) $priceBasic,
-                            'reseller'    => (int) $priceReseller,
-                            'order_qty_3' => (int) $priceQty3,
-                            'order_qty_6' => (int) $priceQty6,
+                        "price_criteria" => [
+                            "basic" => (int) $priceBasic,
+                            "reseller" => (int) $priceReseller,
+                            "order_qty_3" => (int) $priceQty3,
+                            "order_qty_6" => (int) $priceQty6,
                         ],
-                        'stock'          => (int) $stock,
+                        "stock" => (int) $stock,
                     ]);
                 }
+                // Simpan nilai type yang unik saja
+                if ($type) {
+                    $typeLower = strtolower($type);
+                    if (!in_array($typeLower, $collected_product_types)) {
+                        $collected_product_types[] = $typeLower;
+                    }
+                }
             }
+
+            // Update product types list in setting
+            $setting = Setting::first();
+            $existingTypes = $setting->product_types ?? [];
+            $existingTypesLower = array_map("strtolower", $existingTypes);
+
+            foreach ($collected_product_types as $type) {
+                if (!in_array($type, $existingTypesLower)) {
+                    $existingTypes[] = $type;
+                    $existingTypesLower[] = $type;
+                }
+            }
+
+            $setting->update([
+                "product_types" => $existingTypes,
+            ]);
         });
     }
 
     private function getValue($row, $map, $key)
     {
         $index = array_search(strtolower($key), $map);
-        
+
         if ($index !== false && isset($row[$index])) {
             return $row[$index];
         }
-        
+
         return null;
-    }
-
-    private function mapType($type)
-    {
-        $type = strtolower(trim($type));
-        
-        if (in_array($type, ['sepatu', 'shoes'])) return Product::TYPE_SHOES;
-        if (in_array($type, ['tas', 'bag'])) return Product::TYPE_BAG;
-        if (in_array($type, ['aksesoris', 'accessory'])) return Product::TYPE_ACCESSORY;
-
-        return Product::TYPE_SHOES;
     }
 }

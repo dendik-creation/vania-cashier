@@ -1,5 +1,5 @@
 import AppLayout from "@/partials/AppLayout";
-import { PageTitle, PageTitleProps } from "@/Partials/PageTitle";
+import { PageTitle, PageTitleProps } from "@/partials/PageTitle";
 import React, { useEffect, useRef } from "react";
 import { useForm, router } from "@inertiajs/react";
 import {
@@ -71,13 +71,13 @@ const AdminReportIndex = ({
                 replace: true,
                 preserveScroll: true,
                 only: ["transactions", "summary", "filters"],
-            }
+            },
         );
     }, [data.start_date, data.end_date]);
 
     const handleExport = () => {
         const url = `/admin/reports/export?start_date=${data.start_date}&end_date=${data.end_date}`;
-        window.open(url, "_blank");
+        window.open(url);
     };
 
     return (
@@ -197,7 +197,7 @@ const AdminReportIndex = ({
                                             <CalendarIcon size={12} />
                                             {ymdToIdDate(
                                                 trx.transaction_time,
-                                                true
+                                                true,
                                             )}
                                         </div>
                                     </div>
@@ -222,7 +222,7 @@ const AdminReportIndex = ({
                                                 : "Umum"}
                                             <span className="text-xs ml-1 bg-slate-100 px-1.5 py-0.5 rounded-full">
                                                 {humanCustType(
-                                                    trx.customer_type
+                                                    trx.customer_type,
                                                 )}
                                             </span>
                                         </span>

@@ -139,16 +139,7 @@ export const humanCustType = (type: string) => {
 };
 
 export const humanProductType = (type: string) => {
-    switch (type) {
-        case "shoes":
-            return "Sepatu";
-        case "bag":
-            return "Tas";
-        case "accessory":
-            return "Aksesoris";
-        default:
-            return "Lainnya";
-    }
+    return type.charAt(0).toUpperCase() + type.slice(1);
 };
 
 export const humanPaymentMethod = (method: string) => {

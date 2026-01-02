@@ -7,6 +7,7 @@ export type Setting = {
         min_total: number;
         admin_fee: number;
     }[];
+    product_types: string;
     eligible_point_minimum: number;
     idr_point_value: number;
     minimum_point_can_used: number;
