@@ -1,7 +1,7 @@
 import AppLayout from "@/partials/AppLayout";
 import { PageTitle, PageTitleProps } from "@/partials/PageTitle";
 import React, { useEffect, useRef } from "react";
-import { useForm, router } from "@inertiajs/react";
+import { useForm, router, Link } from "@inertiajs/react";
 import {
     DatePickerInput,
     PaginatorBuilder,
@@ -74,11 +74,6 @@ const AdminReportIndex = ({
             },
         );
     }, [data.start_date, data.end_date]);
-
-    const handleExport = () => {
-        const url = `/admin/reports/export?start_date=${data.start_date}&end_date=${data.end_date}`;
-        window.open(url);
-    };
 
     return (
         <AppLayout>
@@ -166,14 +161,15 @@ const AdminReportIndex = ({
                     />
                 </div>
 
-                <Button
-                    onClick={handleExport}
-                    variant="outline"
-                    className="w-full md:w-auto"
+                <Link
+                    href={`/admin/reports/export?start_date=${data.start_date}&end_date=${data.end_date}`}
+                    target="_blank"
                 >
-                    <Printer className="mr-2 h-4 w-4" />
-                    Cetak Laporan
-                </Button>
+                    <Button variant="outline" className="w-full md:w-auto">
+                        <Printer className="mr-2 h-4 w-4" />
+                        Cetak Laporan
+                    </Button>
+                </Link>
             </div>
 
             {/* Transactions List */}
