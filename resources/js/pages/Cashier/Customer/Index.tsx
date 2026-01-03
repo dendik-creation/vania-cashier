@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/button";
 import AppLayout from "@/partials/AppLayout";
 import { PageTitle } from "@/partials/PageTitle";
 import { CustomerIndexProps } from "@/types/customer";
-import { router, useForm } from "@inertiajs/react";
-import { Calendar, Coins, Phone, ReceiptText, Trash2 } from "lucide-react";
+import { Link, router, useForm } from "@inertiajs/react";
+import { Calendar, Coins, Eye, Phone, ReceiptText, Trash2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import CashierCustomerCreate from "./ModalCreate";
 import ConfirmDialog from "@/components/custom/ConfirmDialog";
@@ -49,7 +49,7 @@ const CashierCustomerIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["customers"],
-            }
+            },
         );
     });
 
@@ -152,7 +152,7 @@ const CashierCustomerIndex = ({
                                         <div className="flex items-center gap-2">
                                             <ReceiptText size={16} />
                                             <span className="text-sm">
-                                                {item.transaction_count || 0}{" "}
+                                                {item.transactions_count || 0}{" "}
                                                 Transaksi
                                             </span>
                                         </div>
@@ -160,6 +160,13 @@ const CashierCustomerIndex = ({
                                 </div>
                             </div>
                             <div className="flex items-center justify-end gap-2 mt-4">
+                                <Link
+                                    href={`/cashier/transactions/records?search=${item.phone}`}
+                                >
+                                    <Button variant="outline">
+                                        <Eye className="" />
+                                    </Button>
+                                </Link>
                                 <CashierCustomerEdit customer={item} />
                                 <ConfirmDialog
                                     triggerNode={

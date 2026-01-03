@@ -9,7 +9,7 @@ export type Customer = {
     type: string;
     joined_at: string;
     points: number;
-    transaction_count?: number;
+    transactions_count?: number;
 };
 
 export type CustomerIndexProps = PageTitleProps & {

@@ -198,7 +198,7 @@ const CashierTransactionCreate = ({
         let point_earned = 0;
         form.items.forEach((item) => {
             if (item.price_applied * item.qty > eligible_point_minimum) {
-                point_earned += 1;
+                point_earned += item.qty;
             }
         });
 
