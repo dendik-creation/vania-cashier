@@ -44,12 +44,20 @@ class ProductImport implements ToCollection
                     $brand = isset($rowArray[2])
                         ? trim((string) $rowArray[2])
                         : null;
+                    $with_price_criteria =
+                        !isset($rowArray[3]) ||
+                        strtolower(trim((string) $rowArray[3])) !== "tidak";
+                    $can_earn_point =
+                        !isset($rowArray[4]) ||
+                        strtolower(trim((string) $rowArray[4])) !== "tidak";
 
                     $currentProduct = Product::firstOrCreate(
                         ["name" => $name],
                         [
                             "type" => $type,
                             "brand" => $brand,
+                            "with_price_criteria" => $with_price_criteria,
+                            "can_earn_point" => $can_earn_point,
                         ],
                     );
 
@@ -88,21 +96,27 @@ class ProductImport implements ToCollection
                         $variantHeaderMap,
                         "harga_normal",
                     );
-                    $priceReseller = $this->getValue(
-                        $rowArray,
-                        $variantHeaderMap,
-                        "harga_reseller",
-                    );
-                    $priceQty3 = $this->getValue(
-                        $rowArray,
-                        $variantHeaderMap,
-                        "harga_3qty",
-                    );
-                    $priceQty6 = $this->getValue(
-                        $rowArray,
-                        $variantHeaderMap,
-                        "harga_6qty",
-                    );
+                    if ($currentProduct->with_price_criteria) {
+                        $priceReseller = $this->getValue(
+                            $rowArray,
+                            $variantHeaderMap,
+                            "harga_reseller",
+                        );
+                        $priceQty3 = $this->getValue(
+                            $rowArray,
+                            $variantHeaderMap,
+                            "harga_3qty",
+                        );
+                        $priceQty6 = $this->getValue(
+                            $rowArray,
+                            $variantHeaderMap,
+                            "harga_6qty",
+                        );
+                    } else {
+                        $priceReseller = 0;
+                        $priceQty3 = 0;
+                        $priceQty6 = 0;
+                    }
 
                     $stock =
                         $this->getValue($rowArray, $variantHeaderMap, "stok") ??

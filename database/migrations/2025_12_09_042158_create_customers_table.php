@@ -19,6 +19,7 @@ return new class extends Migration {
             $table->integer("points")->default(0);
             $table->date("joined_at");
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

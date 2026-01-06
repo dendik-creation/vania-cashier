@@ -21,6 +21,7 @@ return new class extends Migration {
             $table->json("price_criteria");
             $table->integer("stock")->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

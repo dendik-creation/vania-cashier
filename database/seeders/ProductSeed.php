@@ -17,6 +17,7 @@ class ProductSeed extends Seeder
             "name" => "Contoh 1",
             "type" => "sepatu",
             "brand" => "Nike",
+            "with_price_criteria" => true,
         ]);
 
         ProductVariant::create([
@@ -27,10 +28,10 @@ class ProductSeed extends Seeder
                 "size" => 40,
             ],
             "price_criteria" => [
-                "basic" => 900000,
-                "reseller" => 850000,
-                "order_qty_3" => 820000,
-                "order_qty_6" => 800000,
+                "basic" => 90000,
+                "reseller" => 85000,
+                "order_qty_3" => 82000,
+                "order_qty_6" => 80000,
             ],
             "stock" => 10,
         ]);
@@ -43,10 +44,10 @@ class ProductSeed extends Seeder
                 "size" => 41,
             ],
             "price_criteria" => [
-                "basic" => 900000,
-                "reseller" => 850000,
-                "order_qty_3" => 820000,
-                "order_qty_6" => 800000,
+                "basic" => 90000,
+                "reseller" => 85000,
+                "order_qty_3" => 82000,
+                "order_qty_6" => 80000,
             ],
             "stock" => 10,
         ]);
@@ -59,10 +60,10 @@ class ProductSeed extends Seeder
                 "size" => 40,
             ],
             "price_criteria" => [
-                "basic" => 900000,
-                "reseller" => 850000,
-                "order_qty_3" => 820000,
-                "order_qty_6" => 800000,
+                "basic" => 90000,
+                "reseller" => 86000,
+                "order_qty_3" => 84000,
+                "order_qty_6" => 81000,
             ],
             "stock" => 10,
         ]);

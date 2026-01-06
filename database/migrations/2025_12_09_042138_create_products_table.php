@@ -14,8 +14,11 @@ return new class extends Migration {
             $table->id();
             $table->string("name");
             $table->string("type"); //such as bag, shoes, accessory in indonesian lang
+            $table->boolean("with_price_criteria")->default(true);
+            $table->boolean("can_earn_point")->default(true);
             $table->string("brand")->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

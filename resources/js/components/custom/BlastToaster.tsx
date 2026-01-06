@@ -3,8 +3,9 @@ import toast from "react-hot-toast";
 
 const BlastToaster = (
     type: "success" | "error" | "warning",
-    message: string
+    message: string,
 ) => {
+    toast.dismiss();
     if (type === "success") {
         toast.success(message, {
             duration: 3000,

@@ -85,12 +85,15 @@ const CashierTransactionCreate = ({
                 order_qty_6: number;
             };
             product_type: string;
+            with_price_criteria: boolean;
+            can_earn_point: boolean;
             qty: number;
         }[],
         subtotal: 0,
         point_used: 0,
         point_earned: 0,
-        discount: 0,
+        point_discount: 0,
+        event_discount: 0,
         admin_fee: 0,
         total: 0,
         on_scanning_printer: false,
@@ -160,24 +163,62 @@ const CashierTransactionCreate = ({
               ? customerFinder.customer_found.type
               : "member";
 
-        const updatedItems = form.items.map((item) => {
-            let price = item.price_criteria.basic;
-            const qty = Number(item.qty);
+        // 2. Cek apakah Logic Multi-Item Aktif
+        const shouldUseMultiItemDiscount =
+            form.items.length > 1 &&
+            currentCustomerType !== "reseller" &&
+            form.items.some((item) => item.with_price_criteria);
 
-            if (currentCustomerType === "reseller") {
-                price = item.price_criteria.reseller;
-            } else {
+        let updatedItems;
+
+        if (shouldUseMultiItemDiscount) {
+            const differences: number[] = [];
+
+            form.items.forEach((item) => {
+                if (!item.with_price_criteria) return;
+
+                const qty = Number(item.qty);
+                const basicPrice = item.price_criteria.basic;
+                let applicablePrice = basicPrice;
+
                 if (qty >= 6) {
-                    price = item.price_criteria.order_qty_6;
+                    applicablePrice = item.price_criteria.order_qty_6;
                 } else if (qty >= 3) {
-                    price = item.price_criteria.order_qty_3;
-                } else {
-                    price = item.price_criteria.basic;
+                    applicablePrice = item.price_criteria.order_qty_3;
                 }
-            }
 
-            return { ...item, price_applied: price };
-        });
+                const diff = basicPrice - applicablePrice;
+                differences.push(diff);
+            });
+            const lowestDiff =
+                differences.length > 0 ? Math.min(...differences) : 0;
+
+            updatedItems = form.items.map((item) => {
+                let price = item.price_criteria.basic;
+                if (item.with_price_criteria && lowestDiff > 0) {
+                    price = item.price_criteria.basic - lowestDiff;
+                }
+
+                return { ...item, price_applied: price };
+            });
+        } else {
+            updatedItems = form.items.map((item) => {
+                let price = item.price_criteria.basic;
+                const qty = Number(item.qty);
+
+                if (item.with_price_criteria) {
+                    if (currentCustomerType === "reseller") {
+                        price = item.price_criteria.reseller;
+                    } else if (qty >= 6) {
+                        price = item.price_criteria.order_qty_6;
+                    } else if (qty >= 3) {
+                        price = item.price_criteria.order_qty_3;
+                    }
+                }
+
+                return { ...item, price_applied: price };
+            });
+        }
 
         const isChanged = updatedItems.some(
             (item, index) =>
@@ -197,7 +238,10 @@ const CashierTransactionCreate = ({
 
         let point_earned = 0;
         form.items.forEach((item) => {
-            if (item.price_applied * item.qty > eligible_point_minimum) {
+            if (
+                item.can_earn_point &&
+                item.price_applied * item.qty > eligible_point_minimum
+            ) {
                 point_earned += item.qty;
             }
         });
@@ -216,12 +260,19 @@ const CashierTransactionCreate = ({
             });
             admin_fee = matchedFee;
         }
-        const discount = Number(form.point_used) * Number(idr_point_value);
-        const total = Number(subtotal) + Number(admin_fee) - Number(discount);
+        const point_discount =
+            Number(form.point_used) * Number(idr_point_value);
+        const event_discount = Number(form.event_discount);
+        const total =
+            Number(subtotal) +
+            Number(admin_fee) -
+            Number(point_discount) -
+            Number(event_discount);
 
         setForm("subtotal", subtotal);
         setForm("admin_fee", admin_fee);
-        setForm("discount", discount);
+        setForm("point_discount", point_discount);
+        setForm("event_discount", event_discount);
         setForm("total", total);
         setForm("point_earned", point_earned);
     };
@@ -235,8 +286,8 @@ const CashierTransactionCreate = ({
         customerFinder.is_found,
         form.payment_method,
         form.point_used,
+        form.event_discount,
     ]);
-
     const handleFindCustomer = (phone: string) => {
         axios
             .get("/cashier/transactions/find/customer", {
@@ -260,7 +311,7 @@ const CashierTransactionCreate = ({
             existingItem &&
             existingItem?.qty >= existingItem.stock_remaining!
         ) {
-            BlastToaster("error", `Stok tidak mencukupi untuk SKU: ${sku}`);
+            BlastToaster("error", `Stok tidak mencukupi untuk ${sku}`);
             setSkuFinder("sku", "");
             return;
         }
@@ -290,6 +341,9 @@ const CashierTransactionCreate = ({
                         price_applied: productVariantData.price_applied,
                         price_criteria: productVariantData.price_criteria,
                         product_type: productVariantData.product_type,
+                        with_price_criteria:
+                            productVariantData.with_price_criteria,
+                        can_earn_point: productVariantData.can_earn_point,
                         stock_remaining: productVariantData.stock_remaining,
                         qty: 1,
                     });
@@ -349,6 +403,25 @@ const CashierTransactionCreate = ({
         if (!form.payment_method) {
             setFormError("payment_method", "Metode pembayaran wajib dipilih");
             isValid = false;
+        }
+
+        if (form.register_customer.name || form.register_customer.phone) {
+            if (!form.register_customer.name) {
+                setFormError("register_customer.name", "Nama wajib diisi");
+                setFormError(
+                    "register_customer",
+                    "Data pelanggan tidak lengkap",
+                );
+                isValid = false;
+            }
+            if (!form.register_customer.phone) {
+                setFormError("register_customer.phone", "No HP wajib diisi");
+                setFormError(
+                    "register_customer",
+                    "Data pelanggan tidak lengkap",
+                );
+                isValid = false;
+            }
         }
 
         return isValid;
@@ -427,11 +500,11 @@ const CashierTransactionCreate = ({
                         </Label>
                         <form onSubmit={handleSubmitSKU}>
                             <Input
-                                disabled={form.on_scanning_printer}
                                 autoFocus
                                 type="text"
                                 placeholder="Masukkan Barcode"
                                 className="w-full"
+                                disabled={form.on_scanning_printer}
                                 value={skuFinder.sku || ""}
                                 onChange={(e) => {
                                     const value = e.target.value;
@@ -458,7 +531,15 @@ const CashierTransactionCreate = ({
                     </div>
                     {/* Customer Input */}
                     <div className="flex flex-col">
-                        <Label className="text-base mb-1">Pelanggan</Label>
+                        <div className="flex items-center gap-2">
+                            <Label className="text-base mb-1">Pelanggan</Label>
+                            {formErrors["register_customer"] && (
+                                <ErrorInput
+                                    error={formErrors["register_customer"]}
+                                    afterLabel={true}
+                                />
+                            )}
+                        </div>
                         <div className="">
                             {!customerFinder.is_found ? (
                                 <div className="flex flex-col lg:flex-row items-center w-full gap-2">
@@ -493,12 +574,12 @@ const CashierTransactionCreate = ({
                                             className="w-full"
                                         >
                                             <Input
-                                                disabled={
-                                                    form.on_scanning_printer
-                                                }
                                                 type="text"
                                                 placeholder="Cari No. Telepon"
                                                 className="w-full"
+                                                disabled={
+                                                    form.on_scanning_printer
+                                                }
                                                 value={
                                                     customerFinder.customer_phone ||
                                                     ""
@@ -511,6 +592,9 @@ const CashierTransactionCreate = ({
                                                 }
                                             />
                                             <button
+                                                disabled={
+                                                    form.on_scanning_printer
+                                                }
                                                 type="submit"
                                                 style={{ display: "none" }}
                                             />
@@ -520,11 +604,11 @@ const CashierTransactionCreate = ({
                                             <DialogTrigger asChild>
                                                 <div className="w-full">
                                                     <Button
+                                                        className="w-full"
+                                                        variant={"yellow"}
                                                         disabled={
                                                             form.on_scanning_printer
                                                         }
-                                                        className="w-full"
-                                                        variant={"yellow"}
                                                     >
                                                         <CircleFadingPlus />
                                                         <span>
@@ -551,14 +635,14 @@ const CashierTransactionCreate = ({
                                                                 type="text"
                                                                 placeholder="Masukkan Nama Lengkap"
                                                                 className="w-full"
+                                                                disabled={
+                                                                    form.on_scanning_printer
+                                                                }
                                                                 value={
                                                                     form
                                                                         .register_customer
                                                                         .name ||
                                                                     ""
-                                                                }
-                                                                disabled={
-                                                                    form.on_scanning_printer
                                                                 }
                                                                 onChange={(e) =>
                                                                     setForm(
@@ -590,11 +674,11 @@ const CashierTransactionCreate = ({
                                                             </label>
                                                             <Input
                                                                 type="tel"
+                                                                placeholder="Masukkan No Telp"
+                                                                className="w-full"
                                                                 disabled={
                                                                     form.on_scanning_printer
                                                                 }
-                                                                placeholder="Masukkan No Telp"
-                                                                className="w-full"
                                                                 value={
                                                                     form
                                                                         .register_customer
@@ -630,10 +714,10 @@ const CashierTransactionCreate = ({
                                                                 Alamat
                                                             </label>
                                                             <Textarea
+                                                                placeholder="Masukkan Alamat"
                                                                 disabled={
                                                                     form.on_scanning_printer
                                                                 }
-                                                                placeholder="Masukkan Alamat"
                                                                 value={
                                                                     form
                                                                         .register_customer
@@ -659,10 +743,10 @@ const CashierTransactionCreate = ({
                                                 <DialogFooter className="mt-9">
                                                     <DialogClose asChild>
                                                         <Button
+                                                            variant="yellow"
                                                             disabled={
                                                                 form.on_scanning_printer
                                                             }
-                                                            variant="yellow"
                                                             className="flex items-center gap-2"
                                                         >
                                                             <Save /> Simpan
@@ -867,8 +951,8 @@ const CashierTransactionCreate = ({
                         </div>
                         <div className="flex gap-2">
                             <Button
-                                disabled={form.on_scanning_printer}
                                 type="button"
+                                disabled={form.on_scanning_printer}
                                 variant={
                                     form.payment_method === "cash"
                                         ? "pink"
@@ -914,6 +998,45 @@ const CashierTransactionCreate = ({
                         </div>
                     </div>
 
+                    {/*Event Direct Discount*/}
+                    <div className="flex flex-col">
+                        <div className="flex items-start gap-2">
+                            <Label className="text-base mb-1">
+                                Gunakan Diskon Event
+                            </Label>
+                            {formErrors["event_discount"] && (
+                                <ErrorInput
+                                    error={formErrors["event_discount"]}
+                                    afterLabel={true}
+                                />
+                            )}
+                        </div>
+                        <Input
+                            type="number"
+                            placeholder="Masukkan nominal"
+                            className="w-full bg-white"
+                            disabled={form.on_scanning_printer}
+                            min={0}
+                            value={form.event_discount || ""}
+                            onChange={(e) => {
+                                const inputValue = Number(e.target.value);
+                                const clampedValue = Math.max(0, inputValue);
+
+                                const maxAllowedDiscount =
+                                    Number(form.subtotal) +
+                                    Number(form.admin_fee) -
+                                    Number(form.point_discount);
+
+                                const finalValue = Math.min(
+                                    clampedValue,
+                                    maxAllowedDiscount,
+                                );
+
+                                setForm("event_discount", finalValue);
+                            }}
+                        />
+                    </div>
+
                     {/*Total Info*/}
                     <div className="flex flex-col">
                         <Label className="text-base mb-1">
@@ -933,9 +1056,6 @@ const CashierTransactionCreate = ({
                                     >
                                         <div className="w-full">
                                             <Button
-                                                disabled={
-                                                    form.on_scanning_printer
-                                                }
                                                 onClick={() => {
                                                     if (
                                                         pointUsedPlaceholder.point_used_placeholder >
@@ -954,6 +1074,9 @@ const CashierTransactionCreate = ({
                                                 }}
                                                 className="w-full"
                                                 variant={"green"}
+                                                disabled={
+                                                    form.on_scanning_printer
+                                                }
                                             >
                                                 <Coins />
                                                 <span>Gunakan Poin</span>
@@ -1026,11 +1149,11 @@ const CashierTransactionCreate = ({
                                         <DialogFooter className="mt-9">
                                             <DialogClose asChild>
                                                 <Button
+                                                    variant="red"
+                                                    type="button"
                                                     disabled={
                                                         form.on_scanning_printer
                                                     }
-                                                    variant="red"
-                                                    type="button"
                                                     className="flex items-center gap-2"
                                                     onClick={() => {
                                                         setPointUsedPlaceholder(
@@ -1048,10 +1171,10 @@ const CashierTransactionCreate = ({
                                             </DialogClose>
                                             <DialogClose asChild>
                                                 <Button
+                                                    variant="yellow"
                                                     disabled={
                                                         form.on_scanning_printer
                                                     }
-                                                    variant="yellow"
                                                     type="button"
                                                     onClick={() => {
                                                         const input =
@@ -1085,36 +1208,41 @@ const CashierTransactionCreate = ({
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Poin Didapat
+                                            Poin pelanggan
                                         </span>
                                         <span className="font-medium">
-                                            {form.point_earned}
-                                        </span>
-                                    </div>
-                                    <div className="border-t"></div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">
-                                            Biaya Admin
-                                        </span>
-                                        <span className="font-medium">
-                                            {floatToIdCurrency(form.admin_fee)}
-                                        </span>
-                                    </div>
-                                    <div className="border-t"></div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">
-                                            Poin Digunakan
-                                        </span>
-                                        <span className="font-medium">
+                                            + {form.point_earned} / -{" "}
                                             {form.point_used}
                                         </span>
                                     </div>
+                                    <div className="border-t"></div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Diskon
+                                            Konversi poin
                                         </span>
                                         <span className="font-medium">
-                                            {floatToIdCurrency(form.discount)}
+                                            {floatToIdCurrency(
+                                                form.point_discount,
+                                            )}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">
+                                            Diskon event
+                                        </span>
+                                        <span className="font-medium">
+                                            {floatToIdCurrency(
+                                                form.event_discount,
+                                            )}
+                                        </span>
+                                    </div>
+                                    <div className="border-t"></div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">
+                                            Biaya admin
+                                        </span>
+                                        <span className="font-medium">
+                                            {floatToIdCurrency(form.admin_fee)}
                                         </span>
                                     </div>
                                     <div className="border-t my-2"></div>
@@ -1135,7 +1263,7 @@ const CashierTransactionCreate = ({
                     <Button
                         variant={"yellow"}
                         size={"lg"}
-                        disabled={formProcessing || form.on_scanning_printer}
+                        disabled={form.on_scanning_printer || formProcessing}
                         onClick={handleSubmitForm}
                     >
                         {formProcessing || form.on_scanning_printer ? (

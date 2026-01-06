@@ -19,16 +19,141 @@ export const PRINTERS = {
 
 export class ReceiptPrinter {
     encoder: any;
-    width: number = 32; // 58mm printer usually has 32 chars width
+    width: number = 32;
 
     constructor() {
         this.encoder = new EscPosEncoder();
     }
 
+    private delay(ms: number) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    private withTimeout<T>(
+        promise: Promise<T>,
+        ms: number,
+        errorMsg: string,
+    ): Promise<T> {
+        return Promise.race([
+            promise,
+            new Promise<T>((_, reject) =>
+                setTimeout(() => reject(new Error(errorMsg)), ms),
+            ),
+        ]);
+    }
+
+    private async printToBluetooth(
+        bytes: Uint8Array,
+        printerConfig: typeof PRINTERS.RECEIPT,
+    ) {
+        const nav = navigator as any;
+        if (!nav.bluetooth) {
+            throw new Error(
+                "Web Bluetooth tidak didukung di browser ini. Gunakan Chrome di Android.",
+            );
+        }
+
+        let device: any = null;
+        let server: any = null;
+
+        try {
+            console.log("Mulai memindai perangkat...");
+
+            device = await nav.bluetooth.requestDevice({
+                acceptAllDevices: true,
+                optionalServices: [printerConfig.service],
+            });
+
+            if (!device) {
+                throw new Error("Tidak ada perangkat yang dipilih.");
+            }
+
+            console.log(
+                `Perangkat dipilih: ${device.name}. Menghubungkan GATT...`,
+            );
+
+            let connected = false;
+            let attempts = 0;
+            const MAX_ATTEMPTS = 3;
+
+            while (!connected && attempts < MAX_ATTEMPTS) {
+                try {
+                    attempts++;
+                    console.log(`Percobaan koneksi ke-${attempts}...`);
+
+                    server = await this.withTimeout(
+                        device.gatt.connect(),
+                        6000,
+                        "Timeout saat mencoba menghubungkan ke Printer.",
+                    );
+                    connected = true;
+                } catch (err) {
+                    console.warn(`Gagal connect percobaan ${attempts}:`, err);
+                    if (attempts >= MAX_ATTEMPTS) {
+                        throw new Error(
+                            "Gagal terhubung ke printer setelah 3x percobaan. Pastikan printer menyala dan scanner tidak sedang mengirim data.",
+                        );
+                    }
+                    await this.delay(1500);
+                }
+            }
+
+            console.log("GATT Terhubung. Mengambil Service...");
+
+            const service = await server.getPrimaryService(
+                printerConfig.service,
+            );
+            const characteristic = await service.getCharacteristic(
+                printerConfig.characteristic,
+            );
+
+            console.log("Service ditemukan. Memulai pengiriman data...");
+
+            const CHUNK_SIZE = 40;
+
+            for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+                const chunk = bytes.slice(i, i + CHUNK_SIZE);
+
+                await this.withTimeout(
+                    characteristic.writeValue(chunk),
+                    3000,
+                    "Printer tidak merespon saat mencetak. Periksa kertas/baterai.",
+                );
+
+                await this.delay(80);
+            }
+
+            console.log("Data terkirim ke buffer Android.");
+
+            await this.delay(500);
+
+            return true;
+        } catch (error: any) {
+            console.error("Bluetooth Print Error:", error);
+
+            let userMsg = error.message;
+            if (
+                error.name === "NotFoundError" ||
+                userMsg.includes("User cancelled")
+            ) {
+                userMsg = "Batal memilih printer.";
+            } else if (userMsg.includes("NetworkError")) {
+                userMsg =
+                    "Koneksi putus di tengah jalan. Dekatkan tablet ke printer.";
+            }
+
+            throw new Error(userMsg);
+        } finally {
+            if (device && device.gatt && device.gatt.connected) {
+                console.log("Memutus koneksi printer...");
+                device.gatt.disconnect();
+            }
+        }
+    }
+
     generateReceipt(transaction: Transaction, app_setting: Setting) {
         const e = this.encoder.initialize();
 
-        // Header
         e.align("left")
             .bold(true)
             .line(app_setting.app_name)
@@ -39,21 +164,22 @@ export class ReceiptPrinter {
             .line(`#${transaction.invoice_code}`)
             .line("-".repeat(this.width));
 
-        // Info
         e.align("left")
             .line(`Kasir : ${transaction.cashier?.name || "-"}`)
             .line(`Pelanggan : ${transaction.customer?.name || "Umum"}`);
+        if (transaction.customer_id) {
+            e.line(`No HP : ${transaction.customer?.phone || "-"}?`);
+        }
         if (
             (transaction.point_earned > 0 || transaction.point_used > 0) &&
             transaction.customer_type != "general"
         ) {
             e.line(
-                `Poin : +${transaction.point_earned} / -${transaction.point_used}`,
+                `Poin Terkini : ${(transaction.customer?.points as number) + transaction.point_earned - transaction.point_used}`,
             );
         }
         e.line("-".repeat(this.width));
 
-        // Items
         transaction.items.forEach((item: TransactionItem) => {
             const productName = item.variant?.product?.name || "Item";
             const attributes = [];
@@ -66,24 +192,42 @@ export class ReceiptPrinter {
             e.align("left").line(productName);
             e.line(variants).size("small");
             const qty = item.quantity;
-            const price = floatToIdCurrency(item.price_per_item);
-            const subtotal = floatToIdCurrency(item.subtotal);
+            const normalPrice = item.variant.price_criteria.basic;
+            const normalSubtotal =
+                item.variant.price_criteria.basic * item.quantity;
+            const realSubtotal = item.subtotal;
+            const subtotalDiff = normalSubtotal - realSubtotal;
 
-            // Format: 2 x 50.000           100.000
-            const leftPart = `${qty} x ${price}`;
-            const rightPart = subtotal;
+            const leftPart = `${qty} x ${floatToIdCurrency(normalPrice)}`;
+            const rightPartTop = floatToIdCurrency(realSubtotal);
+            const rightPartBottom =
+                subtotalDiff !== 0
+                    ? `(${floatToIdCurrency(subtotalDiff)})`
+                    : "";
 
-            const spaces = this.width - leftPart.length - rightPart.length;
-            if (spaces > 0) {
-                e.line(leftPart + " ".repeat(spaces) + rightPart);
+            const spacesTop =
+                this.width - leftPart.length - rightPartTop.length;
+            if (spacesTop > 0) {
+                e.line(leftPart + " ".repeat(spacesTop) + rightPartTop);
             } else {
-                e.line(leftPart).align("right").line(rightPart).align("left");
+                e.line(leftPart)
+                    .align("right")
+                    .line(rightPartTop)
+                    .align("left");
+            }
+
+            if (rightPartBottom) {
+                const spacesBottom = this.width - rightPartBottom.length;
+                if (spacesBottom > 0) {
+                    e.line(" ".repeat(spacesBottom) + rightPartBottom);
+                } else {
+                    e.align("right").line(rightPartBottom).align("left");
+                }
             }
         });
 
         e.line("-".repeat(this.width));
 
-        // Totals
         const formatCurrency = (val: number) => floatToIdCurrency(val);
 
         const printRow = (label: string, val: string) => {
@@ -96,8 +240,16 @@ export class ReceiptPrinter {
         };
 
         printRow("Subtotal", formatCurrency(transaction.subtotal));
-        if (transaction.discount > 0)
-            printRow("Diskon", "-" + formatCurrency(transaction.discount));
+        if (transaction.point_discount > 0)
+            printRow(
+                "Konversi Poin",
+                "-" + formatCurrency(transaction.point_discount),
+            );
+        if (transaction.event_discount > 0)
+            printRow(
+                "Diskon Event",
+                "-" + formatCurrency(transaction.event_discount),
+            );
         if (transaction.admin_fee > 0)
             printRow("Biaya Admin", formatCurrency(transaction.admin_fee));
 
@@ -105,7 +257,6 @@ export class ReceiptPrinter {
         printRow("TOTAL", formatCurrency(transaction.total));
         e.bold(false);
 
-        // Footer
         e.line("-".repeat(this.width))
             .align("left")
             .line("Terima Kasih")
@@ -132,25 +283,20 @@ export class ReceiptPrinter {
         itemPerRow: number,
     ): Uint8Array {
         let commands = "";
-
-        // Constants for 203 DPI (8 dots/mm)
         const dpi = 8;
         const labelWidthMm = 40;
         const labelHeightMm = 30;
         const gapMm = 3;
         const horizontalGapMm = 5;
 
-        // Calculate total width based on itemPerRow
         const totalWidthMm =
             labelWidthMm * itemPerRow + horizontalGapMm * (itemPerRow - 1);
 
-        // Setup Label Size
         commands += `SIZE ${totalWidthMm} mm,${labelHeightMm} mm\r\n`;
         commands += `GAP ${gapMm} mm,0 mm\r\n`;
         commands += `DIRECTION 1\r\n`;
         commands += `CLS\r\n`;
 
-        // Flatten variants
         const itemsToPrint: ProductVariant[] = [];
         variants.forEach((v) => {
             const copies = v.copies || 1;
@@ -159,40 +305,26 @@ export class ReceiptPrinter {
             }
         });
 
-        // Process by rows
         for (let i = 0; i < itemsToPrint.length; i += itemPerRow) {
             const rowItems = itemsToPrint.slice(i, i + itemPerRow);
 
             commands += `CLS\r\n`;
 
             rowItems.forEach((item, index) => {
-                // Calculate X offset for this column
                 const xOffsetDots =
                     index * (labelWidthMm * dpi + horizontalGapMm * dpi);
-
-                // Label dimensions in dots
-                const labelWidthDots = labelWidthMm * dpi; // 320
-                const paddingDots = 16; // 2mm padding
-
-                // Center of the label (relative to xOffset)
+                const labelWidthDots = labelWidthMm * dpi;
+                const paddingDots = 16;
                 const labelCenterDots = xOffsetDots + labelWidthDots / 2;
 
-                // 1. Title: item.product_name
-                // Menggunakan Font "0" (Triumvirate) agar lebih bagus.
-                // x_mul=12, y_mul=12. Estimasi lebar 12 dots/char.
                 const titleText = item.product_name
                     ? item.product_name
                     : "Item";
                 const titleWidthEst = titleText.length * 12;
                 const titleX = Math.floor(labelCenterDots - titleWidthEst / 2);
-                // TEXT x,y,"font",rotation,x_mul,y_mul,"content"
                 commands += `TEXT ${titleX},10,"0",0,12,12,"${titleText}"\r\n`;
 
-                // 2. Barcode
-                // Code128.
-                // Try narrow=2 first for better visibility.
                 const sku = item.sku;
-                // Width check: (10 * (len + 2) + 2) * 2.5
                 const barcodeWidthWide = (10 * (sku.length + 2) + 2) * 2.5;
                 let narrow = 2;
                 let barcodeWidth = barcodeWidthWide;
@@ -208,14 +340,10 @@ export class ReceiptPrinter {
                     barcodeX,
                 );
 
-                // Y=50, Height=60.
                 commands += `BARCODE ${finalBarcodeX},50,"128",60,1,0,${narrow},${
                     narrow * 2
                 },"${sku}"\r\n`;
 
-                // 3. Details
-                // Start Y after barcode. 50 + 60 + 20 (text) = 130.
-                // Add gap -> 140.
                 let currentY = 140;
                 const lineHeight = 30;
 
@@ -231,24 +359,18 @@ export class ReceiptPrinter {
                     rightText: string,
                     y: number,
                 ) => {
-                    // Left Text
                     commands += `TEXT ${leftX},${y},"0",0,9,9,"${leftText}"\r\n`;
-
-                    // Right Text
-                    // Estimate width: chars * 12 dots (safe for longer text)
                     const rightTextWidth = rightText.length * 12;
                     const rightTextX = rightX - rightTextWidth;
                     commands += `TEXT ${rightTextX},${y},"0",0,9,9,"${rightText}"\r\n`;
                 };
 
-                // Row 1: Color | (Beli 1) Harga
                 const color = (item.attributes.color || "").substring(0, 12);
                 const priceBasic = `(Beli 1) ${formatPrice(
                     item.price_criteria.basic,
                 )}`;
                 printRow(color, priceBasic, currentY);
 
-                // Row 2: Size | (Beli 3) Harga
                 currentY += lineHeight;
                 const size = String(item.attributes.size || "").substring(
                     0,
@@ -259,7 +381,6 @@ export class ReceiptPrinter {
                 )}`;
                 printRow(size, price3, currentY);
 
-                // Row 3: (empty left) | (Beli 6) Harga
                 currentY += lineHeight;
                 const price6 = `(Beli 6) ${formatPrice(
                     item.price_criteria.order_qty_6,
@@ -271,65 +392,5 @@ export class ReceiptPrinter {
         }
 
         return new TextEncoder().encode(commands);
-    }
-
-    private async printToBluetooth(
-        bytes: Uint8Array,
-        printerConfig: typeof PRINTERS.RECEIPT,
-    ) {
-        const nav = navigator as any;
-        if (!nav.bluetooth) {
-            throw new Error("Web Bluetooth tidak didukung di browser ini.");
-        }
-
-        try {
-            console.log("Mencari perangkat...");
-
-            const device = await nav.bluetooth.requestDevice({
-                acceptAllDevices: true,
-                optionalServices: [printerConfig.service],
-            });
-
-            console.log(
-                `Perangkat dipilih: ${device.name}. Menghubungkan GATT...`,
-            );
-
-            const server = await device.gatt.connect();
-            console.log("GATT Terhubung.");
-
-            const service = await server.getPrimaryService(
-                printerConfig.service,
-            );
-            const characteristic = await service.getCharacteristic(
-                printerConfig.characteristic,
-            );
-
-            console.log("Characteristic ditemukan. Memulai transfer data...");
-            const CHUNK_SIZE = 50;
-
-            const delay = (ms: number) =>
-                new Promise((resolve) => setTimeout(resolve, ms));
-
-            for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
-                const chunk = bytes.slice(i, i + CHUNK_SIZE);
-
-                await characteristic.writeValue(chunk);
-                await delay(60);
-            }
-
-            console.log("Semua data terkirim.");
-
-            await delay(1000);
-
-            if (device.gatt.connected) {
-                device.gatt.disconnect();
-                console.log("Koneksi ditutup.");
-            }
-
-            return true;
-        } catch (error) {
-            console.error("Bluetooth Error:", error);
-            throw error;
-        }
     }
 }

@@ -45,7 +45,7 @@ class TransactionController extends Controller
         if (!$product_variant) {
             return response()->json(
                 [
-                    "message" => "Produk dengan SKU tersebut tidak ditemukan",
+                    "message" => "Produk tersebut tidak ditemukan",
                 ],
                 404,
             );
@@ -53,7 +53,7 @@ class TransactionController extends Controller
         if ($product_variant->stock == 0) {
             return response()->json(
                 [
-                    "message" => "Produk dengan SKU stoknya habis",
+                    "message" => "Produk tersebut stoknya habis",
                 ],
                 404,
             );
@@ -68,6 +68,8 @@ class TransactionController extends Controller
                     "price_criteria" => $product_variant->price_criteria,
                     "price_applied" => 0,
                     "product_type" => $product_variant->product->type,
+                    "can_earn_point" =>
+                        $product_variant->product->can_earn_point,
                     "stock_remaining" => $product_variant->stock,
                 ],
             ],
@@ -148,8 +150,11 @@ class TransactionController extends Controller
         $setting = Setting::first();
         $points = 0;
         foreach ($items as $item) {
-            if ($item["price_applied"] > $setting->eligible_point_minimum) {
-                $points += 1;
+            if (
+                $item["can_earn_point"] &&
+                $item["price_applied"] > $setting->eligible_point_minimum
+            ) {
+                $points += $item["qty"];
             }
         }
         return $points;
@@ -192,6 +197,11 @@ class TransactionController extends Controller
         $validated = $request->validate([
             "is_new_customer" => ["required", "boolean"],
             "customer_id" => ["nullable", "numeric"],
+            // cust register as member
+            "register_customer" => ["nullable", "array"],
+            "register_customer.name" => ["nullable", "string"],
+            "register_customer.phone" => ["nullable", "string"],
+            "register_customer.address" => ["nullable", "string"],
             "customer_type" => ["nullable", "string"],
             "payment_method" => ["required", "string"],
             "items" => ["required", "array", "min:1"],
@@ -207,6 +217,7 @@ class TransactionController extends Controller
             "items.*.price_criteria.order_qty_3" => ["required", "numeric"],
             "items.*.price_criteria.order_qty_6" => ["required", "numeric"],
             "items.*.product_type" => ["required", "string"],
+            "items.*.can_earn_point" => ["required", "boolean"],
             "items.*.qty" => ["required", "integer", "min:1"],
             "subtotal" => ["required", "numeric"],
             "point_used" => ["required", "numeric"],
@@ -247,6 +258,7 @@ class TransactionController extends Controller
                 "address" => $validated["register_customer"]["address"],
                 "type" => $validated["register_customer"]["type"] ?? "member",
                 "points" => 0,
+                "joined_at" => now()->format("Y-m-d"),
             ]);
             $validated["customer_id"] = $customer->id;
             $validated["customer_type"] = "member";
@@ -259,9 +271,7 @@ class TransactionController extends Controller
                 return response()->json(
                     [
                         "message" =>
-                            "Produk dengan SKU " .
-                            $item["sku"] .
-                            " tidak ditemukan",
+                            "Kode Produk " . $item["sku"] . " tidak ditemukan",
                     ],
                     404,
                 );
@@ -270,9 +280,7 @@ class TransactionController extends Controller
                 return response()->json(
                     [
                         "message" =>
-                            "Stok produk dengan SKU " .
-                            $item["sku"] .
-                            " tidak mencukupi",
+                            "Stok produk " . $item["sku"] . " tidak mencukupi",
                     ],
                     400,
                 );
@@ -409,6 +417,7 @@ class TransactionController extends Controller
             "items.*.price_criteria.order_qty_3" => ["required", "numeric"],
             "items.*.price_criteria.order_qty_6" => ["required", "numeric"],
             "items.*.product_type" => ["required", "string"],
+            "items.*.can_earn_point" => ["required", "boolean"],
             "items.*.qty" => ["required", "integer", "min:1"],
             "subtotal" => ["required", "numeric"],
             "point_used" => ["required", "numeric"],
@@ -498,16 +507,12 @@ class TransactionController extends Controller
                     $product_variant = ProductVariant::find($item["id"]);
                     if (!$product_variant) {
                         throw new \Exception(
-                            "Produk dengan SKU " .
-                                $item["sku"] .
-                                " tidak ditemukan",
+                            "Produk " . $item["sku"] . " tidak ditemukan",
                         );
                     }
                     if ($product_variant->stock < $item["qty"]) {
                         throw new \Exception(
-                            "Stok produk dengan SKU " .
-                                $item["sku"] .
-                                " tidak mencukupi",
+                            "Stok produk " . $item["sku"] . " tidak mencukupi",
                         );
                     }
                     $items[] = $item;

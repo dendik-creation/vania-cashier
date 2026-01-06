@@ -62,7 +62,7 @@ const CashierTransactionEdit = ({
         put: formPut,
         clearErrors: clearFormErrors,
     } = useForm({
-        is_new_customer: false,
+        is_new_customer: transaction.customer_id ? false : true,
         customer_id: transaction.customer_id || "",
         customer_type: transaction.customer_type,
         register_customer: {
@@ -87,11 +87,15 @@ const CashierTransactionEdit = ({
             stock_remaining: item.variant?.stock || 0,
             product_type: item.variant?.product?.type || "package",
             qty: item.quantity,
+            with_price_criteria:
+                item.variant?.product?.with_price_criteria || false,
+            can_earn_point: item.variant?.product?.can_earn_point || false,
         })),
         subtotal: transaction.subtotal,
         point_used: transaction.point_used,
         point_earned: transaction.point_earned,
-        discount: transaction.discount,
+        point_discount: transaction.point_discount,
+        event_discount: transaction.event_discount,
         admin_fee: transaction.admin_fee,
         total: transaction.total,
     });
@@ -136,9 +140,9 @@ const CashierTransactionEdit = ({
         switch (type) {
             case "sepatu":
                 return <Footprints size={size} />;
-            case "bag":
+            case "tas":
                 return <Handbag size={size} />;
-            case "accessory":
+            case "aksesoris":
                 return <Sparkles size={size} />;
             default:
                 return <Package size={size} />;
@@ -152,24 +156,62 @@ const CashierTransactionEdit = ({
               ? customerFinder.customer_found.type
               : "member";
 
-        const updatedItems = form.items.map((item) => {
-            let price = item.price_criteria.basic;
-            const qty = Number(item.qty);
+        // 2. Cek apakah Logic Multi-Item Aktif
+        const shouldUseMultiItemDiscount =
+            form.items.length > 1 &&
+            currentCustomerType !== "reseller" &&
+            form.items.some((item) => item.with_price_criteria);
 
-            if (currentCustomerType === "reseller") {
-                price = item.price_criteria.reseller;
-            } else {
+        let updatedItems;
+
+        if (shouldUseMultiItemDiscount) {
+            const differences: number[] = [];
+
+            form.items.forEach((item) => {
+                if (!item.with_price_criteria) return;
+
+                const qty = Number(item.qty);
+                const basicPrice = item.price_criteria.basic;
+                let applicablePrice = basicPrice;
+
                 if (qty >= 6) {
-                    price = item.price_criteria.order_qty_6;
+                    applicablePrice = item.price_criteria.order_qty_6;
                 } else if (qty >= 3) {
-                    price = item.price_criteria.order_qty_3;
-                } else {
-                    price = item.price_criteria.basic;
+                    applicablePrice = item.price_criteria.order_qty_3;
                 }
-            }
 
-            return { ...item, price_applied: price };
-        });
+                const diff = basicPrice - applicablePrice;
+                differences.push(diff);
+            });
+            const lowestDiff =
+                differences.length > 0 ? Math.min(...differences) : 0;
+
+            updatedItems = form.items.map((item) => {
+                let price = item.price_criteria.basic;
+                if (item.with_price_criteria && lowestDiff > 0) {
+                    price = item.price_criteria.basic - lowestDiff;
+                }
+
+                return { ...item, price_applied: price };
+            });
+        } else {
+            updatedItems = form.items.map((item) => {
+                let price = item.price_criteria.basic;
+                const qty = Number(item.qty);
+
+                if (item.with_price_criteria) {
+                    if (currentCustomerType === "reseller") {
+                        price = item.price_criteria.reseller;
+                    } else if (qty >= 6) {
+                        price = item.price_criteria.order_qty_6;
+                    } else if (qty >= 3) {
+                        price = item.price_criteria.order_qty_3;
+                    }
+                }
+
+                return { ...item, price_applied: price };
+            });
+        }
 
         const isChanged = updatedItems.some(
             (item, index) =>
@@ -189,8 +231,11 @@ const CashierTransactionEdit = ({
 
         let point_earned = 0;
         form.items.forEach((item) => {
-            if (item.price_applied * item.qty > eligible_point_minimum) {
-                point_earned += 1;
+            if (
+                item.can_earn_point &&
+                item.price_applied * item.qty > eligible_point_minimum
+            ) {
+                point_earned += item.qty;
             }
         });
 
@@ -208,12 +253,19 @@ const CashierTransactionEdit = ({
             });
             admin_fee = matchedFee;
         }
-        const discount = form.point_used * idr_point_value;
-        const total = subtotal + admin_fee - form.discount;
+        const point_discount =
+            Number(form.point_used) * Number(idr_point_value);
+        const event_discount = Number(form.event_discount);
+        const total =
+            Number(subtotal) +
+            Number(admin_fee) -
+            Number(point_discount) -
+            Number(event_discount);
 
         setForm("subtotal", subtotal);
         setForm("admin_fee", admin_fee);
-        setForm("discount", discount);
+        setForm("point_discount", point_discount);
+        setForm("event_discount", event_discount);
         setForm("total", total);
         setForm("point_earned", point_earned);
     };
@@ -227,6 +279,7 @@ const CashierTransactionEdit = ({
         customerFinder.is_found,
         form.payment_method,
         form.point_used,
+        form.event_discount,
     ]);
 
     const handleFindCustomer = (phone: string) => {
@@ -252,7 +305,7 @@ const CashierTransactionEdit = ({
             existingItem &&
             existingItem?.qty >= existingItem.stock_remaining!
         ) {
-            BlastToaster("error", `Stok tidak mencukupi untuk SKU: ${sku}`);
+            BlastToaster("error", `Stok tidak mencukupi untuk ${sku}`);
             setSkuFinder("sku", "");
             return;
         }
@@ -281,6 +334,9 @@ const CashierTransactionEdit = ({
                         price_applied: productVariantData.price_applied,
                         price_criteria: productVariantData.price_criteria,
                         product_type: productVariantData.product_type,
+                        with_price_criteria:
+                            productVariantData.with_price_criteria,
+                        can_earn_point: productVariantData.can_earn_point,
                         stock_remaining: productVariantData.stock_remaining,
                         qty: 1,
                     });
@@ -836,6 +892,44 @@ const CashierTransactionEdit = ({
                         </div>
                     </div>
 
+                    {/*Event Direct Discount*/}
+                    <div className="flex flex-col">
+                        <div className="flex items-start gap-2">
+                            <Label className="text-base mb-1">
+                                Gunakan Diskon Event
+                            </Label>
+                            {formErrors["event_discount"] && (
+                                <ErrorInput
+                                    error={formErrors["event_discount"]}
+                                    afterLabel={true}
+                                />
+                            )}
+                        </div>
+                        <Input
+                            type="number"
+                            placeholder="Masukkan nominal"
+                            className="w-full bg-white"
+                            min={0}
+                            value={form.event_discount || ""}
+                            onChange={(e) => {
+                                const inputValue = Number(e.target.value);
+                                const clampedValue = Math.max(0, inputValue);
+
+                                const maxAllowedDiscount =
+                                    Number(form.subtotal) +
+                                    Number(form.admin_fee) -
+                                    Number(form.point_discount);
+
+                                const finalValue = Math.min(
+                                    clampedValue,
+                                    maxAllowedDiscount,
+                                );
+
+                                setForm("event_discount", finalValue);
+                            }}
+                        />
+                    </div>
+
                     {/*Total Info*/}
                     <div className="flex flex-col">
                         <Label className="text-base mb-1">
@@ -995,36 +1089,41 @@ const CashierTransactionEdit = ({
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Poin Didapat
+                                            Poin pelanggan
                                         </span>
                                         <span className="font-medium">
-                                            {form.point_earned}
-                                        </span>
-                                    </div>
-                                    <div className="border-t"></div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">
-                                            Biaya Admin
-                                        </span>
-                                        <span className="font-medium">
-                                            {floatToIdCurrency(form.admin_fee)}
-                                        </span>
-                                    </div>
-                                    <div className="border-t"></div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">
-                                            Poin Digunakan
-                                        </span>
-                                        <span className="font-medium">
+                                            + {form.point_earned} / -{" "}
                                             {form.point_used}
                                         </span>
                                     </div>
+                                    <div className="border-t"></div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Diskon
+                                            Konversi poin
                                         </span>
                                         <span className="font-medium">
-                                            {floatToIdCurrency(form.discount)}
+                                            {floatToIdCurrency(
+                                                form.point_discount,
+                                            )}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">
+                                            Diskon event
+                                        </span>
+                                        <span className="font-medium">
+                                            {floatToIdCurrency(
+                                                form.event_discount,
+                                            )}
+                                        </span>
+                                    </div>
+                                    <div className="border-t"></div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">
+                                            Biaya admin
+                                        </span>
+                                        <span className="font-medium">
+                                            {floatToIdCurrency(form.admin_fee)}
                                         </span>
                                     </div>
                                     <div className="border-t my-2"></div>
@@ -1052,7 +1151,7 @@ const CashierTransactionEdit = ({
                             <Loader className="animate-spin" />
                         ) : (
                             <div className="flex items-center gap-2">
-                                <Save /> <span>Update Transaksi</span>
+                                <Save /> <span>Perbarui Transaksi</span>
                             </div>
                         )}
                     </Button>

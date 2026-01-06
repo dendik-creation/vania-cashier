@@ -30,7 +30,8 @@ return new class extends Migration {
             $table->integer("point_used")->default(0);
 
             $table->integer("subtotal");
-            $table->integer("discount")->default(0);
+            $table->integer("point_discount")->default(0);
+            $table->integer("event_discount")->default(0);
             $table->integer("total");
 
             $table->enum("payment_method", ["cash", "qris", "transfer"]);

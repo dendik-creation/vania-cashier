@@ -63,26 +63,49 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            "name" => "required|string|max:255",
-            "type" => "required|string",
-            "brand" => "nullable|string|max:255",
-            "variants" => "required|array|min:1",
-            "variants.*.sku" => "required|string|unique:product_variants,sku",
-            "variants.*.attributes" => "required|array",
-            "variants.*.price_criteria" => "required|array",
-            "variants.*.price_criteria.basic" => "required|integer|min:0",
-            "variants.*.price_criteria.reseller" => "required|integer|min:0",
-            "variants.*.price_criteria.order_qty_3" => "required|integer|min:0",
-            "variants.*.price_criteria.order_qty_6" => "required|integer|min:0",
-            "variants.*.stock" => "required|integer|min:0",
-        ]);
+        $request->validate(
+            [
+                "name" => "required|string|max:255",
+                "type" => "required|string",
+                "brand" => "nullable|string|max:255",
+                "with_price_criteria" => "required|boolean",
+                "can_earn_point" => "required|boolean",
+                "variants" => "required|array|min:1",
+                "variants.*.sku" =>
+                    "required|string|unique:product_variants,sku",
+                "variants.*.attributes" => "required|array",
+                "variants.*.price_criteria" => "required|array",
+                "variants.*.price_criteria.basic" => "required|integer|min:0",
+                "variants.*.price_criteria.reseller" =>
+                    "nullable|integer|min:0",
+                "variants.*.price_criteria.order_qty_3" =>
+                    "nullable|integer|min:0",
+                "variants.*.price_criteria.order_qty_6" =>
+                    "nullable|integer|min:0",
+                "variants.*.stock" => "required|integer|min:0",
+            ],
+            [
+                "variants.*.sku.unique" => "Kode barang sudah digunakan.",
+            ],
+        );
+
+        if (!$request->with_price_criteria) {
+            foreach ($request->variants as $index => $variantData) {
+                $request->merge([
+                    "variants.{$index}.price_criteria.reseller" => 0,
+                    "variants.{$index}.price_criteria.order_qty_3" => 0,
+                    "variants.{$index}.price_criteria.order_qty_6" => 0,
+                ]);
+            }
+        }
 
         DB::transaction(function () use ($request) {
             $product = Product::create([
                 "name" => $request->name,
                 "type" => $request->type,
                 "brand" => $request->brand,
+                "with_price_criteria" => $request->with_price_criteria,
+                "can_earn_point" => $request->can_earn_point,
             ]);
 
             foreach ($request->variants as $variantData) {
@@ -131,16 +154,44 @@ class ProductController extends Controller
             "name" => "required|string|max:255",
             "type" => "required|string",
             "brand" => "nullable|string|max:255",
+            "with_price_criteria" => "required|boolean",
+            "can_earn_point" => "required|boolean",
             "variants" => "required|array|min:1",
-            "variants.*.sku" => "required|string",
+            "variants.*.sku" => [
+                "required",
+                "string",
+                function ($attribute, $value, $fail) use ($request) {
+                    if (preg_match("/variants\.(\d+)\.sku/", $attribute, $m)) {
+                        $index = $m[1];
+                        $variantId = $request->input("variants.$index.id");
+                        $query = ProductVariant::where("sku", $value);
+                        if ($variantId) {
+                            $query->where("id", "!=", $variantId);
+                        }
+                        if ($query->exists()) {
+                            $fail("Kode barang sudah digunakan.");
+                        }
+                    }
+                },
+            ],
             "variants.*.attributes" => "required|array",
             "variants.*.price_criteria" => "required|array",
             "variants.*.price_criteria.basic" => "required|integer|min:0",
-            "variants.*.price_criteria.reseller" => "required|integer|min:0",
-            "variants.*.price_criteria.order_qty_3" => "required|integer|min:0",
-            "variants.*.price_criteria.order_qty_6" => "required|integer|min:0",
+            "variants.*.price_criteria.reseller" => "nullable|integer|min:0",
+            "variants.*.price_criteria.order_qty_3" => "nullable|integer|min:0",
+            "variants.*.price_criteria.order_qty_6" => "nullable|integer|min:0",
             "variants.*.stock" => "required|integer|min:0",
         ]);
+
+        if (!$request->with_price_criteria) {
+            foreach ($request->variants as $index => $variantData) {
+                $request->merge([
+                    "variants.{$index}.price_criteria.reseller" => 0,
+                    "variants.{$index}.price_criteria.order_qty_3" => 0,
+                    "variants.{$index}.price_criteria.order_qty_6" => 0,
+                ]);
+            }
+        }
 
         // Validate SKU uniqueness (excluding current product variants)
         foreach ($request->variants as $index => $variantData) {
@@ -164,14 +215,14 @@ class ProductController extends Controller
 
                     if ($skuExists) {
                         return back()->withErrors([
-                            "variants.{$index}.sku" => "SKU sudah digunakan.",
+                            "variants.{$index}.sku" => "Kode barang sudah digunakan.",
                         ]);
                     }
                 }
             } else {
                 if ($skuExists) {
                     return back()->withErrors([
-                        "variants.{$index}.sku" => "SKU sudah digunakan.",
+                        "variants.{$index}.sku" => "Kode barang sudah digunakan.",
                     ]);
                 }
             }
@@ -182,6 +233,8 @@ class ProductController extends Controller
                 "name" => $request->name,
                 "type" => $request->type,
                 "brand" => $request->brand,
+                "with_price_criteria" => $request->with_price_criteria,
+                "can_earn_point" => $request->can_earn_point,
             ]);
 
             // Handle Variants

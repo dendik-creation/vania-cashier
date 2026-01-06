@@ -20,6 +20,7 @@ import {
     Tags,
     PackageSearch,
     Upload,
+    Coins,
 } from "lucide-react";
 import { FormEvent, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -244,6 +245,14 @@ const CashierProductIndex = ({
                                             {product.variants_count
                                                 ? `${product.variants_count} Varian`
                                                 : "Tanpa Varian"}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Coins size={16} />
+                                        <span className="text-sm">
+                                            {product.can_earn_point
+                                                ? `Menghasilkan poin`
+                                                : "Tidak menghasilkan poin"}
                                         </span>
                                     </div>
                                 </div>

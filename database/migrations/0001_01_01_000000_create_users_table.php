@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->enum("role", ["admin", "cashier"]);
             $table->dateTime("joined_at")->default(now());
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create("password_reset_tokens", function (Blueprint $table) {

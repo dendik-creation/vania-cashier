@@ -28,12 +28,12 @@ class Transaction extends Model
     // Relationships
     public function cashier()
     {
-        return $this->belongsTo(User::class, "cashier_id");
+        return $this->belongsTo(User::class, "cashier_id")->withTrashed();
     }
 
     public function customer()
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Customer::class)->withTrashed();
     }
 
     public function items()

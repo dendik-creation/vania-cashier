@@ -75,6 +75,22 @@ const CashierProductShow = ({
                             </h3>
                             <p className="text-base">{product.brand || "-"}</p>
                         </div>
+                        <div>
+                            <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                                Menerapkan variasi harga
+                            </h3>
+                            <Badge variant={"outline"}>
+                                {product.with_price_criteria ? "Ya" : "Tidak"}
+                            </Badge>
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                                Dapat menghasilkan poin
+                            </h3>
+                            <Badge variant={"outline"}>
+                                {product.can_earn_point ? "Ya" : "Tidak"}
+                            </Badge>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -88,7 +104,7 @@ const CashierProductShow = ({
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead className="min-w-[150px]">
-                                            SKU
+                                            Kode Barang
                                         </TableHead>
                                         <TableHead className="min-w-[100px]">
                                             Warna

@@ -20,6 +20,7 @@ import {
     Phone,
     ArrowLeft,
     Edit,
+    Coins,
 } from "lucide-react";
 import {
     floatToIdCurrency,
@@ -91,6 +92,17 @@ const CashierTransactionShow = ({
                                     >
                                         {transaction.customer.type}
                                     </Badge>
+                                </div>
+                                <div className="grid gap-1">
+                                    <span className="text-sm font-medium text-muted-foreground">
+                                        Poin
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <Coins className="h-4 w-4 text-muted-foreground" />
+                                        <span>
+                                            {transaction.customer.points}
+                                        </span>
+                                    </div>
                                 </div>
                                 <div className="grid gap-1">
                                     <span className="text-sm font-medium text-muted-foreground">
@@ -193,27 +205,35 @@ const CashierTransactionShow = ({
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">
-                                        Poin Didapat
+                                        Perolehan Poin
                                     </span>
                                     <span>
-                                        +{transaction.point_earned} poin
+                                        +{transaction.point_earned} / -
+                                        {transaction.point_used} poin
                                     </span>
                                 </div>
-                                {transaction.point_used > 0 && (
-                                    <div className="flex justify-between text-sm text-green-600">
-                                        <span>Poin Digunakan</span>
-                                        <span>
-                                            -{transaction.point_earned} poin
+                                {transaction.point_discount > 0 && (
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">
+                                            Konversi Poin
                                         </span>
-                                    </div>
-                                )}
-                                {transaction.discount > 0 && (
-                                    <div className="flex justify-between text-sm text-green-600">
-                                        <span>Diskon (Poin)</span>
                                         <span>
                                             -
                                             {floatToIdCurrency(
-                                                transaction.discount,
+                                                transaction.point_discount,
+                                            )}
+                                        </span>
+                                    </div>
+                                )}
+                                {transaction.event_discount > 0 && (
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">
+                                            Diskon Event
+                                        </span>
+                                        <span>
+                                            -
+                                            {floatToIdCurrency(
+                                                transaction.event_discount,
                                             )}
                                         </span>
                                     </div>
@@ -254,7 +274,7 @@ const CashierTransactionShow = ({
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Produk</TableHead>
-                                    <TableHead>SKU</TableHead>
+                                    <TableHead>Kode Produk</TableHead>
                                     <TableHead className="text-right">
                                         Harga
                                     </TableHead>

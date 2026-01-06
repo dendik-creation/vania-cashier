@@ -3,29 +3,31 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProductVariant extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
-        'product_id',
-        'sku',
-        'attributes',
-        'price_criteria',
-        'stock',
+        "product_id",
+        "sku",
+        "attributes",
+        "price_criteria",
+        "stock",
     ];
 
     protected $casts = [
-        'attributes' => 'array', // JSON: {"size": 41, "color": "red"}
-        'price_criteria' => 'array', // JSON: {"basic": 100000, "reseller": 90000, "order_qty_3": 85000, "order_qty_6": 80000}
-        'stock' => 'integer',
+        "attributes" => "array", // JSON: {"size": 41, "color": "red"}
+        "price_criteria" => "array", // JSON: {"basic": 100000, "reseller": 90000, "order_qty_3": 85000, "order_qty_6": 80000}
+        "stock" => "integer",
     ];
 
-    protected $hidden = ['created_at', 'updated_at'];
+    protected $hidden = ["created_at", "updated_at"];
 
     // Relationships
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 
     public function transactionItems()
@@ -42,12 +44,12 @@ class ProductVariant extends Model
     public function getAttribute($key)
     {
         $value = parent::getAttribute($key);
-        
+
         // Ensure attributes is always an array
-        if ($key === 'attributes' && is_string($value)) {
+        if ($key === "attributes" && is_string($value)) {
             return json_decode($value, true) ?? [];
         }
-        
+
         return $value;
     }
 }

@@ -12,7 +12,8 @@ export type Transaction = {
     point_earned: number;
     point_used: number;
     subtotal: number;
-    discount: number;
+    point_discount: number;
+    event_discount: number;
     total: number;
     sku_sold?: number;
     payment_method: "cash" | "qris" | "transfer";

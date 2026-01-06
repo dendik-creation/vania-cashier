@@ -9,6 +9,7 @@ import { Plus, Trash2, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminProductEditProps, VariantFormData } from "@/types/product";
 import { humanProductType } from "@/components/helper/helper";
+import { Switch } from "@/components/ui/switch";
 
 const AdminProductEdit = ({
     title,
@@ -20,8 +21,10 @@ const AdminProductEdit = ({
         useForm({
             name: product.name,
             type: product.type,
+            with_price_criteria: product.with_price_criteria || false,
+            can_earn_point: product.can_earn_point || false,
             brand: product.brand || "",
-            variants: (product.variants || []).map((v) => ({
+            variants: (product.variants || []).map((v: VariantFormData) => ({
                 id: v.id,
                 sku: v.sku,
                 attributes: {
@@ -118,7 +121,7 @@ const AdminProductEdit = ({
         data.variants.forEach((variant, index) => {
             // SKU wajib
             if (!variant.sku || variant.sku.trim() === "") {
-                setError(`variants.${index}.sku`, "SKU wajib diisi");
+                setError(`variants.${index}.sku`, "Kode barang wajib diisi");
                 isValid = false;
             }
 
@@ -165,58 +168,60 @@ const AdminProductEdit = ({
                 isValid = false;
             }
 
-            // Validasi price criteria - Harga Reseller
-            if (
-                !variant.price_criteria.reseller ||
-                variant.price_criteria.reseller === ""
-            ) {
-                setError(
-                    `variants.${index}.price_criteria.reseller`,
-                    "Harga reseller wajib diisi",
-                );
-                isValid = false;
-            } else if (Number(variant.price_criteria.reseller) <= 0) {
-                setError(
-                    `variants.${index}.price_criteria.reseller`,
-                    "Harga reseller harus lebih dari 0",
-                );
-                isValid = false;
-            }
+            if (data.with_price_criteria) {
+                // Validasi price criteria - Harga Reseller
+                if (
+                    !variant.price_criteria.reseller ||
+                    variant.price_criteria.reseller === ""
+                ) {
+                    setError(
+                        `variants.${index}.price_criteria.reseller`,
+                        "Harga reseller wajib diisi",
+                    );
+                    isValid = false;
+                } else if (Number(variant.price_criteria.reseller) <= 0) {
+                    setError(
+                        `variants.${index}.price_criteria.reseller`,
+                        "Harga reseller harus lebih dari 0",
+                    );
+                    isValid = false;
+                }
 
-            // Validasi price criteria - Harga Order 3+
-            if (
-                !variant.price_criteria.order_qty_3 ||
-                variant.price_criteria.order_qty_3 === ""
-            ) {
-                setError(
-                    `variants.${index}.price_criteria.order_qty_3`,
-                    "Harga qty 3+ wajib diisi",
-                );
-                isValid = false;
-            } else if (Number(variant.price_criteria.order_qty_3) <= 0) {
-                setError(
-                    `variants.${index}.price_criteria.order_qty_3`,
-                    "Harga qty 3+ harus lebih dari 0",
-                );
-                isValid = false;
-            }
+                // Validasi price criteria - Harga qty 3+
+                if (
+                    !variant.price_criteria.order_qty_3 ||
+                    variant.price_criteria.order_qty_3 === ""
+                ) {
+                    setError(
+                        `variants.${index}.price_criteria.order_qty_3`,
+                        "Harga qty 3+ wajib diisi",
+                    );
+                    isValid = false;
+                } else if (Number(variant.price_criteria.order_qty_3) <= 0) {
+                    setError(
+                        `variants.${index}.price_criteria.order_qty_3`,
+                        "Harga qty 3+ harus lebih dari 0",
+                    );
+                    isValid = false;
+                }
 
-            // Validasi price criteria - Harga Order 6+
-            if (
-                !variant.price_criteria.order_qty_6 ||
-                variant.price_criteria.order_qty_6 === ""
-            ) {
-                setError(
-                    `variants.${index}.price_criteria.order_qty_6`,
-                    "Harga qty 6+ wajib diisi",
-                );
-                isValid = false;
-            } else if (Number(variant.price_criteria.order_qty_6) <= 0) {
-                setError(
-                    `variants.${index}.price_criteria.order_qty_6`,
-                    "Harga qty 6+ harus lebih dari 0",
-                );
-                isValid = false;
+                // Validasi price criteria - Harga qty 6+
+                if (
+                    !variant.price_criteria.order_qty_6 ||
+                    variant.price_criteria.order_qty_6 === ""
+                ) {
+                    setError(
+                        `variants.${index}.price_criteria.order_qty_6`,
+                        "Harga qty 6+ wajib diisi",
+                    );
+                    isValid = false;
+                } else if (Number(variant.price_criteria.order_qty_6) <= 0) {
+                    setError(
+                        `variants.${index}.price_criteria.order_qty_6`,
+                        "Harga qty 6+ harus lebih dari 0",
+                    );
+                    isValid = false;
+                }
             }
 
             // Validasi stok
@@ -293,7 +298,7 @@ const AdminProductEdit = ({
                             />
                             <ErrorInput error={errors.type} />
                         </div>
-                        <div className="space-y-2 md:col-span-2">
+                        <div className="space-y-2">
                             <Label htmlFor="brand" className="text-base mb-1">
                                 Brand
                             </Label>
@@ -303,9 +308,48 @@ const AdminProductEdit = ({
                                 onChange={(e) =>
                                     setData("brand", e.target.value)
                                 }
-                                placeholder="Masukkan brand produk (opsional)"
+                                placeholder="Masukkan brand produk"
                             />
                             <ErrorInput error={errors.brand} />
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-8">
+                                <div className="flex flex-col gap-2">
+                                    <Label
+                                        htmlFor="brand"
+                                        className="text-base mb-1"
+                                    >
+                                        Gunakan Variasi Harga
+                                    </Label>
+                                    <Switch
+                                        checked={data.with_price_criteria}
+                                        onCheckedChange={(value) =>
+                                            setData(
+                                                "with_price_criteria",
+                                                value,
+                                            )
+                                        }
+                                    />
+                                    <ErrorInput
+                                        error={errors.with_price_criteria}
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <Label
+                                        htmlFor="can_earn_point"
+                                        className="text-base mb-1"
+                                    >
+                                        Dapat Menghasilkan Poin
+                                    </Label>
+                                    <Switch
+                                        checked={data.can_earn_point}
+                                        onCheckedChange={(value) =>
+                                            setData("can_earn_point", value)
+                                        }
+                                    />
+                                    <ErrorInput error={errors.can_earn_point} />
+                                </div>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -338,7 +382,7 @@ const AdminProductEdit = ({
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-1 md:col-span-2">
                                                 <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
-                                                    SKU
+                                                    Kode Barang
                                                 </Label>
                                                 <div className="flex items-start gap-3">
                                                     <Input
@@ -350,7 +394,7 @@ const AdminProductEdit = ({
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        placeholder="Masukkan SKU"
+                                                        placeholder="Masukkan Kode Barang"
                                                     />
                                                     <Button
                                                         type="button"
@@ -479,7 +523,6 @@ const AdminProductEdit = ({
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        placeholder="100000"
                                                     />
                                                     <ErrorInput
                                                         error={
@@ -491,7 +534,9 @@ const AdminProductEdit = ({
                                                 </div>
 
                                                 <div className="space-y-1">
-                                                    <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
+                                                    <Label
+                                                        className={`text-base mb-1 ${data.with_price_criteria && "after:content-['*'] after:text-red-500 after:ml-1"}`}
+                                                    >
                                                         Harga Reseller
                                                     </Label>
                                                     <Input
@@ -508,7 +553,9 @@ const AdminProductEdit = ({
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        placeholder="90000"
+                                                        disabled={
+                                                            !data.with_price_criteria
+                                                        }
                                                     />
                                                     <ErrorInput
                                                         error={
@@ -520,7 +567,9 @@ const AdminProductEdit = ({
                                                 </div>
 
                                                 <div className="space-y-1">
-                                                    <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
+                                                    <Label
+                                                        className={`text-base mb-1 ${data.with_price_criteria && "after:content-['*'] after:text-red-500 after:ml-1"}`}
+                                                    >
                                                         Harga Qty 3+
                                                     </Label>
                                                     <Input
@@ -537,7 +586,9 @@ const AdminProductEdit = ({
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        placeholder="85000"
+                                                        disabled={
+                                                            !data.with_price_criteria
+                                                        }
                                                     />
                                                     <ErrorInput
                                                         error={
@@ -549,7 +600,9 @@ const AdminProductEdit = ({
                                                 </div>
 
                                                 <div className="space-y-1">
-                                                    <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
+                                                    <Label
+                                                        className={`text-base mb-1 ${data.with_price_criteria && "after:content-['*'] after:text-red-500 after:ml-1"}`}
+                                                    >
                                                         Harga Qty 6+
                                                     </Label>
                                                     <Input
@@ -566,7 +619,9 @@ const AdminProductEdit = ({
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        placeholder="80000"
+                                                        disabled={
+                                                            !data.with_price_criteria
+                                                        }
                                                     />
                                                     <ErrorInput
                                                         error={

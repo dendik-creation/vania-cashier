@@ -6,6 +6,8 @@ export type Product = {
     name: string;
     type: string;
     brand?: string | null;
+    with_price_criteria: boolean;
+    can_earn_point: boolean;
     created_at?: string;
     updated_at?: string;
     variants_count?: number;
@@ -17,6 +19,8 @@ export type ProductVariant = {
     product_id: number;
     product_name?: string;
     product_type?: string;
+    with_price_criteria?: boolean;
+    can_earn_point?: boolean;
     sku: string;
     attributes: {
         size?: string | number;
