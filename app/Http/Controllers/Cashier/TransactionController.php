@@ -39,10 +39,16 @@ class TransactionController extends Controller
         $validated = $request->validate([
             "sku" => "required",
         ]);
-        $product_variant = ProductVariant::where("sku", $validated["sku"])
+
+        $product_variants = ProductVariant::where("sku", $validated["sku"])
+            ->orWhereHas("product", function ($query) use ($validated) {
+                $query->where("name", "like", "%{$validated["sku"]}%");
+            })
             ->with("product")
-            ->first();
-        if (!$product_variant) {
+            ->where("stock", ">", 0)
+            ->get();
+
+        if ($product_variants->isEmpty()) {
             return response()->json(
                 [
                     "message" => "Produk tersebut tidak ditemukan",
@@ -50,31 +56,24 @@ class TransactionController extends Controller
                 404,
             );
         }
-        if ($product_variant->stock == 0) {
-            return response()->json(
-                [
-                    "message" => "Produk tersebut stoknya habis",
-                ],
-                404,
-            );
-        }
-        return response()->json(
-            [
-                "product_variant" => [
-                    "id" => $product_variant->id,
-                    "sku" => $product_variant->sku,
-                    "product_name" => $product_variant->product->name,
-                    "attributes" => $product_variant->attributes,
-                    "price_criteria" => $product_variant->price_criteria,
-                    "price_applied" => 0,
-                    "product_type" => $product_variant->product->type,
-                    "can_earn_point" =>
-                        $product_variant->product->can_earn_point,
-                    "stock_remaining" => $product_variant->stock,
-                ],
-            ],
-            200,
-        );
+
+        $results = $product_variants->map(function ($product_variant) {
+            return [
+                "id" => $product_variant->id,
+                "sku" => $product_variant->sku,
+                "product_name" => $product_variant->product->name,
+                "attributes" => $product_variant->attributes,
+                "price_criteria" => $product_variant->price_criteria,
+                "price_applied" => 0,
+                "product_type" => $product_variant->product->type,
+                "with_price_criteria" =>
+                    $product_variant->product->with_price_criteria,
+                "can_earn_point" => $product_variant->product->can_earn_point,
+                "stock_remaining" => $product_variant->stock,
+            ];
+        });
+
+        return response()->json($results, 200);
     }
 
     public function index(Request $request)
@@ -233,10 +232,8 @@ class TransactionController extends Controller
             $validated["is_new_customer"] ||
             (isset($validated["register_customer"]["name"]) &&
                 isset($validated["register_customer"]["phone"]) &&
-                isset($validated["register_customer"]["address"]) &&
                 (empty($validated["register_customer"]["name"]) ||
-                    empty($validated["register_customer"]["phone"]) ||
-                    empty($validated["register_customer"]["address"])))
+                    empty($validated["register_customer"]["phone"])))
         ) {
             $validated["customer_id"] = null;
             $validated["customer_type"] = "general";
@@ -247,15 +244,13 @@ class TransactionController extends Controller
             isset($validated["register_customer"]) &&
             isset($validated["register_customer"]["name"]) &&
             isset($validated["register_customer"]["phone"]) &&
-            isset($validated["register_customer"]["address"]) &&
             !empty($validated["register_customer"]["name"]) &&
-            !empty($validated["register_customer"]["phone"]) &&
-            !empty($validated["register_customer"]["address"])
+            !empty($validated["register_customer"]["phone"])
         ) {
             $customer = Customer::create([
                 "name" => $validated["register_customer"]["name"],
                 "phone" => $validated["register_customer"]["phone"],
-                "address" => $validated["register_customer"]["address"],
+                "address" => $validated["register_customer"]["address"] ?: null,
                 "type" => $validated["register_customer"]["type"] ?? "member",
                 "points" => 0,
                 "joined_at" => now()->format("Y-m-d"),
@@ -470,10 +465,8 @@ class TransactionController extends Controller
                     $validated["is_new_customer"] ||
                     (isset($validated["register_customer"]["name"]) &&
                         isset($validated["register_customer"]["phone"]) &&
-                        isset($validated["register_customer"]["address"]) &&
                         (empty($validated["register_customer"]["name"]) ||
-                            empty($validated["register_customer"]["phone"]) ||
-                            empty($validated["register_customer"]["address"])))
+                            empty($validated["register_customer"]["phone"])))
                 ) {
                     $validated["customer_id"] = null;
                     $validated["customer_type"] = "general";
@@ -484,15 +477,14 @@ class TransactionController extends Controller
                     isset($validated["register_customer"]) &&
                     isset($validated["register_customer"]["name"]) &&
                     isset($validated["register_customer"]["phone"]) &&
-                    isset($validated["register_customer"]["address"]) &&
                     !empty($validated["register_customer"]["name"]) &&
-                    !empty($validated["register_customer"]["phone"]) &&
-                    !empty($validated["register_customer"]["address"])
+                    !empty($validated["register_customer"]["phone"])
                 ) {
                     $customer = Customer::create([
                         "name" => $validated["register_customer"]["name"],
                         "phone" => $validated["register_customer"]["phone"],
-                        "address" => $validated["register_customer"]["address"],
+                        "address" =>
+                            $validated["register_customer"]["address"] ?: null,
                         "type" =>
                             $validated["register_customer"]["type"] ?? "member",
                         "points" => 0,

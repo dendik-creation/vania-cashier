@@ -100,8 +100,34 @@ const CashierTransactionEdit = ({
         total: transaction.total,
     });
 
-    const { data: skuFinder, setData: setSkuFinder } = useForm({
+    const {
+        data: skuFinder,
+        setData: setSkuFinder,
+        reset: resetSkuFinder,
+    } = useForm({
         sku: "",
+        is_multiple_found: false,
+        multiple_found_items: [] as {
+            id: string;
+            sku: string;
+            product_name: string;
+            attributes: {
+                size: string;
+                color: string;
+            };
+            price_applied: number;
+            price_criteria: {
+                basic: number;
+                reseller: number;
+                order_qty_3: number;
+                order_qty_6: number;
+            };
+            product_type: string;
+            with_price_criteria: boolean;
+            can_earn_point: boolean;
+            stock_remaining: number;
+            qty: number;
+        }[],
     });
     const { data: customerFinder, setData: setCustomerFinder } = useForm({
         customer_phone: transaction.customer?.phone || "",
@@ -156,7 +182,6 @@ const CashierTransactionEdit = ({
               ? customerFinder.customer_found.type
               : "member";
 
-        // 2. Cek apakah Logic Multi-Item Aktif
         const shouldUseMultiItemDiscount =
             form.items.length > 1 &&
             currentCustomerType !== "reseller" &&
@@ -165,21 +190,23 @@ const CashierTransactionEdit = ({
         let updatedItems;
 
         if (shouldUseMultiItemDiscount) {
+            const maxQtyInCart = Math.max(
+                ...form.items
+                    .filter((item) => item.with_price_criteria)
+                    .map((item) => Number(item.qty) || 0),
+            );
+
             const differences: number[] = [];
 
             form.items.forEach((item) => {
                 if (!item.with_price_criteria) return;
-
-                const qty = Number(item.qty);
                 const basicPrice = item.price_criteria.basic;
                 let applicablePrice = basicPrice;
-
-                if (qty >= 6) {
+                if (maxQtyInCart >= 6) {
                     applicablePrice = item.price_criteria.order_qty_6;
-                } else if (qty >= 3) {
+                } else if (maxQtyInCart >= 3) {
                     applicablePrice = item.price_criteria.order_qty_3;
                 }
-
                 const diff = basicPrice - applicablePrice;
                 differences.push(diff);
             });
@@ -188,6 +215,7 @@ const CashierTransactionEdit = ({
 
             updatedItems = form.items.map((item) => {
                 let price = item.price_criteria.basic;
+
                 if (item.with_price_criteria && lowestDiff > 0) {
                     price = item.price_criteria.basic - lowestDiff;
                 }
@@ -309,14 +337,30 @@ const CashierTransactionEdit = ({
             setSkuFinder("sku", "");
             return;
         }
+
         axios
             .get("/cashier/transactions/find/sku", {
                 params: { sku },
             })
             .then((response) => {
-                const productVariantData = response.data.product_variant;
+                const productVariantData = response.data;
+
+                if (
+                    Array.isArray(productVariantData) &&
+                    productVariantData.length > 1
+                ) {
+                    setSkuFinder("is_multiple_found", true);
+                    setSkuFinder("multiple_found_items", productVariantData);
+                    setSkuFinder("sku", "");
+                    return;
+                }
+
+                const singleProduct = Array.isArray(productVariantData)
+                    ? productVariantData[0]
+                    : productVariantData;
+
                 const existingItemIndex = form.items.findIndex(
-                    (item) => item.id === productVariantData.id,
+                    (item) => item.id === singleProduct.id,
                 );
                 let updatedItems = [...form.items];
                 if (existingItemIndex !== -1) {
@@ -327,17 +371,16 @@ const CashierTransactionEdit = ({
                     };
                 } else {
                     updatedItems.push({
-                        id: productVariantData.id,
-                        sku: productVariantData.sku,
-                        product_name: productVariantData.product_name,
-                        attributes: productVariantData.attributes,
-                        price_applied: productVariantData.price_applied,
-                        price_criteria: productVariantData.price_criteria,
-                        product_type: productVariantData.product_type,
-                        with_price_criteria:
-                            productVariantData.with_price_criteria,
-                        can_earn_point: productVariantData.can_earn_point,
-                        stock_remaining: productVariantData.stock_remaining,
+                        id: singleProduct.id,
+                        sku: singleProduct.sku,
+                        product_name: singleProduct.product_name,
+                        attributes: singleProduct.attributes,
+                        price_applied: singleProduct.price_applied,
+                        price_criteria: singleProduct.price_criteria,
+                        product_type: singleProduct.product_type,
+                        with_price_criteria: singleProduct.with_price_criteria,
+                        can_earn_point: singleProduct.can_earn_point,
+                        stock_remaining: singleProduct.stock_remaining,
                         qty: 1,
                     });
                 }
@@ -422,16 +465,185 @@ const CashierTransactionEdit = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
                 <div className="w-full flex flex-col gap-4">
+                    {/*Modal IF product found higher than 1*/}
+                    <Dialog
+                        open={skuFinder.is_multiple_found}
+                        onOpenChange={(open) => {
+                            setSkuFinder(
+                                "is_multiple_found",
+                                !skuFinder.is_multiple_found,
+                            );
+                            return open;
+                        }}
+                    >
+                        <DialogContent className="sm:max-w-8xl max-h-96 overflow-y-auto">
+                            <DialogTitle>Pilih varian produk</DialogTitle>
+                            <DialogDescription className="mb-3">
+                                Pilih satu untuk masuk ke keranjang
+                            </DialogDescription>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {skuFinder.multiple_found_items.map(
+                                    (item, index) => (
+                                        <Card
+                                            tabIndex={index}
+                                            key={index}
+                                            onClick={() => {
+                                                const existingItem =
+                                                    form.items.find(
+                                                        (i) =>
+                                                            i.id ==
+                                                            Number(item.id),
+                                                    );
+                                                if (
+                                                    existingItem &&
+                                                    existingItem.qty >=
+                                                        existingItem.stock_remaining
+                                                ) {
+                                                    BlastToaster(
+                                                        "error",
+                                                        `Stok tidak mencukupi untuk ${item.sku}`,
+                                                    );
+                                                    setSkuFinder(
+                                                        "is_multiple_found",
+                                                        false,
+                                                    );
+                                                    setSkuFinder(
+                                                        "multiple_found_items",
+                                                        [],
+                                                    );
+                                                    return;
+                                                }
+
+                                                const existingItemIndex =
+                                                    form.items.findIndex(
+                                                        (i) =>
+                                                            i.id ==
+                                                            Number(item.id),
+                                                    );
+                                                let updatedItems = [
+                                                    ...form.items,
+                                                ];
+                                                if (existingItemIndex !== -1) {
+                                                    const existingItem =
+                                                        updatedItems[
+                                                            existingItemIndex
+                                                        ];
+                                                    updatedItems[
+                                                        existingItemIndex
+                                                    ] = {
+                                                        ...existingItem,
+                                                        qty:
+                                                            existingItem.qty +
+                                                            1,
+                                                    };
+                                                } else {
+                                                    updatedItems.push({
+                                                        id: Number(item.id),
+                                                        sku: item.sku,
+                                                        product_name:
+                                                            item.product_name,
+                                                        attributes:
+                                                            item.attributes,
+                                                        price_applied:
+                                                            item.price_applied,
+                                                        price_criteria:
+                                                            item.price_criteria,
+                                                        product_type:
+                                                            item.product_type,
+                                                        with_price_criteria:
+                                                            item.with_price_criteria,
+                                                        can_earn_point:
+                                                            item.can_earn_point,
+                                                        stock_remaining:
+                                                            item.stock_remaining,
+                                                        qty: 1,
+                                                    });
+                                                }
+                                                setForm("items", updatedItems);
+                                                setSkuFinder(
+                                                    "is_multiple_found",
+                                                    false,
+                                                );
+                                                setSkuFinder(
+                                                    "multiple_found_items",
+                                                    [],
+                                                );
+                                            }}
+                                            className="relative py-3 overflow-hidden cursor-pointer"
+                                        >
+                                            <CardContent className="px-3 z-10">
+                                                {/*Product Name*/}
+                                                <div className="flex flex-col mb-3">
+                                                    <h3 className="font-semibold text-md">
+                                                        {item.sku}
+                                                    </h3>
+                                                    <span className="text-xs text-gray-600">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="me-2 z-0 flex"
+                                                        >
+                                                            {renderProductIcon({
+                                                                type:
+                                                                    item.product_type ||
+                                                                    "",
+                                                                size: 16,
+                                                            })}
+                                                            <span>
+                                                                {
+                                                                    item.product_name
+                                                                }
+                                                            </span>
+                                                        </Badge>
+                                                    </span>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm">
+                                                            Warna{" "}
+                                                            {
+                                                                item.attributes
+                                                                    ?.color
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm">
+                                                            Ukuran{" "}
+                                                            {
+                                                                item.attributes
+                                                                    ?.size
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ),
+                                )}
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button
+                                        variant="red"
+                                        type="button"
+                                        className="flex items-center gap-2"
+                                    >
+                                        <X /> Batal
+                                    </Button>
+                                </DialogClose>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                     {/* SKU Input */}
                     <div className="flex flex-col">
                         <Label className="text-base mb-1">
-                            Scan Barcode Produk
+                            Scan Barcode / Cari Produk
                         </Label>
                         <form onSubmit={handleSubmitSKU}>
                             <Input
                                 autoFocus
                                 type="text"
-                                placeholder="Masukkan Barcode"
+                                placeholder="Masukkan pencarian"
                                 className="w-full"
                                 value={skuFinder.sku || ""}
                                 onChange={(e) => {
@@ -444,7 +656,7 @@ const CashierTransactionEdit = ({
                                     lastKeyTime.current = currentTime;
                                     if (scannerTimer.current)
                                         clearTimeout(scannerTimer.current);
-                                    if (timeDiff < 60 && value.length > 2) {
+                                    if (timeDiff < 40 && value.length > 2) {
                                         scannerTimer.current = setTimeout(
                                             () => {
                                                 handleFindSKU(value);
@@ -775,6 +987,13 @@ const CashierTransactionEdit = ({
                                                     {item.product_name}
                                                 </p>
                                                 <div className="flex gap-1">
+                                                    <span className="text-xs">
+                                                        <pre>
+                                                            {"(" +
+                                                                item.sku +
+                                                                ")"}
+                                                        </pre>
+                                                    </span>
                                                     <span className="text-xs">
                                                         {item.attributes.color}
                                                     </span>
