@@ -125,18 +125,6 @@ const AdminProductEdit = ({
                 isValid = false;
             }
 
-            // Warna wajib
-            if (
-                !variant.attributes.color ||
-                variant.attributes.color.trim() === ""
-            ) {
-                setError(
-                    `variants.${index}.attributes.color`,
-                    "Warna wajib diisi",
-                );
-                isValid = false;
-            }
-
             // Ukuran wajib untuk sepatu
             if (
                 data.type === "sepatu" &&
@@ -418,7 +406,7 @@ const AdminProductEdit = ({
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
+                                                <Label className="text-base mb-1">
                                                     Warna
                                                 </Label>
                                                 <Input

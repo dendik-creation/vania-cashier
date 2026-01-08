@@ -132,10 +132,19 @@ const AdminTransactionCreate = ({
         setData: setCustomerFinder,
         reset: resetCustomerFinder,
     } = useForm({
-        customer_phone: "",
+        customer_find: "",
+        is_multiple_found: false,
+        multiple_found_items: [] as {
+            id: number | string | undefined | null;
+            name: string;
+            phone: string;
+            address: string;
+            type: string;
+            points: number;
+        }[],
         is_found: false,
         customer_found: {
-            id: null,
+            id: null as number | string | null | undefined,
             name: "",
             phone: "",
             address: "",
@@ -193,50 +202,54 @@ const AdminTransactionCreate = ({
         let updatedItems;
 
         if (shouldUseMultiItemDiscount) {
-            const maxQtyInCart = Math.max(
-                ...form.items
-                    .filter((item) => item.with_price_criteria)
-                    .map((item) => Number(item.qty) || 0),
-            );
+            const totalAllQty = form.items.reduce((sum, item) => {
+                return sum + (Number(item.qty) || 0);
+            }, 0);
 
             const differences: number[] = [];
 
             form.items.forEach((item) => {
                 if (!item.with_price_criteria) return;
-                const basicPrice = item.price_criteria.basic;
+
+                const basicPrice = Number(item.price_criteria.basic);
                 let applicablePrice = basicPrice;
-                if (maxQtyInCart >= 6) {
-                    applicablePrice = item.price_criteria.order_qty_6;
-                } else if (maxQtyInCart >= 3) {
-                    applicablePrice = item.price_criteria.order_qty_3;
+
+                if (totalAllQty >= 6) {
+                    applicablePrice = Number(item.price_criteria.order_qty_6);
+                } else if (totalAllQty >= 3) {
+                    applicablePrice = Number(item.price_criteria.order_qty_3);
                 }
+
                 const diff = basicPrice - applicablePrice;
                 differences.push(diff);
             });
+
             const lowestDiff =
                 differences.length > 0 ? Math.min(...differences) : 0;
 
             updatedItems = form.items.map((item) => {
-                let price = item.price_criteria.basic;
+                let price = Number(item.price_criteria.basic);
 
                 if (item.with_price_criteria && lowestDiff > 0) {
-                    price = item.price_criteria.basic - lowestDiff;
+                    price = Number(item.price_criteria.basic) - lowestDiff;
                 }
 
                 return { ...item, price_applied: price };
             });
         } else {
             updatedItems = form.items.map((item) => {
-                let price = item.price_criteria.basic;
+                let price = Number(item.price_criteria.basic);
                 const qty = Number(item.qty);
 
                 if (item.with_price_criteria) {
                     if (currentCustomerType === "reseller") {
-                        price = item.price_criteria.reseller;
-                    } else if (qty >= 6) {
-                        price = item.price_criteria.order_qty_6;
-                    } else if (qty >= 3) {
-                        price = item.price_criteria.order_qty_3;
+                        price = Number(item.price_criteria.reseller);
+                    } else {
+                        if (qty >= 6) {
+                            price = Number(item.price_criteria.order_qty_6);
+                        } else if (qty >= 3) {
+                            price = Number(item.price_criteria.order_qty_3);
+                        }
                     }
                 }
 
@@ -246,7 +259,8 @@ const AdminTransactionCreate = ({
 
         const isChanged = updatedItems.some(
             (item, index) =>
-                item.price_applied !== form.items[index].price_applied,
+                Number(item.price_applied) !==
+                Number(form.items[index].price_applied),
         );
 
         if (isChanged) {
@@ -256,7 +270,8 @@ const AdminTransactionCreate = ({
 
     const recalculateTransactionPayment = () => {
         const subtotal = form.items.reduce(
-            (total, item) => total + item.price_applied * item.qty,
+            (total, item) =>
+                total + Number(item.price_applied) * Number(item.qty),
             0,
         );
 
@@ -264,9 +279,19 @@ const AdminTransactionCreate = ({
         form.items.forEach((item) => {
             if (
                 item.can_earn_point &&
-                item.price_applied * item.qty > eligible_point_minimum
+                Number(item.price_applied) * Number(item.qty) >=
+                    Number(eligible_point_minimum)
             ) {
-                point_earned += item.qty;
+                if (
+                    Number(item.price_applied) < Number(eligible_point_minimum)
+                ) {
+                    point_earned += Math.floor(
+                        (Number(item.price_applied) * Number(item.qty)) /
+                            Number(eligible_point_minimum),
+                    );
+                } else {
+                    point_earned += Number(item.qty);
+                }
             }
         });
 
@@ -274,12 +299,15 @@ const AdminTransactionCreate = ({
         if (form.payment_method && Array.isArray(admin_fee_criteria)) {
             const criteria = admin_fee_criteria
                 .filter((c: any) => c.payment_method === form.payment_method)
-                .sort((a: any, b: any) => a.min_total - b.min_total);
+                .sort(
+                    (a: any, b: any) =>
+                        Number(a.min_total) - Number(b.min_total),
+                );
 
             let matchedFee = 0;
             criteria.forEach((c: any) => {
-                if (subtotal >= c.min_total) {
-                    matchedFee = c.admin_fee;
+                if (Number(subtotal) >= Number(c.min_total)) {
+                    matchedFee = Number(c.admin_fee);
                 }
             });
             admin_fee = matchedFee;
@@ -318,11 +346,22 @@ const AdminTransactionCreate = ({
                 params: { phone },
             })
             .then((response) => {
-                const customerData = response.data.customer;
+                const customerData = response.data;
+
+                if (Array.isArray(customerData) && customerData.length > 1) {
+                    setCustomerFinder("is_multiple_found", true);
+                    setCustomerFinder("multiple_found_items", customerData);
+                    return;
+                }
+
+                const singleCustomer = Array.isArray(customerData)
+                    ? customerData[0]
+                    : customerData;
+
                 setCustomerFinder("is_found", true);
-                setCustomerFinder("customer_found", customerData);
-                setForm("customer_id", customerData.id);
-                setForm("customer_type", customerData.type);
+                setCustomerFinder("customer_found", singleCustomer);
+                setForm("customer_id", singleCustomer.id);
+                setForm("customer_type", singleCustomer.type);
             })
             .catch((err) => {
                 setCustomerFinder("is_found", false);
@@ -396,12 +435,9 @@ const AdminTransactionCreate = ({
 
     const handleSubmitCustomer = (e: FormEvent) => {
         e.preventDefault();
-        const phone = customerFinder.customer_phone || "";
-        const numbersOnly = phone.replace(/\D/g, "");
-        setCustomerFinder("customer_phone", numbersOnly);
-        if (phone.trim() != "" && phone.length >= 8) {
-            handleFindCustomer(numbersOnly);
-        }
+        const value = customerFinder.customer_find || "";
+        setCustomerFinder("customer_find", value);
+        handleFindCustomer(value);
     };
     const handleSubmitSKU = (e: FormEvent) => {
         e.preventDefault();
@@ -415,6 +451,16 @@ const AdminTransactionCreate = ({
     const handleQtyAction = (action: "ADD" | "MIN", index: number) => {
         if (action == "ADD") {
             const updatedItems = [...form.items];
+            if (
+                updatedItems[index].stock_remaining &&
+                updatedItems[index].qty >= updatedItems[index].stock_remaining
+            ) {
+                BlastToaster(
+                    "error",
+                    `Stok tidak mencukupi untuk ${updatedItems[index].sku}`,
+                );
+                return;
+            }
             updatedItems[index].qty = updatedItems[index].qty + 1;
             setForm("items", updatedItems);
         } else if (action == "MIN") {
@@ -426,6 +472,8 @@ const AdminTransactionCreate = ({
             }
             setForm("items", updatedItems);
         }
+        handlePriceItemByCriteria();
+        recalculateTransactionPayment();
     };
     const savePointUsed = (value: number) => {
         setForm("point_used", value);
@@ -531,7 +579,7 @@ const AdminTransactionCreate = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
                 <div className="w-full flex flex-col gap-4">
-                    {/*Modal IF product found higher than 1*/}
+                    {/*Modal IF product found more than 1*/}
                     <Dialog
                         open={skuFinder.is_multiple_found}
                         onOpenChange={(open) => {
@@ -539,6 +587,7 @@ const AdminTransactionCreate = ({
                                 "is_multiple_found",
                                 !skuFinder.is_multiple_found,
                             );
+                            setSkuFinder("multiple_found_items", []);
                             return open;
                         }}
                     >
@@ -696,6 +745,105 @@ const AdminTransactionCreate = ({
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
+                    {/*Modal IF customer found more than 1*/}
+                    <Dialog
+                        open={customerFinder.is_multiple_found}
+                        onOpenChange={(open) => {
+                            setCustomerFinder(
+                                "is_multiple_found",
+                                !customerFinder.is_multiple_found,
+                            );
+                            setCustomerFinder("multiple_found_items", []);
+                            return open;
+                        }}
+                    >
+                        <DialogContent className="sm:max-w-8xl max-h-96 overflow-y-auto">
+                            <DialogTitle>Pilih pelanggan</DialogTitle>
+                            <DialogDescription className="mb-3">
+                                Pilih satu pelanggan yang sesuai
+                            </DialogDescription>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {customerFinder.multiple_found_items.map(
+                                    (item, index) => (
+                                        <Card
+                                            tabIndex={index}
+                                            key={index}
+                                            onClick={() => {
+                                                setCustomerFinder(
+                                                    "is_found",
+                                                    true,
+                                                );
+                                                setCustomerFinder(
+                                                    "customer_found",
+                                                    item,
+                                                );
+                                                setForm(
+                                                    "customer_id",
+                                                    item.id as string,
+                                                );
+                                                setForm(
+                                                    "customer_type",
+                                                    item.type,
+                                                );
+                                                setCustomerFinder(
+                                                    "is_multiple_found",
+                                                    false,
+                                                );
+                                                setCustomerFinder(
+                                                    "multiple_found_items",
+                                                    [],
+                                                );
+                                            }}
+                                            className="relative py-3 overflow-hidden cursor-pointer"
+                                        >
+                                            <CardContent className="px-3 z-10">
+                                                <div className="flex flex-col mb-3">
+                                                    <h3 className="font-semibold text-md">
+                                                        {item.name}
+                                                    </h3>
+                                                    <span className="text-xs text-gray-600">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="me-2 z-0 flex"
+                                                        >
+                                                            <span>
+                                                                {humanCustType(
+                                                                    item.type,
+                                                                )}
+                                                            </span>
+                                                        </Badge>
+                                                    </span>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm">
+                                                            No.Hp {item.phone}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm">
+                                                            Poin {item.points}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ),
+                                )}
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button
+                                        variant="red"
+                                        type="button"
+                                        className="flex items-center gap-2"
+                                    >
+                                        <X /> Batal
+                                    </Button>
+                                </DialogClose>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                     {/* SKU Input */}
                     <div className="flex flex-col">
                         <Label className="text-base mb-1">
@@ -761,7 +909,7 @@ const AdminTransactionCreate = ({
                                             placeholder="Pilih Status Pelanggan"
                                             options={[
                                                 {
-                                                    label: "Baru",
+                                                    label: "Baru / Umum",
                                                     value: "1",
                                                 },
                                                 {
@@ -778,18 +926,18 @@ const AdminTransactionCreate = ({
                                         >
                                             <Input
                                                 type="text"
-                                                placeholder="Cari No. Telepon"
+                                                placeholder="Cari nama atau no hp"
                                                 className="w-full"
                                                 disabled={
                                                     form.on_scanning_printer
                                                 }
                                                 value={
-                                                    customerFinder.customer_phone ||
+                                                    customerFinder.customer_find ||
                                                     ""
                                                 }
                                                 onChange={(e) =>
                                                     setCustomerFinder(
-                                                        "customer_phone",
+                                                        "customer_find",
                                                         e.target.value,
                                                     )
                                                 }
@@ -1014,7 +1162,7 @@ const AdminTransactionCreate = ({
                                                     false,
                                                 );
                                                 setCustomerFinder(
-                                                    "customer_phone",
+                                                    "customer_find",
                                                     "",
                                                 );
                                             }}

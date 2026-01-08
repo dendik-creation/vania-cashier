@@ -20,8 +20,10 @@ class TransactionController extends Controller
         $validated = $request->validate([
             "phone" => "required",
         ]);
-        $customer = Customer::where("phone", $validated["phone"])->first();
-        if (!$customer) {
+        $customers = Customer::where("phone", $validated["phone"])
+            ->orWhere("name", "like", "%{$validated["phone"]}%")
+            ->get();
+        if ($customers->isEmpty()) {
             return response()->json(
                 [
                     "message" => "Pelanggan tidak ditemukan",
@@ -29,9 +31,7 @@ class TransactionController extends Controller
                 404,
             );
         }
-        return response()->json([
-            "customer" => $customer,
-        ]);
+        return response()->json($customers, 200);
     }
 
     public function findSKU(Request $request)
@@ -212,11 +212,6 @@ class TransactionController extends Controller
             "items.*.attributes" => ["required", "array"],
             "items.*.attributes.color" => ["required", "string"],
             "items.*.price_applied" => ["required", "numeric"],
-            "items.*.price_criteria" => ["required", "array"],
-            "items.*.price_criteria.basic" => ["required", "numeric"],
-            "items.*.price_criteria.reseller" => ["required", "numeric"],
-            "items.*.price_criteria.order_qty_3" => ["required", "numeric"],
-            "items.*.price_criteria.order_qty_6" => ["required", "numeric"],
             "items.*.product_type" => ["required", "string"],
             "items.*.can_earn_point" => ["required", "boolean"],
             "items.*.qty" => ["required", "integer", "min:1"],
@@ -422,11 +417,6 @@ class TransactionController extends Controller
             "items.*.attributes" => ["required", "array"],
             "items.*.attributes.color" => ["required", "string"],
             "items.*.price_applied" => ["required", "numeric"],
-            "items.*.price_criteria" => ["required", "array"],
-            "items.*.price_criteria.basic" => ["required", "numeric"],
-            "items.*.price_criteria.reseller" => ["required", "numeric"],
-            "items.*.price_criteria.order_qty_3" => ["required", "numeric"],
-            "items.*.price_criteria.order_qty_6" => ["required", "numeric"],
             "items.*.product_type" => ["required", "string"],
             "items.*.can_earn_point" => ["required", "boolean"],
             "items.*.qty" => ["required", "integer", "min:1"],

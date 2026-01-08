@@ -20,8 +20,10 @@ class TransactionController extends Controller
         $validated = $request->validate([
             "phone" => "required",
         ]);
-        $customer = Customer::where("phone", $validated["phone"])->first();
-        if (!$customer) {
+        $customers = Customer::where("phone", $validated["phone"])
+            ->orWhere("name", "like", "%{$validated["phone"]}%")
+            ->get();
+        if ($customers->isEmpty()) {
             return response()->json(
                 [
                     "message" => "Pelanggan tidak ditemukan",
@@ -29,9 +31,7 @@ class TransactionController extends Controller
                 404,
             );
         }
-        return response()->json([
-            "customer" => $customer,
-        ]);
+        return response()->json($customers, 200);
     }
 
     public function findSKU(Request $request)

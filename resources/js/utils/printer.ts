@@ -44,7 +44,7 @@ export class ReceiptPrinter {
             .line(`Kasir : ${transaction.cashier?.name || "-"}`)
             .line(`Pelanggan : ${transaction.customer?.name || "Umum"}`);
         if (transaction.customer_id) {
-            e.line(`No HP : ${transaction.customer?.phone || "-"}?`);
+            e.line(`No HP : ${transaction.customer?.phone || "-"}`);
         }
         if (
             (transaction.point_earned > 0 || transaction.point_used > 0) &&
@@ -81,7 +81,7 @@ export class ReceiptPrinter {
             const rightPartTop = floatToIdCurrency(normalSubtotal);
             const rightPartBottom =
                 subtotalDiff !== 0
-                    ? `(${floatToIdCurrency(subtotalDiff)})`
+                    ? `(-${floatToIdCurrency(subtotalDiff)})`
                     : "";
 
             // leftPart + rightPartTop
@@ -98,7 +98,14 @@ export class ReceiptPrinter {
 
             // rightPartBottom
             if (rightPartBottom) {
-                e.align("right").line(`-${rightPartBottom}`).align("left");
+                const spacesBottom = this.width - rightPartBottom.length;
+                e.align("left");
+
+                if (spacesBottom > 0) {
+                    e.line(" ".repeat(spacesBottom) + rightPartBottom);
+                } else {
+                    e.align("right").line(rightPartBottom).align("left");
+                }
             }
         });
 
