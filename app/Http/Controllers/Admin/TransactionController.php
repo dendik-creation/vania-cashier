@@ -57,6 +57,15 @@ class TransactionController extends Controller
             );
         }
 
+        if($product_variants->count() == 1 && $product_variants->first()->stock <= 0){
+            return response()->json(
+                [
+                    "message" => "Stok " . $product_variants->first()->sku . " kosong",
+                ],
+                400,
+            );
+        }
+
         $results = $product_variants->map(function ($product_variant) {
             return [
                 "id" => $product_variant->id,
@@ -210,7 +219,6 @@ class TransactionController extends Controller
             "items.*.sku" => ["required", "string"],
             "items.*.product_name" => ["required", "string"],
             "items.*.attributes" => ["required", "array"],
-            "items.*.attributes.color" => ["required", "string"],
             "items.*.price_applied" => ["required", "numeric"],
             "items.*.product_type" => ["required", "string"],
             "items.*.can_earn_point" => ["required", "boolean"],
@@ -415,7 +423,6 @@ class TransactionController extends Controller
             "items.*.sku" => ["required", "string"],
             "items.*.product_name" => ["required", "string"],
             "items.*.attributes" => ["required", "array"],
-            "items.*.attributes.color" => ["required", "string"],
             "items.*.price_applied" => ["required", "numeric"],
             "items.*.product_type" => ["required", "string"],
             "items.*.can_earn_point" => ["required", "boolean"],

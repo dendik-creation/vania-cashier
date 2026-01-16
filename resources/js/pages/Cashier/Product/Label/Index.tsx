@@ -367,7 +367,8 @@ const CashierProductLabelIndex = ({
                                                 <PaintBucket size={16} />
                                                 <span className="text-sm">
                                                     Warna{" "}
-                                                    {item.attributes?.color}
+                                                    {item.attributes?.color ??
+                                                        "-"}
                                                 </span>
                                             </div>
                                             {item.product_type == "sepatu" && (
@@ -377,7 +378,8 @@ const CashierProductLabelIndex = ({
                                                     />
                                                     <span className="text-sm">
                                                         Ukuran{" "}
-                                                        {item.attributes?.size}
+                                                        {item.attributes
+                                                            ?.size ?? "-"}
                                                     </span>
                                                 </div>
                                             )}
@@ -436,7 +438,8 @@ const CashierProductLabelIndex = ({
                                                     <PaintBucket size={16} />
                                                     <span className="text-sm">
                                                         Warna{" "}
-                                                        {item.attributes?.color}
+                                                        {item.attributes
+                                                            ?.color ?? "-"}
                                                     </span>
                                                 </div>
                                                 {item.product_type ==
@@ -447,10 +450,8 @@ const CashierProductLabelIndex = ({
                                                         />
                                                         <span className="text-sm">
                                                             Ukuran{" "}
-                                                            {
-                                                                item.attributes
-                                                                    ?.size
-                                                            }
+                                                            {item.attributes
+                                                                ?.size ?? "-"}
                                                         </span>
                                                     </div>
                                                 )}

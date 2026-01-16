@@ -649,19 +649,15 @@ const CashierTransactionEdit = ({
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-sm">
                                                             Warna{" "}
-                                                            {
-                                                                item.attributes
-                                                                    ?.color
-                                                            }
+                                                            {item.attributes
+                                                                ?.color ?? "-"}
                                                         </span>
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-sm">
                                                             Ukuran{" "}
-                                                            {
-                                                                item.attributes
-                                                                    ?.size
-                                                            }
+                                                            {item.attributes
+                                                                ?.size ?? "-"}
                                                         </span>
                                                     </div>
                                                 </div>

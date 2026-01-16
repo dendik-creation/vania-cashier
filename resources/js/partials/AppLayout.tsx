@@ -39,7 +39,10 @@ export default function AppLayout({ children, className }: AppLayoutProps) {
             <div
                 className={`flex min-h-screen w-full bg-slate-50 ${className}`}
             >
-                <AppSidebar role={flash?.user?.role as string} />
+                <AppSidebar
+                    role={flash?.user?.role as string}
+                    app_name={flash?.app_name as string}
+                />
                 <div className="flex flex-col w-full min-w-0">
                     <AppHeader
                         name={flash?.user?.name}

@@ -53,7 +53,12 @@ export default function SignIn({ app_name }: { app_name: string }) {
                     <img
                         src="/icon.png"
                         alt="Icon Image"
-                        className="mx-auto bg-cover object-center"
+                        className="mx-auto bg-contain object-contain"
+                        style={{
+                            width: "75%",
+                            height: "auto",
+                            maxHeight: "300px",
+                        }}
                     />
                 </div>
                 {/* Kanan: Form */}

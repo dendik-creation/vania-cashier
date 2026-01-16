@@ -32,6 +32,7 @@ const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
         phone: customer.phone || "",
         type: customer.type || "",
         address: customer.address || "",
+        points: customer.points || 0,
     });
 
     const handleChangeInput = (key: keyof typeof data, value: string) => {
@@ -51,6 +52,10 @@ const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
         }
         if (!data.type || data.type.trim() === "") {
             setError("type", "Tipe pelanggan wajib dipilih");
+            isValid = false;
+        }
+        if (!data.points || data.points.toString().trim() === "") {
+            setError("points", "Poin wajib diisi");
             isValid = false;
         }
         return isValid;
@@ -135,7 +140,7 @@ const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
                                     onChange={(value) =>
                                         handleChangeInput(
                                             "type",
-                                            value.toString()
+                                            value.toString(),
                                         )
                                     }
                                     removeValue={() =>
@@ -144,6 +149,24 @@ const AdminCustomerEdit = ({ customer }: { customer: Customer }) => {
                                 />
                             </div>
                             {errors.type && <ErrorInput error={errors.type} />}
+                        </div>
+                        <div className="flex flex-col w-full">
+                            <label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
+                                Poin
+                            </label>
+                            <Input
+                                type="number"
+                                placeholder="Masukkan poin"
+                                className="w-full"
+                                disabled={processing}
+                                value={data.points || ""}
+                                onChange={(e) =>
+                                    handleChangeInput("points", e.target.value)
+                                }
+                            />
+                            {errors.points && (
+                                <ErrorInput error={errors.points} />
+                            )}
                         </div>
                         <div className="flex flex-col w-full">
                             <label className="text-base mb-1">Alamat</label>

@@ -11,7 +11,7 @@ return [
     "status_bar" => "#e5e5e5",
     "icons" => [
         "512x512" => [
-            "path" => "/icon.png",
+            "path" => "/icon_512.png",
             "purpose" => "any",
         ],
     ],

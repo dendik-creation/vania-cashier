@@ -14,7 +14,7 @@ class ProductSeed extends Seeder
     public function run(): void
     {
         $product1 = Product::create([
-            "name" => "Contoh 1",
+            "name" => "Contoh Nike",
             "type" => "sepatu",
             "brand" => "Nike",
             "with_price_criteria" => true,
@@ -22,7 +22,7 @@ class ProductSeed extends Seeder
 
         ProductVariant::create([
             "product_id" => $product1->id,
-            "sku" => "EXAMPL01",
+            "sku" => "NIKE01",
             "attributes" => [
                 "color" => "Black",
                 "size" => 40,
@@ -38,7 +38,7 @@ class ProductSeed extends Seeder
 
         ProductVariant::create([
             "product_id" => $product1->id,
-            "sku" => "EXAMPL02",
+            "sku" => "NIKE02",
             "attributes" => [
                 "color" => "White",
                 "size" => 41,
@@ -54,7 +54,7 @@ class ProductSeed extends Seeder
 
         ProductVariant::create([
             "product_id" => $product1->id,
-            "sku" => "EXAMPL03",
+            "sku" => "NIKE03",
             "attributes" => [
                 "color" => "Blue",
                 "size" => 40,

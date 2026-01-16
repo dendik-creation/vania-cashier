@@ -367,14 +367,16 @@ const AdminProductLabelIndex = ({
                                                 <PaintBucket size={16} />
                                                 <span className="text-sm">
                                                     Warna{" "}
-                                                    {item.attributes?.color}
+                                                    {item.attributes?.color ??
+                                                        "-"}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <RulerDimensionLine size={16} />
                                                 <span className="text-sm">
                                                     Ukuran{" "}
-                                                    {item.attributes?.size}
+                                                    {item.attributes?.size ??
+                                                        "-"}
                                                 </span>
                                             </div>
                                         </div>
@@ -432,7 +434,8 @@ const AdminProductLabelIndex = ({
                                                     <PaintBucket size={16} />
                                                     <span className="text-sm">
                                                         Warna{" "}
-                                                        {item.attributes?.color}
+                                                        {item.attributes
+                                                            ?.color ?? "-"}
                                                     </span>
                                                 </div>
                                                 {item.product_type ==
@@ -443,10 +446,8 @@ const AdminProductLabelIndex = ({
                                                         />
                                                         <span className="text-sm">
                                                             Ukuran{" "}
-                                                            {
-                                                                item.attributes
-                                                                    ?.size
-                                                            }
+                                                            {item.attributes
+                                                                ?.size ?? "-"}
                                                         </span>
                                                     </div>
                                                 )}
