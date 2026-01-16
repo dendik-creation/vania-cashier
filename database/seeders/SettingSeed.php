@@ -31,7 +31,6 @@ class SettingSeed extends Seeder
                     "admin_fee" => 2000,
                 ],
             ],
-            "eligible_point_minimum" => 50000,
         ]);
     }
 }

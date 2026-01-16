@@ -8,7 +8,7 @@ var filesToCache = [
     "/assets/fonts/SpaceGrotesk-Medium.ttf",
     "/assets/fonts/SpaceGrotesk-SemiBold.ttf",
     "/assets/fonts/SpaceGrotesk-Bold.ttf",
-    "/icon.png",
+    "/icon_512.png",
     "/favicon.ico",
     "/assets/xlsx-format/import-produk.xlsx",
 ];
@@ -19,7 +19,7 @@ self.addEventListener("install", (event) => {
     event.waitUntil(
         caches.open(staticCacheName).then((cache) => {
             return cache.addAll(filesToCache);
-        })
+        }),
     );
 });
 
@@ -31,9 +31,9 @@ self.addEventListener("activate", (event) => {
                 cacheNames
                     .filter((cacheName) => cacheName.startsWith("pwa-"))
                     .filter((cacheName) => cacheName !== staticCacheName)
-                    .map((cacheName) => caches.delete(cacheName))
+                    .map((cacheName) => caches.delete(cacheName)),
             );
-        })
+        }),
     );
 });
 
@@ -47,6 +47,6 @@ self.addEventListener("fetch", (event) => {
             })
             .catch(() => {
                 return caches.match("offline");
-            })
+            }),
     );
 });

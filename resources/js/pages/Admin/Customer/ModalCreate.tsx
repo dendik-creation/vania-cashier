@@ -31,6 +31,7 @@ const AdminCustomerCreate = () => {
         phone: "",
         type: "",
         address: "",
+        points: 0,
     });
 
     const handleChangeInput = (key: keyof typeof data, value: string) => {
@@ -50,6 +51,10 @@ const AdminCustomerCreate = () => {
         }
         if (!data.type || data.type.trim() === "") {
             setError("type", "Tipe pelanggan wajib dipilih");
+            isValid = false;
+        }
+        if (!data.points || data.points < 0) {
+            setError("points", "Poin wajib diisi");
             isValid = false;
         }
         return isValid;
@@ -135,7 +140,7 @@ const AdminCustomerCreate = () => {
                                     onChange={(value) =>
                                         handleChangeInput(
                                             "type",
-                                            value.toString()
+                                            value.toString(),
                                         )
                                     }
                                     removeValue={() =>
@@ -144,6 +149,24 @@ const AdminCustomerCreate = () => {
                                 />
                             </div>
                             {errors.type && <ErrorInput error={errors.type} />}
+                        </div>
+                        <div className="flex flex-col w-full">
+                            <label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
+                                Poin
+                            </label>
+                            <Input
+                                type="number"
+                                placeholder="Masukkan poin"
+                                className="w-full"
+                                disabled={processing}
+                                value={data.points || ""}
+                                onChange={(e) =>
+                                    handleChangeInput("points", e.target.value)
+                                }
+                            />
+                            {errors.points && (
+                                <ErrorInput error={errors.points} />
+                            )}
                         </div>
                         <div className="flex flex-col w-full">
                             <label className="text-base mb-1">Alamat</label>

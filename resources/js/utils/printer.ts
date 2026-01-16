@@ -20,14 +20,24 @@ export const PRINTERS = {
 export class ReceiptPrinter {
     encoder: any;
     width: number = 32; // 58mm printer usually has 32 chars width
+    debugReceipt: boolean = false;
 
     constructor() {
         this.encoder = new EscPosEncoder();
+        // this.debugReceipt = true; // aktifkan untuk visual print saja hehe
     }
 
     generateReceipt(transaction: Transaction, app_setting: Setting) {
         const e = this.encoder.initialize();
 
+        const printRow = (label: string, val: string) => {
+            const spaces = this.width - label.length - val.length;
+            if (spaces > 0) {
+                e.line(label + " ".repeat(spaces) + val);
+            } else {
+                e.line(label).align("right").line(val).align("left");
+            }
+        };
         // Header
         e.align("left")
             .bold(true)
@@ -36,22 +46,20 @@ export class ReceiptPrinter {
             .line(app_setting.app_address)
             .size("small")
             .line(ymdToIdDate(transaction.transaction_time, true))
+            .size("normal")
             .line(`#${transaction.invoice_code}`)
             .line("-".repeat(this.width));
 
         // Info
-        e.align("left")
-            .line(`Kasir : ${transaction.cashier?.name || "-"}`)
-            .line(`Pelanggan : ${transaction.customer?.name || "Umum"}`);
+        printRow("Kasir", transaction.cashier?.name || "-");
+        printRow("Pelanggan", transaction.customer?.name || "Umum");
         if (transaction.customer_id) {
-            e.line(`No HP : ${transaction.customer?.phone || "-"}`);
+            printRow("No HP", transaction.customer?.phone || "-");
         }
-        if (
-            (transaction.point_earned > 0 || transaction.point_used > 0) &&
-            transaction.customer_type != "general"
-        ) {
-            e.line(
-                `Poin Terkini : ${Number(transaction.customer?.points || 0) + Number(transaction.point_earned) - Number(transaction.point_used)}`,
+        if (transaction.customer_type != "general") {
+            printRow(
+                "Poin Terkini",
+                `${Number(transaction.customer?.points || 0)}`
             );
         }
         e.line("-".repeat(this.width));
@@ -66,8 +74,12 @@ export class ReceiptPrinter {
                 attributes.push("Color:" + item.variant.attributes.color);
             const variants =
                 attributes.length > 0 ? ` (${attributes.join(" ")})` : "";
-            e.align("left").line(productName);
-            e.line(variants).size("small");
+
+            e.align("left").size("normal").line(productName);
+            if (variants) {
+                e.size("small").line(variants).size("normal");
+            }
+
             const qty = item.quantity;
             const normalPrice = item.variant.price_criteria.basic;
             const normalSubtotal =
@@ -98,14 +110,7 @@ export class ReceiptPrinter {
 
             // rightPartBottom
             if (rightPartBottom) {
-                const spacesBottom = this.width - rightPartBottom.length;
-                e.align("left");
-
-                if (spacesBottom > 0) {
-                    e.line(" ".repeat(spacesBottom) + rightPartBottom);
-                } else {
-                    e.align("right").line(rightPartBottom).align("left");
-                }
+                e.align("right").line(rightPartBottom).align("left");
             }
         });
 
@@ -113,26 +118,25 @@ export class ReceiptPrinter {
 
         // Totals
         const formatCurrency = (val: number) => floatToIdCurrency(val);
+        const normalAllAmount = transaction.items.reduce(
+            (sum, item) =>
+                sum + (item.variant?.price_criteria.basic || 0) * item.quantity,
+            0
+        );
+        const totalDiscount = normalAllAmount - transaction.subtotal;
+        printRow("Subtotal", formatCurrency(normalAllAmount));
+        if (totalDiscount > 0)
+            printRow("Diskon", "-" + formatCurrency(totalDiscount));
 
-        const printRow = (label: string, val: string) => {
-            const spaces = this.width - label.length - val.length;
-            if (spaces > 0) {
-                e.line(label + " ".repeat(spaces) + val);
-            } else {
-                e.line(label).align("right").line(val).align("left");
-            }
-        };
-
-        printRow("Subtotal", formatCurrency(transaction.subtotal));
         if (transaction.point_discount > 0)
             printRow(
                 "Konversi Poin",
-                "-" + formatCurrency(transaction.point_discount),
+                "-" + formatCurrency(transaction.point_discount)
             );
         if (transaction.event_discount > 0)
             printRow(
                 "Diskon Event",
-                "-" + formatCurrency(transaction.event_discount),
+                "-" + formatCurrency(transaction.event_discount)
             );
         if (transaction.admin_fee > 0)
             printRow("Biaya Admin", formatCurrency(transaction.admin_fee));
@@ -152,20 +156,28 @@ export class ReceiptPrinter {
     }
 
     async printReceipt(bytes: Uint8Array) {
+        if (this.debugReceipt) {
+            this.simulatePrint(bytes, "Receipt (ESC/POS)");
+            return true;
+        }
         return this.printToBluetooth(bytes, PRINTERS.RECEIPT);
     }
 
     async printLabel(
         variants: (ProductVariant & { copies?: number })[],
-        itemPerRow: number = 1,
+        itemPerRow: number = 1
     ) {
         const bytes = this.generateTSPLCommands(variants, itemPerRow);
+        if (this.debugReceipt) {
+            this.simulatePrint(bytes, "Label (TSPL)");
+            return true;
+        }
         return this.printToBluetooth(bytes, PRINTERS.LABEL);
     }
 
     private generateTSPLCommands(
         variants: (ProductVariant & { copies?: number })[],
-        itemPerRow: number,
+        itemPerRow: number
     ): Uint8Array {
         let commands = "";
 
@@ -241,7 +253,7 @@ export class ReceiptPrinter {
                 const barcodeX = Math.floor(labelCenterDots - barcodeWidth / 2);
                 const finalBarcodeX = Math.max(
                     xOffsetDots + paddingDots,
-                    barcodeX,
+                    barcodeX
                 );
 
                 // Y=50, Height=60.
@@ -265,7 +277,7 @@ export class ReceiptPrinter {
                 const printRow = (
                     leftText: string,
                     rightText: string,
-                    y: number,
+                    y: number
                 ) => {
                     // Left Text
                     commands += `TEXT ${leftX},${y},"0",0,9,9,"${leftText}"\r\n`;
@@ -280,7 +292,7 @@ export class ReceiptPrinter {
                 // Row 1: Color | (Beli 1) Harga
                 const color = (item.attributes.color || "").substring(0, 12);
                 const priceBasic = `(Beli 1) ${formatPrice(
-                    item.price_criteria.basic,
+                    item.price_criteria.basic
                 )}`;
                 printRow(color, priceBasic, currentY);
 
@@ -288,17 +300,17 @@ export class ReceiptPrinter {
                 currentY += lineHeight;
                 const size = String(item.attributes.size || "").substring(
                     0,
-                    12,
+                    12
                 );
                 const price3 = `(Beli 3) ${formatPrice(
-                    item.price_criteria.order_qty_3,
+                    item.price_criteria.order_qty_3
                 )}`;
                 printRow(size, price3, currentY);
 
                 // Row 3: (empty left) | (Beli 6) Harga
                 currentY += lineHeight;
                 const price6 = `(Beli 6) ${formatPrice(
-                    item.price_criteria.order_qty_6,
+                    item.price_criteria.order_qty_6
                 )}`;
                 printRow("", price6, currentY);
             });
@@ -311,7 +323,7 @@ export class ReceiptPrinter {
 
     private async printToBluetooth(
         bytes: Uint8Array,
-        printerConfig: typeof PRINTERS.RECEIPT,
+        printerConfig: typeof PRINTERS.RECEIPT
     ) {
         const nav = navigator as any;
         if (!nav.bluetooth) {
@@ -327,17 +339,17 @@ export class ReceiptPrinter {
             });
 
             console.log(
-                `Perangkat dipilih: ${device.name}. Menghubungkan GATT...`,
+                `Perangkat dipilih: ${device.name}. Menghubungkan GATT...`
             );
 
             const server = await device.gatt.connect();
             console.log("GATT Terhubung.");
 
             const service = await server.getPrimaryService(
-                printerConfig.service,
+                printerConfig.service
             );
             const characteristic = await service.getCharacteristic(
-                printerConfig.characteristic,
+                printerConfig.characteristic
             );
 
             console.log("Characteristic ditemukan. Memulai transfer data...");
@@ -367,5 +379,158 @@ export class ReceiptPrinter {
             console.error("Bluetooth Error:", error);
             throw error;
         }
+    }
+
+    private simulatePrint(bytes: Uint8Array, type: string) {
+        console.log(`[DEBUG PRINT - ${type}] Simulating print output...`);
+
+        // Convert bytes to Hex string
+        let hexString = "";
+        for (let i = 0; i < bytes.length; i++) {
+            const hex = bytes[i].toString(16).padStart(2, "0").toUpperCase();
+            hexString += hex + " ";
+        }
+
+        // Try to decode content for Preview
+        let previewHtml = "";
+
+        if (type.includes("ESC/POS")) {
+            // Simple parser for ESC/POS
+            previewHtml = this.parseEscPosForPreview(bytes);
+        } else {
+            // For TSPL or others, just text decode
+            const text = new TextDecoder().decode(bytes);
+            previewHtml = `<pre>${text}</pre>`;
+        }
+
+        const win = window.open(
+            "",
+            "Debug Receipt",
+            "width=500,height=800,menubar=0,toolbar=0,location=0,status=0,scrollbars=1,resizable=1"
+        );
+        if (win) {
+            win.document.write(`
+                <html>
+                <head>
+                    <title>Debug Print Result</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 20px; background: #f0f0f0; }
+                        h2 { border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+                        .container { display: flex; flex-direction: column; gap: 20px; }
+                        .box { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+                        .raw-data { font-family: monospace; font-size: 10px; color: #555; word-break: break-all; max-height: 200px; overflow-y: auto; }
+                        .preview { font-family: 'Courier New', Courier, monospace; width: 300px; margin: 0 auto; background: #fff; padding: 10px; border: 1px dashed #999; }
+                        .preview-line { white-space: pre; min-height: 1em; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="box">
+                            <h2>Raw Data (Sent to Printer)</h2>
+                            <div class="raw-data">${hexString}</div>
+                        </div>
+                        <div class="box">
+                             <h2>Visual Preview (Approximate)</h2>
+                             <div class="preview">
+                                ${previewHtml}
+                             </div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `);
+            win.document.close();
+        }
+    }
+
+    private parseEscPosForPreview(bytes: Uint8Array): string {
+        let html = "";
+        let currentLine = "";
+        let isBold = false;
+        let isSmall = false; // Font B
+        let align = "left"; // left, center, right
+
+        let i = 0;
+        const flushLine = () => {
+            const alignStyle = `text-align: ${align};`;
+            const fontWeight = isBold ? "font-weight: bold;" : "";
+            const fontSize = isSmall ? "font-size: 10px;" : "font-size: 12px;";
+            html += `<div class="preview-line" style="${alignStyle}${fontWeight}${fontSize}">${currentLine}</div>`;
+            currentLine = "";
+        };
+
+        while (i < bytes.length) {
+            const byte = bytes[i];
+
+            // ESC @ (Initialize)
+            if (byte === 0x1b && bytes[i + 1] === 0x40) {
+                i += 2;
+                continue;
+            }
+
+            // LF (Line Feed)
+            if (byte === 0x0a) {
+                flushLine();
+                i++;
+                continue;
+            }
+
+            // ESC E n (Bold)
+            if (byte === 0x1b && bytes[i + 1] === 0x45) {
+                isBold = bytes[i + 2] === 1;
+                i += 3;
+                continue;
+            }
+
+            // ESC t n (Select character code table) - Fix for 't' appearing in preview
+            if (byte === 0x1b && bytes[i + 1] === 0x74) {
+                i += 3;
+                continue;
+            }
+
+            // ESC a n (Align)
+            if (byte === 0x1b && bytes[i + 1] === 0x61) {
+                const n = bytes[i + 2];
+                if (n === 0) align = "left";
+                else if (n === 1) align = "center";
+                else if (n === 2) align = "right";
+                i += 3;
+                continue;
+            }
+
+            // ESC M n (Font - Small/Normal)
+            if (byte === 0x1b && bytes[i + 1] === 0x4d) {
+                isSmall = bytes[i + 2] === 1;
+                i += 3;
+                continue;
+            }
+
+            // GS ! n (Character size)
+            if (byte === 0x1d && bytes[i + 1] === 0x21) {
+                // Ignore detailed size scaling for now, just treat as normal
+                i += 3;
+                continue;
+            }
+
+            // GS V (Cut) - Ignore or mark
+            if (byte === 0x1d && bytes[i + 1] === 0x56) {
+                html += `<div style="border-top: 1px dashed black; margin: 5px 0; text-align: center; font-size: 10px;">[CUT]</div>`;
+                // GS V m or GS V m n
+                if (bytes[i + 2] === 66 || bytes[i + 2] === 65) i += 4;
+                else i += 3;
+                continue;
+            }
+
+            // Printable characters (Roughly 0x20 to 0x7E)
+            if (byte >= 0x20 && byte <= 0x7e) {
+                currentLine += String.fromCharCode(byte);
+            }
+
+            i++;
+        }
+
+        if (currentLine) flushLine();
+
+        return html;
     }
 }

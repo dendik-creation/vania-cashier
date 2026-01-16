@@ -46,6 +46,7 @@ class CustomerController extends Controller
                 "phone" => "required|string|unique:customers,phone|max:20",
                 "address" => "nullable|string",
                 "type" => "required|in:member,reseller",
+                "points" => "required|integer|min:0",
             ],
             [
                 "phone.unique" => "Nomor telepon sudah digunakan",
@@ -57,6 +58,7 @@ class CustomerController extends Controller
             "phone" => $request->phone,
             "address" => $request->address,
             "type" => $request->type,
+            "points" => $request->points,
             "joined_at" => now(),
         ]);
 
@@ -77,6 +79,7 @@ class CustomerController extends Controller
                     "|max:20",
                 "address" => "nullable|string",
                 "type" => "required|in:member,reseller",
+                "points" => "required|integer|min:0",
             ],
             [
                 "phone.unique" => "Nomor telepon sudah digunakan",
@@ -87,6 +90,7 @@ class CustomerController extends Controller
             "name" => $request->name,
             "phone" => $request->phone,
             "address" => $request->address,
+            "points" => $request->points,
             "type" => $request->type,
         ]);
 

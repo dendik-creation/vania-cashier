@@ -7,6 +7,7 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
+use Spatie\Image\Image;
 
 class SettingController extends Controller
 {
@@ -41,26 +42,33 @@ class SettingController extends Controller
         ];
 
         if ($request->hasFile("app_logo")) {
-            $rules["app_logo"] = "required|image|max:2048";
+            $rules["app_logo"] = "required|image|max:4096";
         } else {
             $rules["app_logo"] = "nullable";
         }
 
-        $validated = $request->validate($rules);
+        $validated = $request->validate($rules, [
+            "app_logo.max" => "Ukuran file maksimal 4MB",
+        ]);
         $setting = Setting::first();
         if ($request->hasFile("app_logo")) {
-            $path = $request
-                ->file("app_logo")
-                ->storeAs(
-                    "public",
-                    "icon." .
-                        $request
-                            ->file("app_logo")
-                            ->getClientOriginalExtension(),
-                );
-            $validated["app_logo"] =
-                "/icon." .
-                $request->file("app_logo")->getClientOriginalExtension();
+            $file = $request->file("app_logo");
+            $filename = "icon.png";
+            $filename512 = "icon_512.png";
+
+            // Convert and save the uploaded file as PNG in the public directory
+            Image::load($file->getPathname())
+                ->format("png")
+                ->save(public_path($filename));
+
+            // Resize to 512x512 and save as icon_512.png
+            Image::load(public_path($filename))
+                ->width(512)
+                ->height(512)
+                ->format("png")
+                ->save(public_path($filename512));
+
+            $validated["app_logo"] = "/{$filename}";
         } else {
             unset($validated["app_logo"]);
         }

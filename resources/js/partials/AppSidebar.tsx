@@ -15,7 +15,13 @@ import { Link } from "@inertiajs/react";
 import { ArrowBigRightDash } from "lucide-react";
 import { useEffect } from "react";
 
-export default function AppSidebar({ role }: { role: string }) {
+export default function AppSidebar({
+    role,
+    app_name,
+}: {
+    role: string;
+    app_name: string;
+}) {
     const pathname = window.location.pathname;
     const { toggleSidebar } = useSidebar();
     useEffect(() => {
@@ -33,11 +39,11 @@ export default function AppSidebar({ role }: { role: string }) {
             <SidebarContent
                 className={cn(
                     "min-h-full relative h-full flex flex-col",
-                    role == "admin" ? "bg-pink-900" : "bg-sky-900"
+                    role == "admin" ? "bg-pink-900" : "bg-sky-900",
                 )}
             >
                 <SidebarHeader className="mt-3 ms-3 gap-0">
-                    <span className="text-white/80 font-bold">Vania Shop</span>
+                    <span className="text-white/80 font-bold">{app_name}</span>
                     <span className="text-white/60 text-sm font-normal">
                         Point Of Sale
                     </span>

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Session;
 
 class CustomerController extends Controller
 {
-public function index(Request $request)
+    public function index(Request $request)
     {
         $by_search = $request->query("search");
         $by_type = $request->query("type");
@@ -46,6 +46,7 @@ public function index(Request $request)
                 "phone" => "required|string|unique:customers,phone|max:20",
                 "address" => "nullable|string",
                 "type" => "required|in:member,reseller",
+                "points" => "required|integer|min:0",
             ],
             [
                 "phone.unique" => "Nomor telepon sudah digunakan",
@@ -57,6 +58,7 @@ public function index(Request $request)
             "phone" => $request->phone,
             "address" => $request->address,
             "type" => $request->type,
+            "points" => $request->points,
             "joined_at" => now(),
         ]);
 
@@ -77,6 +79,7 @@ public function index(Request $request)
                     "|max:20",
                 "address" => "nullable|string",
                 "type" => "required|in:member,reseller",
+                "points" => "required|integer|min:0",
             ],
             [
                 "phone.unique" => "Nomor telepon sudah digunakan",
@@ -87,6 +90,7 @@ public function index(Request $request)
             "name" => $request->name,
             "phone" => $request->phone,
             "address" => $request->address,
+            "points" => $request->points,
             "type" => $request->type,
         ]);
 
