@@ -56,6 +56,12 @@ class ReportController extends Controller
                 'total_revenue' => $totalRevenue,
                 'total_transactions' => $totalTransactions,
                 'total_items_sold' => $totalItemsSold,
+                'total_revenue_by_payment_method' => [
+                    'cash' => $summaryQuery->where('payment_method', 'cash')->sum('total'),
+                    'debit' => $summaryQuery->where('payment_method', 'debit')->sum('total'),
+                    'transfer' => $summaryQuery->where('payment_method', 'transfer')->sum('total'),
+                    'qris' => $summaryQuery->where('payment_method', 'qris')->sum('total'),
+                ]
             ],
             'filters' => [
                 'start_date' => $startDate,

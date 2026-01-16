@@ -168,7 +168,7 @@ class TransactionController extends Controller
         return $points;
     }
 
-    private function discountInDecimal($point_used)
+    private function pointDiscount($point_used)
     {
         $setting = Setting::first();
         return $point_used * $setting->idr_point_value;
@@ -195,12 +195,16 @@ class TransactionController extends Controller
         });
     }
 
-    private function recalculateTotal($subtotal, $discount, $admin_fee)
-    {
-        return $subtotal - $discount + $admin_fee;
+    private function recalculateTotal(
+        $subtotal,
+        $point_discount,
+        $event_discount,
+        $admin_fee,
+    ) {
+        return $subtotal - $point_discount - $event_discount + $admin_fee;
     }
 
-    public function store(Request $request)
+     public function store(Request $request)
     {
         $validated = $request->validate([
             "is_new_customer" => ["required", "boolean"],
@@ -212,29 +216,25 @@ class TransactionController extends Controller
             "register_customer.address" => ["nullable", "string"],
             "customer_type" => ["nullable", "string"],
             "payment_method" => ["required", "string"],
+            "payment_provider" => ["nullable", "string"],
             "items" => ["required", "array", "min:1"],
             "items.*.id" => ["required", "numeric"],
             "items.*.sku" => ["required", "string"],
             "items.*.product_name" => ["required", "string"],
             "items.*.attributes" => ["required", "array"],
             "items.*.price_applied" => ["required", "numeric"],
-            "items.*.price_criteria" => ["required", "array"],
-            "items.*.price_criteria.basic" => ["required", "numeric"],
-            "items.*.price_criteria.reseller" => ["required", "numeric"],
-            "items.*.price_criteria.order_qty_3" => ["required", "numeric"],
-            "items.*.price_criteria.order_qty_6" => ["required", "numeric"],
             "items.*.product_type" => ["required", "string"],
             "items.*.can_earn_point" => ["required", "boolean"],
             "items.*.qty" => ["required", "integer", "min:1"],
             "subtotal" => ["required", "numeric"],
             "point_used" => ["required", "numeric"],
             "point_earned" => ["required", "numeric"],
-            "discount" => ["required", "numeric"],
+            "point_discount" => ["required", "numeric"],
+            "event_discount" => ["required", "numeric"],
             "admin_fee" => ["required", "numeric"],
             "total" => ["required", "numeric"],
         ]);
         $cashier_id = Auth::user()->id;
-
         // pelanggan umum (tidak join😭)
         if (
             $validated["is_new_customer"] ||
@@ -246,7 +246,7 @@ class TransactionController extends Controller
             $validated["customer_id"] = null;
             $validated["customer_type"] = "general";
         }
-        // Simpan customer baru jika diperlukan
+        // Simpan customer baru jika form lengkab
         if (
             $validated["is_new_customer"] &&
             isset($validated["register_customer"]) &&
@@ -283,7 +283,7 @@ class TransactionController extends Controller
                 return response()->json(
                     [
                         "message" =>
-                            "Stok produk " . $item["sku"] . " tidak mencukupi",
+                            "Stok Produk " . $item["sku"] . " tidak mencukupi",
                     ],
                     400,
                 );
@@ -296,8 +296,14 @@ class TransactionController extends Controller
         $point_earned = $this->recalculatePointEarned($items);
         $point_used = $validated["point_used"];
         $admin_fee = $validated["admin_fee"];
-        $discount = $this->discountInDecimal($point_used);
-        $total = $this->recalculateTotal($subtotal, $discount, $admin_fee);
+        $event_discount = $validated["event_discount"];
+        $point_discount = $this->pointDiscount($point_used);
+        $total = $this->recalculateTotal(
+            $subtotal,
+            $point_discount,
+            $event_discount,
+            $admin_fee,
+        );
 
         // Simpan transaksi ke database
         $transaction = Transaction::create([
@@ -308,9 +314,11 @@ class TransactionController extends Controller
             "point_earned" => $point_earned,
             "point_used" => $point_used,
             "subtotal" => $subtotal,
-            "discount" => $discount,
+            "point_discount" => $point_discount,
+            "event_discount" => $event_discount,
             "total" => $total,
             "payment_method" => $validated["payment_method"],
+            "payment_provider" => $validated["payment_provider"],
             "admin_fee" => $admin_fee,
             "transaction_time" => now(),
         ]);
@@ -329,7 +337,7 @@ class TransactionController extends Controller
             ->toArray();
         $transaction->items()->createMany($transaction_items);
 
-        // Update stok produk
+        // Update stok Produk
         foreach ($items as $item) {
             $product_variant = ProductVariant::find($item["id"]);
             $product_variant->decrement("stock", $item["qty"]);
@@ -405,38 +413,33 @@ class TransactionController extends Controller
             "is_new_customer" => ["required", "boolean"],
             "customer_id" => ["nullable", "numeric"],
             "customer_type" => ["nullable", "string"],
+            // cust register as member
             "register_customer" => ["nullable", "array"],
+            "register_customer.name" => ["nullable", "string"],
+            "register_customer.phone" => ["nullable", "string"],
+            "register_customer.address" => ["nullable", "string"],
             "payment_method" => ["required", "string"],
+            "payment_provider" => ["nullable", "string"],
             "items" => ["required", "array", "min:1"],
             "items.*.id" => ["required", "numeric"],
             "items.*.sku" => ["required", "string"],
             "items.*.product_name" => ["required", "string"],
             "items.*.attributes" => ["required", "array"],
             "items.*.price_applied" => ["required", "numeric"],
-            "items.*.price_criteria" => ["required", "array"],
-            "items.*.price_criteria.basic" => ["required", "numeric"],
-            "items.*.price_criteria.reseller" => ["required", "numeric"],
-            "items.*.price_criteria.order_qty_3" => ["required", "numeric"],
-            "items.*.price_criteria.order_qty_6" => ["required", "numeric"],
             "items.*.product_type" => ["required", "string"],
             "items.*.can_earn_point" => ["required", "boolean"],
             "items.*.qty" => ["required", "integer", "min:1"],
             "subtotal" => ["required", "numeric"],
             "point_used" => ["required", "numeric"],
             "point_earned" => ["required", "numeric"],
-            "discount" => ["required", "numeric"],
+            "point_discount" => ["required", "numeric"],
+            "event_discount" => ["required", "numeric"],
             "admin_fee" => ["required", "numeric"],
             "total" => ["required", "numeric"],
         ]);
         try {
             DB::transaction(function () use ($validated, $id) {
                 $transaction = Transaction::with("items")->findOrFail($id);
-                if ($transaction->cashier_id != Auth::user()->id) {
-                    return back()->with(
-                        "error",
-                        "Transaksi ini bukan milik kasir lain",
-                    );
-                }
 
                 // 1. Revert Old State
                 // Revert Stock
@@ -490,8 +493,7 @@ class TransactionController extends Controller
                     $customer = Customer::create([
                         "name" => $validated["register_customer"]["name"],
                         "phone" => $validated["register_customer"]["phone"],
-                        "address" =>
-                            $validated["register_customer"]["address"] ?: null,
+                        "address" => $validated["register_customer"]["address"],
                         "type" =>
                             $validated["register_customer"]["type"] ?? "member",
                         "points" => 0,
@@ -511,7 +513,7 @@ class TransactionController extends Controller
                     }
                     if ($product_variant->stock < $item["qty"]) {
                         throw new \Exception(
-                            "Stok produk " . $item["sku"] . " tidak mencukupi",
+                            "Stok Produk " . $item["sku"] . " tidak mencukupi",
                         );
                     }
                     $items[] = $item;
@@ -522,10 +524,12 @@ class TransactionController extends Controller
                 $point_earned = $this->recalculatePointEarned($items);
                 $point_used = $validated["point_used"];
                 $admin_fee = $validated["admin_fee"];
-                $discount = $this->discountInDecimal($point_used);
+                $event_discount = $validated["event_discount"];
+                $point_discount = $this->pointDiscount($point_used);
                 $total = $this->recalculateTotal(
                     $subtotal,
-                    $discount,
+                    $point_discount,
+                    $event_discount,
                     $admin_fee,
                 );
 
@@ -536,9 +540,11 @@ class TransactionController extends Controller
                     "point_earned" => $point_earned,
                     "point_used" => $point_used,
                     "subtotal" => $subtotal,
-                    "discount" => $discount,
+                    "point_discount" => $point_discount,
+                    "event_discount" => $event_discount,
                     "total" => $total,
                     "payment_method" => $validated["payment_method"],
+                    "payment_provider" => $validated["payment_provider"],
                     "admin_fee" => $admin_fee,
                 ]);
 
@@ -585,7 +591,6 @@ class TransactionController extends Controller
         Session::flash("success", "Transaksi berhasil diperbarui");
         return Inertia::location("/cashier/transactions/{$id}");
     }
-
     public function destroy($id)
     {
         $transaction = Transaction::find($id);

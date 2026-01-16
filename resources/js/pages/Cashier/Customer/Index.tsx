@@ -49,7 +49,7 @@ const CashierCustomerIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["customers"],
-            },
+            }
         );
     });
 
@@ -186,14 +186,19 @@ const CashierCustomerIndex = ({
 
                 {customers.data.length === 0 && <EmptyCard />}
             </div>
-            {customers.total > customers.per_page && (
-                <PaginatorBuilder
-                    prevUrl={customers.prev_page_url ?? "#"}
-                    nextUrl={customers.next_page_url ?? "#"}
-                    currentPage={customers.current_page}
-                    totalPage={customers.last_page}
-                />
-            )}
+            <div className="flex flex-col lg:flex-row justify-between items-center mt-3">
+                <p className="text-sm w-full">
+                    Total {customers.total} Pelanggan
+                </p>
+                {customers.total > customers.per_page && (
+                    <PaginatorBuilder
+                        prevUrl={customers.prev_page_url || ""}
+                        nextUrl={customers.next_page_url || ""}
+                        currentPage={customers.current_page}
+                        totalPage={customers.last_page}
+                    />
+                )}
+            </div>
         </AppLayout>
     );
 };

@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader, Plus, Save, Trash2 } from "lucide-react";
 import { FormEvent } from "react";
+import { cn } from "@/lib/utils";
 registerPlugin(FilePondPluginFileValidateType);
 registerPlugin(FilePondPluginImagePreview);
 
@@ -25,6 +26,7 @@ const paymentMethodOptions = [
     { label: "QRIS", value: "qris" },
     { label: "Tunai", value: "cash" },
     { label: "Transfer", value: "transfer" },
+    { label: "Debit", value: "debit" },
 ];
 
 const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
@@ -79,7 +81,12 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
     const addCriteriaAdminFee = () => {
         const updated = [
             ...data.admin_fee_criteria,
-            { payment_method: "qris", min_total: 0, admin_fee: 0 },
+            {
+                payment_method: "",
+                min_total: 0,
+                admin_fee: 0,
+                bank_origin: "",
+            },
         ];
         setData("admin_fee_criteria", updated);
     };
@@ -109,21 +116,21 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
         if (!data.eligible_point_minimum || data.eligible_point_minimum < 0) {
             setError(
                 "eligible_point_minimum",
-                "Nominal minimum syarat dapat poin wajib diisi dan tidak boleh negatif.",
+                "Nominal minimum syarat dapat poin wajib diisi dan tidak boleh negatif."
             );
             isValid = false;
         }
         if (!data.idr_point_value || data.idr_point_value < 0) {
             setError(
                 "idr_point_value",
-                "Nilai tukar setiap poin wajib diisi dan tidak boleh negatif.",
+                "Nilai tukar setiap poin wajib diisi dan tidak boleh negatif."
             );
             isValid = false;
         }
         if (!data.minimum_point_can_used || data.minimum_point_can_used < 0) {
             setError(
                 "minimum_point_can_used",
-                "Minimal poin yang dapat digunakan wajib diisi dan tidak boleh negatif.",
+                "Minimal poin yang dapat digunakan wajib diisi dan tidak boleh negatif."
             );
             isValid = false;
         }
@@ -131,12 +138,66 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
             setError("product_types", "Tipe produk wajib diisi.");
             isValid = false;
         }
+        if (data.admin_fee_criteria.length === 0) {
+            setError(
+                "admin_fee_criteria",
+                "Minimal harus ada satu kriteria biaya admin."
+            );
+            isValid = false;
+        } else {
+            data.admin_fee_criteria.forEach((criteria, index) => {
+                if (
+                    !criteria.payment_method ||
+                    criteria.payment_method.trim() === ""
+                ) {
+                    setError(
+                        `admin_fee_criteria.${index}.payment_method`,
+                        "Wajib diisi"
+                    );
+                    isValid = false;
+                }
+                if (criteria.payment_method === "debit") {
+                    if (
+                        !criteria.bank_origin ||
+                        criteria.bank_origin.trim() === ""
+                    ) {
+                        setError(
+                            `admin_fee_criteria.${index}.bank_origin`,
+                            "Wajib diisi"
+                        );
+                        isValid = false;
+                    }
+                } else {
+                    if (
+                        criteria.min_total === null ||
+                        criteria.min_total === undefined ||
+                        criteria.min_total < 0
+                    ) {
+                        setError(
+                            `admin_fee_criteria.${index}.min_total`,
+                            "Wajib diisi"
+                        );
+                        isValid = false;
+                    }
+                }
+                if (
+                    criteria.admin_fee === null ||
+                    criteria.admin_fee === undefined ||
+                    criteria.admin_fee < 0
+                ) {
+                    setError(
+                        `admin_fee_criteria.${index}.admin_fee`,
+                        "Wajib diisi"
+                    );
+                    isValid = false;
+                }
+            });
+        }
         return isValid;
     };
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         if (!validateForm()) return;
-        // console.log("Submitting data:", data);
         post("/admin/settings", {
             preserveScroll: true,
             replace: true,
@@ -221,7 +282,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                         onChange={(e) =>
                             handleChangeInput(
                                 "eligible_point_minimum",
-                                e.target.value,
+                                e.target.value
                             )
                         }
                     />
@@ -260,7 +321,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                         onChange={(e) =>
                             handleChangeInput(
                                 "minimum_point_can_used",
-                                e.target.value,
+                                e.target.value
                             )
                         }
                     />
@@ -283,17 +344,33 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                             Tambah Kriteria
                         </Button>
                     </div>
-                    {(data.admin_fee_criteria as any[]).map((criteria, idx) => (
+                    {data.admin_fee_criteria.map((criteria, idx) => (
                         <div
                             key={idx}
-                            className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-2"
+                            className={cn(
+                                "grid grid-cols-1 gap-3 mb-2",
+                                criteria.payment_method === "debit"
+                                    ? "lg:grid-cols-4"
+                                    : "lg:grid-cols-3"
+                            )}
                         >
                             <div className="flex flex-col flex-1">
-                                <Label className="text-xs mb-1">
-                                    Metode Pembayaran
-                                </Label>
+                                <div className="flex text-xs gap-2">
+                                    <Label className="text-xs mb-1 after:content-['*'] after:text-red-500 after:ml-1">
+                                        Metode Pembayaran
+                                    </Label>
+                                    <ErrorInput
+                                        afterLabel={true}
+                                        error={
+                                            errors[
+                                                `admin_fee_criteria.${idx}.payment_method`
+                                            ]
+                                        }
+                                    />
+                                </div>
                                 <SelectSearchInput
                                     options={paymentMethodOptions}
+                                    placeholder="Pilih metode"
                                     value={criteria.payment_method}
                                     onChange={(value) => {
                                         const updated = [
@@ -307,10 +384,58 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                                     }}
                                 />
                             </div>
+                            {criteria.payment_method === "debit" && (
+                                <div className="flex flex-col flex-1">
+                                    <div className="flex text-xs gap-2">
+                                        <Label className="text-xs mb-1 after:content-['*'] after:text-red-500 after:ml-1">
+                                            Bank Asal
+                                        </Label>
+                                        <ErrorInput
+                                            afterLabel={true}
+                                            error={
+                                                errors[
+                                                    `admin_fee_criteria.${idx}.bank_origin`
+                                                ]
+                                            }
+                                        />
+                                    </div>
+                                    <Input
+                                        type="text"
+                                        className="w-full"
+                                        disabled={processing}
+                                        placeholder="Masukkan Nama Bank"
+                                        value={criteria.bank_origin || ""}
+                                        onChange={(e) => {
+                                            const updated = [
+                                                ...data.admin_fee_criteria,
+                                            ];
+                                            updated[idx] = {
+                                                ...updated[idx],
+                                                bank_origin:
+                                                    e.target.value.toUpperCase(),
+                                            };
+                                            setData(
+                                                "admin_fee_criteria",
+                                                updated
+                                            );
+                                        }}
+                                    />
+                                </div>
+                            )}
                             <div className="flex flex-col flex-1">
-                                <Label className="text-xs mb-1">
-                                    Minimal Total Transaksi
-                                </Label>
+                                <div className="flex text-xs gap-2">
+                                    <Label className="text-xs mb-1 after:content-['*'] after:text-red-500 after:ml-1">
+                                        Minimal Total Transaksi
+                                    </Label>
+                                    <ErrorInput
+                                        afterLabel={true}
+                                        error={
+                                            errors[
+                                                `admin_fee_criteria.${idx}.min_total` as any
+                                            ]
+                                        }
+                                    />
+                                </div>
                                 <Input
                                     type="number"
                                     min={0}
@@ -330,9 +455,21 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                                 />
                             </div>
                             <div className="flex flex-col flex-1">
-                                <Label className="text-xs mb-1">
-                                    Biaya Admin diterapkan
-                                </Label>
+                                <div className="flex text-xs gap-2">
+                                    <Label className="text-xs mb-1 after:content-['*'] after:text-red-500 after:ml-1">
+                                        Biaya admin diterapkan{" "}
+                                        {criteria.payment_method === "debit" &&
+                                            "(Jika beda bank)"}
+                                    </Label>
+                                    <ErrorInput
+                                        afterLabel={true}
+                                        error={
+                                            errors[
+                                                `admin_fee_criteria.${idx}.admin_fee` as any
+                                            ]
+                                        }
+                                    />
+                                </div>
                                 <div className="flex items-center gap-2">
                                     <Input
                                         type="number"
@@ -347,12 +484,12 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                                             updated[idx] = {
                                                 ...updated[idx],
                                                 admin_fee: Number(
-                                                    e.target.value,
+                                                    e.target.value
                                                 ),
                                             };
                                             setData(
                                                 "admin_fee_criteria",
-                                                updated,
+                                                updated
                                             );
                                         }}
                                     />

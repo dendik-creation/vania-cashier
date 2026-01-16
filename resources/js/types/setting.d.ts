@@ -3,8 +3,9 @@ export type Setting = {
     app_logo: string;
     app_address: string;
     admin_fee_criteria: {
-        payment_method: "qris" | "cash" | "transfer" | string;
+        payment_method: "qris" | "cash" | "transfer" | "debit" | string;
         min_total: number;
+        bank_origin?: string;
         admin_fee: number;
     }[];
     product_types: string;

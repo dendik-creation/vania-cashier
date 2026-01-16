@@ -214,6 +214,7 @@ class TransactionController extends Controller
             "register_customer.address" => ["nullable", "string"],
             "customer_type" => ["nullable", "string"],
             "payment_method" => ["required", "string"],
+            "payment_provider" => ["nullable", "string"],
             "items" => ["required", "array", "min:1"],
             "items.*.id" => ["required", "numeric"],
             "items.*.sku" => ["required", "string"],
@@ -315,6 +316,7 @@ class TransactionController extends Controller
             "event_discount" => $event_discount,
             "total" => $total,
             "payment_method" => $validated["payment_method"],
+            "payment_provider" => $validated["payment_provider"],
             "admin_fee" => $admin_fee,
             "transaction_time" => now(),
         ]);
@@ -418,6 +420,7 @@ class TransactionController extends Controller
             "register_customer.phone" => ["nullable", "string"],
             "register_customer.address" => ["nullable", "string"],
             "payment_method" => ["required", "string"],
+            "payment_provider" => ["nullable", "string"],
             "items" => ["required", "array", "min:1"],
             "items.*.id" => ["required", "numeric"],
             "items.*.sku" => ["required", "string"],
@@ -542,6 +545,7 @@ class TransactionController extends Controller
                     "event_discount" => $event_discount,
                     "total" => $total,
                     "payment_method" => $validated["payment_method"],
+                    "payment_provider" => $validated["payment_provider"],
                     "admin_fee" => $admin_fee,
                 ]);
 

@@ -1,4 +1,8 @@
-import { floatToIdCurrency, ymdToIdDate } from "@/components/helper/helper";
+import {
+    floatToIdCurrency,
+    humanPaymentMethod,
+    ymdToIdDate,
+} from "@/components/helper/helper";
 import { Setting } from "@/types/setting";
 import { Transaction, TransactionItem } from "@/types/transaction";
 import { ProductVariant } from "@/types/product";
@@ -110,7 +114,12 @@ export class ReceiptPrinter {
 
             // rightPartBottom
             if (rightPartBottom) {
-                e.align("right").line(rightPartBottom).align("left");
+                const spacesBottom = this.width - rightPartBottom.length;
+                if (spacesBottom > 0) {
+                    e.line(" ".repeat(spacesBottom) + rightPartBottom);
+                } else {
+                    e.align("right").line(rightPartBottom).align("left");
+                }
             }
         });
 
@@ -120,7 +129,9 @@ export class ReceiptPrinter {
         const formatCurrency = (val: number) => floatToIdCurrency(val);
         const normalAllAmount = transaction.items.reduce(
             (sum, item) =>
-                sum + (item.variant?.price_criteria.basic || 0) * item.quantity,
+                Number(sum) +
+                Number(item.variant?.price_criteria.basic || 0) *
+                    Number(item.quantity),
             0
         );
         const totalDiscount = normalAllAmount - transaction.subtotal;
@@ -138,6 +149,13 @@ export class ReceiptPrinter {
                 "Diskon Event",
                 "-" + formatCurrency(transaction.event_discount)
             );
+        printRow(
+            "Metode Bayar",
+            humanPaymentMethod(transaction.payment_method) +
+                (transaction.payment_provider
+                    ? ` ${transaction.payment_provider}`
+                    : "")
+        );
         if (transaction.admin_fee > 0)
             printRow("Biaya Admin", formatCurrency(transaction.admin_fee));
 
@@ -494,6 +512,12 @@ export class ReceiptPrinter {
                 if (n === 0) align = "left";
                 else if (n === 1) align = "center";
                 else if (n === 2) align = "right";
+
+                // If text already exists in buffer, flush it before changing alignment to avoid mixing
+                if (currentLine.length > 0) {
+                    flushLine();
+                }
+
                 i += 3;
                 continue;
             }

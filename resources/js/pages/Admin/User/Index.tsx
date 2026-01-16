@@ -50,7 +50,7 @@ const AdminUserIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["users"],
-            },
+            }
         );
     });
 
@@ -167,14 +167,17 @@ const AdminUserIndex = ({
 
                 {users.data.length === 0 && <EmptyCard />}
             </div>
-            {users.total > users.per_page && (
-                <PaginatorBuilder
-                    prevUrl={users.prev_page_url ?? "#"}
-                    nextUrl={users.next_page_url ?? "#"}
-                    currentPage={users.current_page}
-                    totalPage={users.last_page}
-                />
-            )}
+            <div className="flex flex-col lg:flex-row justify-between items-center mt-3">
+                <p className="text-sm w-full">Total {users.total} User</p>
+                {users.total > users.per_page && (
+                    <PaginatorBuilder
+                        prevUrl={users.prev_page_url || ""}
+                        nextUrl={users.next_page_url || ""}
+                        currentPage={users.current_page}
+                        totalPage={users.last_page}
+                    />
+                )}
+            </div>
         </AppLayout>
     );
 };

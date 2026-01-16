@@ -16,7 +16,8 @@ export type Transaction = {
     event_discount: number;
     total: number;
     sku_sold?: number;
-    payment_method: "cash" | "qris" | "transfer";
+    payment_method: "cash" | "qris" | "transfer" | "debit" | string;
+    payment_provider?: string;
     admin_fee: number;
     transaction_time: string;
     items: TransactionItem[];

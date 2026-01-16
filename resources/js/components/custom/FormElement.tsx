@@ -715,13 +715,17 @@ export const PaginatorBuilder = ({
     const pageNumbers = generatePageNumbers();
     const isPrevDisabled = currentPage === 1;
     const isNextDisabled = currentPage === totalPage;
+    const expectedNextUrl = new URL(window.location.href);
+    expectedNextUrl.searchParams.set("page", (currentPage + 1).toString());
+    const expectedPrevUrl = new URL(window.location.href);
+    expectedPrevUrl.searchParams.set("page", (currentPage - 1).toString());
 
     return (
-        <Pagination className="flex justify-end mt-4">
+        <Pagination className="flex w-full justify-end mt-4">
             <PaginationContent>
                 <PaginationItem>
                     <PaginationPrevious
-                        href={isPrevDisabled ? "#" : prevUrl}
+                        href={isPrevDisabled ? "#" : expectedPrevUrl.toString()}
                         className={cn(
                             isPrevDisabled && "pointer-events-none opacity-50"
                         )}
@@ -761,7 +765,7 @@ export const PaginatorBuilder = ({
 
                 <PaginationItem>
                     <PaginationNext
-                        href={isNextDisabled ? "#" : nextUrl}
+                        href={isNextDisabled ? "#" : expectedNextUrl.toString()}
                         className={cn(
                             isNextDisabled && "pointer-events-none opacity-50"
                         )}

@@ -36,8 +36,9 @@ class SettingController extends Controller
             "minimum_point_can_used" => "required|integer|min:0",
             "admin_fee_criteria" => "required|array|min:1",
             "admin_fee_criteria.*.payment_method" =>
-                "required|string|in:qris,cash,transfer",
+                "required",
             "admin_fee_criteria.*.min_total" => "required|integer|min:0",
+            "admin_fee_criteria.*.bank_origin" => "nullable|string",
             "admin_fee_criteria.*.admin_fee" => "required|integer|min:0",
         ];
 

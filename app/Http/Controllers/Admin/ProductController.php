@@ -39,7 +39,6 @@ class ProductController extends Controller
             ->withCount("variants")
             ->orderBy("created_at", "desc")
             ->paginate(config("custom.default.pagination_size"));
-
         return Inertia::render("Admin/Product/Index", [
             "title" => "Daftar Produk",
             "description" => "Kelola data produk yang tersedia",

@@ -18,8 +18,6 @@ import EmptyCard from "@/components/custom/EmptyCard";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Box, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
-import BlastToaster from "@/components/custom/BlastToaster";
 
 type PageProps = PageTitleProps & {
     product_rejects: PaginationData<ProductReject>;
@@ -177,14 +175,19 @@ const AdminProductReject = ({
 
                 {product_rejects.data.length === 0 && <EmptyCard />}
             </div>
-            {product_rejects.total > product_rejects.per_page && (
-                <PaginatorBuilder
-                    prevUrl={product_rejects.prev_page_url ?? "#"}
-                    nextUrl={product_rejects.next_page_url ?? "#"}
-                    currentPage={product_rejects.current_page}
-                    totalPage={product_rejects.last_page}
-                />
-            )}
+            <div className="flex flex-col lg:flex-row justify-between items-center mt-3">
+                <p className="text-sm w-full">
+                    Total {product_rejects.total} Data
+                </p>
+                {product_rejects.total > product_rejects.per_page && (
+                    <PaginatorBuilder
+                        prevUrl={product_rejects.prev_page_url || ""}
+                        nextUrl={product_rejects.next_page_url || ""}
+                        currentPage={product_rejects.current_page}
+                        totalPage={product_rejects.last_page}
+                    />
+                )}
+            </div>
         </AppLayout>
     );
 };

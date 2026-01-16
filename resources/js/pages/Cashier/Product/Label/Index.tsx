@@ -67,7 +67,7 @@ const CashierProductLabelIndex = ({
 
     const handleFilterChange = (
         field: keyof typeof filterData,
-        value: string,
+        value: string
     ) => {
         setFilterData(field, value);
     };
@@ -124,11 +124,11 @@ const CashierProductLabelIndex = ({
         let selectedVariants = form.selected_variants || [];
         if (selectedVariants.some((variant) => variant.sku === sku)) {
             selectedVariants = selectedVariants.filter(
-                (variant) => variant.sku !== sku,
+                (variant) => variant.sku !== sku
             );
         } else {
             const variantToAdd = variantList.find(
-                (variant) => variant.sku === sku,
+                (variant) => variant.sku === sku
             );
             if (variantToAdd) {
                 selectedVariants.push(variantToAdd);
@@ -159,7 +159,7 @@ const CashierProductLabelIndex = ({
             const printer = new ReceiptPrinter();
             await printer.printLabel(
                 form.filtered_selected_variants,
-                form.item_per_row,
+                form.item_per_row
             );
             BlastToaster("success", "Label berhasil dicetak");
         } catch (error: any) {
@@ -273,7 +273,7 @@ const CashierProductLabelIndex = ({
                                                         .value as unknown as
                                                         | 1
                                                         | 2
-                                                        | 3,
+                                                        | 3
                                                 )
                                             }
                                         />
@@ -469,15 +469,15 @@ const CashierProductLabelIndex = ({
                                                                     1,
                                                                     parseInt(
                                                                         e.target
-                                                                            .value,
-                                                                    ),
+                                                                            .value
+                                                                    )
                                                                 );
                                                             const updatedVariants =
                                                                 [
                                                                     ...form.selected_variants,
                                                                 ].map(
                                                                     (
-                                                                        variant,
+                                                                        variant
                                                                     ) => {
                                                                         if (
                                                                             variant.sku ===
@@ -490,10 +490,6 @@ const CashierProductLabelIndex = ({
                                                                                 copies >
                                                                                 maxCopies
                                                                             ) {
-                                                                                BlastToaster(
-                                                                                    "warning",
-                                                                                    `Copies melebihi stok tersedia (${maxCopies})`,
-                                                                                );
                                                                                 return {
                                                                                     ...variant,
                                                                                     copies: maxCopies,
@@ -505,15 +501,15 @@ const CashierProductLabelIndex = ({
                                                                             };
                                                                         }
                                                                         return variant;
-                                                                    },
+                                                                    }
                                                                 );
                                                             setForm(
                                                                 "filtered_selected_variants",
-                                                                updatedVariants,
+                                                                updatedVariants
                                                             );
                                                             setForm(
                                                                 "selected_variants",
-                                                                updatedVariants,
+                                                                updatedVariants
                                                             );
                                                         }}
                                                     />
@@ -521,7 +517,7 @@ const CashierProductLabelIndex = ({
                                             </div>
                                         </CardContent>
                                     </Card>
-                                ),
+                                )
                             )}
                         </div>
                     )}

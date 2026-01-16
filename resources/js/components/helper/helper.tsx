@@ -6,7 +6,7 @@ export const ymdToIdDate = (
     dateString: string | null | undefined,
     withTime: boolean = false,
     timeOnly: boolean = false,
-    withDay: boolean = false,
+    withDay: boolean = false
 ) => {
     if (!dateString) return null;
     const parsedDate = new Date(dateString as string);
@@ -20,8 +20,8 @@ export const ymdToIdDate = (
             ? "EEEE, d MMMM yyyy - HH:mm"
             : "EEEE, d MMMM yyyy"
         : withTime
-          ? "d MMMM yyyy - HH:mm"
-          : "d MMMM yyyy";
+        ? "d MMMM yyyy - HH:mm"
+        : "d MMMM yyyy";
 
     return format(parsedDate, formatString, { locale: id });
 };
@@ -30,7 +30,7 @@ export const ymdToUsDate = (
     dateString: string | null | undefined,
     withTime: boolean = false,
     timeOnly: boolean = false,
-    withDay: boolean = false,
+    withDay: boolean = false
 ) => {
     if (!dateString) return null;
     const parsedDate = new Date(dateString as string);
@@ -44,8 +44,8 @@ export const ymdToUsDate = (
             ? "EEEE, MMMM d, yyyy - HH:mm"
             : "EEEE, MMMM d, yyyy"
         : withTime
-          ? "MMMM d, yyyy - HH:mm"
-          : "MMMM d, yyyy";
+        ? "MMMM d, yyyy - HH:mm"
+        : "MMMM d, yyyy";
 
     return format(parsedDate, formatString, { locale: enUS });
 };
@@ -53,7 +53,7 @@ export const ymdToUsDate = (
 export const floatToIdCurrency = (
     value: number | string,
     withSymbol: boolean = true,
-    withDecimal: boolean = false,
+    withDecimal: boolean = false
 ) => {
     const numberValue = typeof value === "string" ? parseFloat(value) : value;
     if (isNaN(numberValue)) return "0";
@@ -69,7 +69,7 @@ export const floatToIdCurrency = (
 
 export const inputDebounce = (
     callback: (...args: any[]) => void,
-    delay: number = 1000,
+    delay: number = 1000
 ) => {
     let timer: ReturnType<typeof setTimeout>;
 
@@ -84,7 +84,7 @@ export const inputDebounce = (
 export const handleElipsisText = (
     text: string,
     maxLength: number,
-    ellipsis: string = "…",
+    ellipsis: string = "…"
 ) => {
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength) + ellipsis;
@@ -94,7 +94,7 @@ export const generateStringRand = (
     length: number,
     withUppercase: boolean = false,
     withSymbols: boolean = false,
-    withNumbers: boolean = false,
+    withNumbers: boolean = false
 ) => {
     const lowercase = "abcdefghijklmnopqrstuvwxyz";
     const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -150,6 +150,8 @@ export const humanPaymentMethod = (method: string) => {
             return "Transfer";
         case "qris":
             return "QRIS";
+        case "debit":
+            return "Debit";
         default:
             return method;
     }

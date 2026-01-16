@@ -34,6 +34,12 @@ type PageProps = PageTitleProps & {
         total_revenue: number;
         total_transactions: number;
         total_items_sold: number;
+        total_revenue_by_payment_method: {
+            cash: number;
+            debit: number;
+            transfer: number;
+            qris: number;
+        };
     };
     filters: {
         start_date: string;
@@ -71,7 +77,7 @@ const AdminReportIndex = ({
                 replace: true,
                 preserveScroll: true,
                 only: ["transactions", "summary", "filters"],
-            },
+            }
         );
     }, [data.start_date, data.end_date]);
 
@@ -80,7 +86,7 @@ const AdminReportIndex = ({
             <PageTitle title={title} description={description} />
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
                 <Card className="bg-primary/5 border-primary/20 shadow-sm">
                     <CardContent className="p-4 flex items-center justify-between">
                         <div>
@@ -123,6 +129,78 @@ const AdminReportIndex = ({
                         </div>
                         <div className="p-2 bg-green-100 rounded-full text-green-700">
                             <Package size={24} />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
+                <Card className="bg-primary/5 border-primary/20 shadow-sm">
+                    <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">
+                                Pendapatan dari Tunai
+                            </p>
+                            <h3 className="text-2xl font-bold text-primary">
+                                {floatToIdCurrency(
+                                    summary.total_revenue_by_payment_method.cash
+                                )}
+                            </h3>
+                        </div>
+                        <div className="p-2 bg-primary/10 rounded-full text-primary">
+                            <Banknote size={24} />
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="bg-blue-50 border-blue-200 shadow-sm">
+                    <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">
+                                Pendapatan dari Transfer
+                            </p>
+                            <h3 className="text-2xl font-bold text-blue-700">
+                                {floatToIdCurrency(
+                                    summary.total_revenue_by_payment_method
+                                        .transfer
+                                )}
+                            </h3>
+                        </div>
+                        <div className="p-2 bg-blue-100 rounded-full text-blue-700">
+                            <Banknote size={24} />
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="bg-green-50 border-green-200 shadow-sm">
+                    <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">
+                                Pendapatan dari QRIS
+                            </p>
+                            <h3 className="text-2xl font-bold text-green-700">
+                                {floatToIdCurrency(
+                                    summary.total_revenue_by_payment_method.qris
+                                )}
+                            </h3>
+                        </div>
+                        <div className="p-2 bg-green-100 rounded-full text-green-700">
+                            <Banknote size={24} />
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="bg-yellow-50 border-yellow-200 shadow-sm">
+                    <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-muted-foreground">
+                                Pendapatan dari Debit
+                            </p>
+                            <h3 className="text-2xl font-bold text-yellow-700">
+                                {floatToIdCurrency(
+                                    summary.total_revenue_by_payment_method
+                                        .debit
+                                )}
+                            </h3>
+                        </div>
+                        <div className="p-2 bg-yellow-100 rounded-full text-yellow-700">
+                            <Banknote size={24} />
                         </div>
                     </CardContent>
                 </Card>
@@ -193,7 +271,7 @@ const AdminReportIndex = ({
                                             <CalendarIcon size={12} />
                                             {ymdToIdDate(
                                                 trx.transaction_time,
-                                                true,
+                                                true
                                             )}
                                         </div>
                                     </div>
@@ -218,7 +296,7 @@ const AdminReportIndex = ({
                                                 : "Umum"}
                                             <span className="text-xs ml-1 bg-slate-100 px-1.5 py-0.5 rounded-full">
                                                 {humanCustType(
-                                                    trx.customer_type,
+                                                    trx.customer_type
                                                 )}
                                             </span>
                                         </span>
@@ -243,15 +321,19 @@ const AdminReportIndex = ({
                 </div>
             )}
 
-            {/* Pagination */}
-            {transactions.data.length > 0 && (
-                <PaginatorBuilder
-                    prevUrl={transactions.prev_page_url || ""}
-                    nextUrl={transactions.next_page_url || ""}
-                    currentPage={transactions.current_page}
-                    totalPage={transactions.last_page}
-                />
-            )}
+            <div className="flex flex-col lg:flex-row justify-between items-center mt-3">
+                <p className="text-sm w-full">
+                    Total {transactions.total} Transaksi
+                </p>
+                {transactions.total > transactions.per_page && (
+                    <PaginatorBuilder
+                        prevUrl={transactions.prev_page_url || ""}
+                        nextUrl={transactions.next_page_url || ""}
+                        currentPage={transactions.current_page}
+                        totalPage={transactions.last_page}
+                    />
+                )}
+            </div>
         </AppLayout>
     );
 };

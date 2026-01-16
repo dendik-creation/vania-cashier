@@ -167,7 +167,7 @@ const CashierTransactionShow = ({
                                         <span>
                                             {ymdToIdDate(
                                                 transaction.transaction_time,
-                                                true,
+                                                true
                                             )}
                                         </span>
                                     </div>
@@ -185,8 +185,11 @@ const CashierTransactionShow = ({
                                     <div className="flex items-center gap-2">
                                         <span>
                                             {humanPaymentMethod(
-                                                transaction.payment_method,
+                                                transaction.payment_method
                                             )}
+                                            {transaction.payment_provider
+                                                ? ` ${transaction.payment_provider}`
+                                                : ""}{" "}
                                         </span>
                                     </div>
                                 </div>
@@ -199,7 +202,7 @@ const CashierTransactionShow = ({
                                     </span>
                                     <span>
                                         {floatToIdCurrency(
-                                            transaction.subtotal,
+                                            transaction.subtotal
                                         )}
                                     </span>
                                 </div>
@@ -220,7 +223,7 @@ const CashierTransactionShow = ({
                                         <span>
                                             -
                                             {floatToIdCurrency(
-                                                transaction.point_discount,
+                                                transaction.point_discount
                                             )}
                                         </span>
                                     </div>
@@ -233,7 +236,7 @@ const CashierTransactionShow = ({
                                         <span>
                                             -
                                             {floatToIdCurrency(
-                                                transaction.event_discount,
+                                                transaction.event_discount
                                             )}
                                         </span>
                                     </div>
@@ -245,7 +248,7 @@ const CashierTransactionShow = ({
                                         </span>
                                         <span>
                                             {floatToIdCurrency(
-                                                transaction.admin_fee,
+                                                transaction.admin_fee
                                             )}
                                         </span>
                                     </div>
@@ -297,7 +300,7 @@ const CashierTransactionShow = ({
                                             <div className="text-xs text-muted-foreground">
                                                 {item.variant?.attributes &&
                                                     Object.entries(
-                                                        item.variant.attributes,
+                                                        item.variant.attributes
                                                     ).map(([key, value]) => (
                                                         <span
                                                             key={key}
@@ -314,7 +317,7 @@ const CashierTransactionShow = ({
                                         </TableCell>
                                         <TableCell className="text-right">
                                             {floatToIdCurrency(
-                                                item.price_per_item,
+                                                item.price_per_item
                                             )}
                                         </TableCell>
                                         <TableCell className="text-center">

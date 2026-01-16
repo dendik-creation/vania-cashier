@@ -105,7 +105,7 @@ const CashierTransactionIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["transactions"],
-            },
+            }
         );
     });
 
@@ -119,7 +119,7 @@ const CashierTransactionIndex = ({
     const readyPrintReceipt = async (trxId: number) => {
         try {
             const printResponse = await axios.get(
-                `/cashier/transactions/print/${trxId}`,
+                `/cashier/transactions/print/${trxId}`
             );
             const { transaction: trxData, setting: settingData } =
                 printResponse.data;
@@ -257,8 +257,11 @@ const CashierTransactionIndex = ({
                                         <BanknoteArrowUp size={16} />
                                         <span className="text-sm">
                                             {humanPaymentMethod(
-                                                trx.payment_method,
+                                                trx.payment_method
                                             )}{" "}
+                                            {trx.payment_provider
+                                                ? ` ${trx.payment_provider}`
+                                                : ""}{" "}
                                             - {floatToIdCurrency(trx.total)}
                                         </span>
                                     </div>
@@ -268,7 +271,7 @@ const CashierTransactionIndex = ({
                                         <span className="text-sm">
                                             {ymdToIdDate(
                                                 trx.transaction_time,
-                                                true,
+                                                true
                                             )}
                                         </span>
                                     </div>
@@ -325,14 +328,19 @@ const CashierTransactionIndex = ({
                 </div>
             )}
 
-            {transactions.data.length > transactions.per_page && (
-                <PaginatorBuilder
-                    prevUrl={transactions.prev_page_url || ""}
-                    nextUrl={transactions.next_page_url || ""}
-                    currentPage={transactions.current_page}
-                    totalPage={transactions.last_page}
-                />
-            )}
+            <div className="flex flex-col lg:flex-row justify-between items-center mt-3">
+                <p className="text-sm w-full">
+                    Total {transactions.total} Transaksi
+                </p>
+                {transactions.total > transactions.per_page && (
+                    <PaginatorBuilder
+                        prevUrl={transactions.prev_page_url || ""}
+                        nextUrl={transactions.next_page_url || ""}
+                        currentPage={transactions.current_page}
+                        totalPage={transactions.last_page}
+                    />
+                )}
+            </div>
         </AppLayout>
     );
 };

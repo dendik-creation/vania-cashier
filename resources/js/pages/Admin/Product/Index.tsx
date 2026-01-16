@@ -19,7 +19,6 @@ import {
     Package,
     Tags,
     PackageSearch,
-    FileUp,
     Upload,
     Coins,
 } from "lucide-react";
@@ -107,7 +106,7 @@ const AdminProductIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["products"],
-            },
+            }
         );
     });
 
@@ -297,14 +296,17 @@ const AdminProductIndex = ({
                 </div>
             )}
 
-            {products.data.length > products.per_page && (
-                <PaginatorBuilder
-                    prevUrl={products.prev_page_url || ""}
-                    nextUrl={products.next_page_url || ""}
-                    currentPage={products.current_page}
-                    totalPage={products.last_page}
-                />
-            )}
+            <div className="flex flex-col lg:flex-row justify-between items-center mt-3">
+                <p className="text-sm w-full">Total {products.total} Produk</p>
+                {products.total > products.per_page && (
+                    <PaginatorBuilder
+                        prevUrl={products.prev_page_url || ""}
+                        nextUrl={products.next_page_url || ""}
+                        currentPage={products.current_page}
+                        totalPage={products.last_page}
+                    />
+                )}
+            </div>
         </AppLayout>
     );
 };
