@@ -47,6 +47,7 @@ const CashierTransactionCreate = ({
     title,
     description,
 }: Props) => {
+    const isMobile = useIsMobile();
     const lastKeyTime = useRef(Date.now());
     const scannerTimer = useRef(null);
     const {
@@ -192,8 +193,8 @@ const CashierTransactionCreate = ({
         const currentCustomerType = form.is_new_customer
             ? form.register_customer.type
             : customerFinder.is_found
-            ? customerFinder.customer_found.type
-            : "member";
+              ? customerFinder.customer_found.type
+              : "member";
 
         const shouldUseMultiItemDiscount =
             form.items.length > 1 &&
@@ -261,7 +262,7 @@ const CashierTransactionCreate = ({
         const isChanged = updatedItems.some(
             (item, index) =>
                 Number(item.price_applied) !==
-                Number(form.items[index].price_applied)
+                Number(form.items[index].price_applied),
         );
 
         if (isChanged) {
@@ -273,7 +274,7 @@ const CashierTransactionCreate = ({
         const subtotal = form.items.reduce(
             (total, item) =>
                 total + Number(item.price_applied) * Number(item.qty),
-            0
+            0,
         );
 
         let point_earned = 0;
@@ -288,7 +289,7 @@ const CashierTransactionCreate = ({
                 ) {
                     point_earned += Math.floor(
                         (Number(item.price_applied) * Number(item.qty)) /
-                            Number(eligible_point_minimum)
+                            Number(eligible_point_minimum),
                     );
                 } else {
                     point_earned += Number(item.qty);
@@ -302,32 +303,60 @@ const CashierTransactionCreate = ({
         }
         if (form.payment_method && Array.isArray(admin_fee_criteria)) {
             if (form.payment_method === "debit") {
-                const debitCriteria = admin_fee_criteria.filter(
-                    (c) => c.payment_method === "debit"
-                );
+                if (form.payment_provider != "") {
+                    const debitCriteria = admin_fee_criteria
+                        .filter((c) => c.payment_method === "debit")
+                        .sort(
+                            (a, b) =>
+                                Number(a.min_total ?? 0) -
+                                Number(b.min_total ?? 0),
+                        );
 
-                let matchedFee = 0;
-                debitCriteria.forEach((c) => {
-                    if (Number(subtotal) >= Number(c.min_total ?? 0)) {
-                        if (form.payment_provider) {
-                            if (form.payment_provider === c.bank_origin) {
-                                matchedFee = 0;
-                            } else {
-                                matchedFee = Number(c.admin_fee);
+                    let matchedFee = 0;
+                    let foundBankOriginMatch = false;
+
+                    if (form.payment_provider) {
+                        for (let i = 0; i < debitCriteria.length; i++) {
+                            const c = debitCriteria[i];
+                            if (Number(subtotal) >= Number(c.min_total ?? 0)) {
+                                let bankOrigins: string[] = [];
+                                if (typeof c.bank_origin === "string") {
+                                    bankOrigins = c.bank_origin
+                                        .split(",")
+                                        .map((b) => b.trim().toUpperCase());
+                                }
+                                if (
+                                    bankOrigins.length > 0 &&
+                                    bankOrigins.includes(
+                                        form.payment_provider.toUpperCase(),
+                                    )
+                                ) {
+                                    foundBankOriginMatch = true;
+                                    break;
+                                }
                             }
-                        } else {
-                            matchedFee = 0;
                         }
                     }
-                });
 
-                admin_fee = matchedFee;
+                    if (foundBankOriginMatch) {
+                        matchedFee = 0;
+                    } else {
+                        for (let i = 0; i < debitCriteria.length; i++) {
+                            const c = debitCriteria[i];
+                            if (Number(subtotal) >= Number(c.min_total ?? 0)) {
+                                matchedFee = Number(c.admin_fee);
+                            }
+                        }
+                    }
+
+                    admin_fee = matchedFee;
+                }
             } else {
                 const criteria = admin_fee_criteria
                     .filter((c) => c.payment_method === form.payment_method)
                     .sort(
                         (a, b) =>
-                            Number(a.min_total ?? 0) - Number(b.min_total ?? 0)
+                            Number(a.min_total ?? 0) - Number(b.min_total ?? 0),
                     );
 
                 let matchedFee = 0;
@@ -340,6 +369,7 @@ const CashierTransactionCreate = ({
                 admin_fee = matchedFee;
             }
         }
+
         const point_discount =
             Number(form.point_used) * Number(idr_point_value);
         const event_discount = Number(form.event_discount);
@@ -430,7 +460,7 @@ const CashierTransactionCreate = ({
                     : productVariantData;
 
                 const existingItemIndex = form.items.findIndex(
-                    (item) => item.id === singleProduct.id
+                    (item) => item.id === singleProduct.id,
                 );
                 let updatedItems = [...form.items];
                 if (existingItemIndex !== -1) {
@@ -486,7 +516,7 @@ const CashierTransactionCreate = ({
             ) {
                 BlastToaster(
                     "error",
-                    `Stok tidak mencukupi untuk ${updatedItems[index].sku}`
+                    `Stok tidak mencukupi untuk ${updatedItems[index].sku}`,
                 );
                 return;
             }
@@ -530,7 +560,7 @@ const CashierTransactionCreate = ({
                 setFormError("register_customer.name", "Nama wajib diisi");
                 setFormError(
                     "register_customer",
-                    "Data pelanggan tidak lengkap"
+                    "Data pelanggan tidak lengkap",
                 );
                 isValid = false;
             }
@@ -538,7 +568,7 @@ const CashierTransactionCreate = ({
                 setFormError("register_customer.phone", "No HP wajib diisi");
                 setFormError(
                     "register_customer",
-                    "Data pelanggan tidak lengkap"
+                    "Data pelanggan tidak lengkap",
                 );
                 isValid = false;
             }
@@ -559,7 +589,7 @@ const CashierTransactionCreate = ({
             const { transaction_id, message } = response.data;
 
             const printResponse = await axios.get(
-                `/cashier/transactions/print/${transaction_id}`
+                `/cashier/transactions/print/${transaction_id}`,
             );
             const { transaction: trxData, setting: settingData } =
                 printResponse.data;
@@ -572,7 +602,7 @@ const CashierTransactionCreate = ({
 
             BlastToaster(
                 "success",
-                message || "Transaksi berhasil & Struk dicetak"
+                message || "Transaksi berhasil & Struk dicetak",
             );
             handleResetAll();
         } catch (error: any) {
@@ -589,7 +619,7 @@ const CashierTransactionCreate = ({
             ) {
                 BlastToaster(
                     "success",
-                    "Transaksi Berhasil Tanpa Cetak Struk."
+                    "Transaksi Berhasil Tanpa Cetak Struk.",
                 );
                 handleResetAll();
             } else {
@@ -597,7 +627,7 @@ const CashierTransactionCreate = ({
                     "error",
                     error.response?.data?.message ||
                         error.message ||
-                        "Terjadi kesalahan"
+                        "Terjadi kesalahan",
                 );
             }
         } finally {
@@ -619,7 +649,7 @@ const CashierTransactionCreate = ({
                         onOpenChange={(open) => {
                             setSkuFinder(
                                 "is_multiple_found",
-                                !skuFinder.is_multiple_found
+                                !skuFinder.is_multiple_found,
                             );
                             setSkuFinder("multiple_found_items", []);
                             return open;
@@ -639,7 +669,7 @@ const CashierTransactionCreate = ({
                                             onClick={() => {
                                                 const existingItem =
                                                     form.items.find(
-                                                        (i) => i.id === item.id
+                                                        (i) => i.id === item.id,
                                                     );
                                                 if (
                                                     existingItem &&
@@ -648,22 +678,22 @@ const CashierTransactionCreate = ({
                                                 ) {
                                                     BlastToaster(
                                                         "error",
-                                                        `Stok tidak mencukupi untuk ${item.sku}`
+                                                        `Stok tidak mencukupi untuk ${item.sku}`,
                                                     );
                                                     setSkuFinder(
                                                         "is_multiple_found",
-                                                        false
+                                                        false,
                                                     );
                                                     setSkuFinder(
                                                         "multiple_found_items",
-                                                        []
+                                                        [],
                                                     );
                                                     return;
                                                 }
 
                                                 const existingItemIndex =
                                                     form.items.findIndex(
-                                                        (i) => i.id === item.id
+                                                        (i) => i.id === item.id,
                                                     );
                                                 let updatedItems = [
                                                     ...form.items,
@@ -707,11 +737,11 @@ const CashierTransactionCreate = ({
                                                 setForm("items", updatedItems);
                                                 setSkuFinder(
                                                     "is_multiple_found",
-                                                    false
+                                                    false,
                                                 );
                                                 setSkuFinder(
                                                     "multiple_found_items",
-                                                    []
+                                                    [],
                                                 );
                                             }}
                                             className="relative py-3 overflow-hidden cursor-pointer"
@@ -759,7 +789,7 @@ const CashierTransactionCreate = ({
                                                 </div>
                                             </CardContent>
                                         </Card>
-                                    )
+                                    ),
                                 )}
                             </div>
                             <DialogFooter>
@@ -781,7 +811,7 @@ const CashierTransactionCreate = ({
                         onOpenChange={(open) => {
                             setCustomerFinder(
                                 "is_multiple_found",
-                                !customerFinder.is_multiple_found
+                                !customerFinder.is_multiple_found,
                             );
                             setCustomerFinder("multiple_found_items", []);
                             return open;
@@ -801,27 +831,27 @@ const CashierTransactionCreate = ({
                                             onClick={() => {
                                                 setCustomerFinder(
                                                     "is_found",
-                                                    true
+                                                    true,
                                                 );
                                                 setCustomerFinder(
                                                     "customer_found",
-                                                    item
+                                                    item,
                                                 );
                                                 setForm(
                                                     "customer_id",
-                                                    item.id as string
+                                                    item.id as string,
                                                 );
                                                 setForm(
                                                     "customer_type",
-                                                    item.type
+                                                    item.type,
                                                 );
                                                 setCustomerFinder(
                                                     "is_multiple_found",
-                                                    false
+                                                    false,
                                                 );
                                                 setCustomerFinder(
                                                     "multiple_found_items",
-                                                    []
+                                                    [],
                                                 );
                                             }}
                                             className="relative py-3 overflow-hidden cursor-pointer"
@@ -838,7 +868,7 @@ const CashierTransactionCreate = ({
                                                         >
                                                             <span>
                                                                 {humanCustType(
-                                                                    item.type
+                                                                    item.type,
                                                                 )}
                                                             </span>
                                                         </Badge>
@@ -858,7 +888,7 @@ const CashierTransactionCreate = ({
                                                 </div>
                                             </CardContent>
                                         </Card>
-                                    )
+                                    ),
                                 )}
                             </div>
                             <DialogFooter>
@@ -902,7 +932,7 @@ const CashierTransactionCreate = ({
                                             () => {
                                                 handleFindSKU(value);
                                             },
-                                            200
+                                            200,
                                         ) as unknown as null;
                                     }
                                 }}
@@ -932,7 +962,7 @@ const CashierTransactionCreate = ({
                                             onChange={(value) =>
                                                 setForm(
                                                     "is_new_customer",
-                                                    value === "1"
+                                                    value === "1",
                                                 )
                                             }
                                             className="w-full"
@@ -968,7 +998,7 @@ const CashierTransactionCreate = ({
                                                 onChange={(e) =>
                                                     setCustomerFinder(
                                                         "customer_find",
-                                                        e.target.value
+                                                        e.target.value,
                                                     )
                                                 }
                                             />
@@ -1033,7 +1063,7 @@ const CashierTransactionCreate = ({
                                                                             name: e
                                                                                 .target
                                                                                 .value,
-                                                                        }
+                                                                        },
                                                                     )
                                                                 }
                                                             />
@@ -1074,7 +1104,7 @@ const CashierTransactionCreate = ({
                                                                             phone: e
                                                                                 .target
                                                                                 .value,
-                                                                        }
+                                                                        },
                                                                     )
                                                                 }
                                                             />
@@ -1114,7 +1144,7 @@ const CashierTransactionCreate = ({
                                                                                 e
                                                                                     .target
                                                                                     .value,
-                                                                        }
+                                                                        },
                                                                     )
                                                                 }
                                                             />
@@ -1153,7 +1183,8 @@ const CashierTransactionCreate = ({
                                                 <Badge>
                                                     {humanCustType(
                                                         customerFinder
-                                                            .customer_found.type
+                                                            .customer_found
+                                                            .type,
                                                     )}
                                                 </Badge>
                                             </div>
@@ -1188,11 +1219,11 @@ const CashierTransactionCreate = ({
                                             onClick={() => {
                                                 setCustomerFinder(
                                                     "is_found",
-                                                    false
+                                                    false,
                                                 );
                                                 setCustomerFinder(
                                                     "customer_find",
-                                                    ""
+                                                    "",
                                                 );
                                             }}
                                         >
@@ -1275,7 +1306,7 @@ const CashierTransactionCreate = ({
                                                 </div>
                                                 <p className="font-semibold">
                                                     {floatToIdCurrency(
-                                                        item.price_applied
+                                                        item.price_applied,
                                                     )}
                                                 </p>
                                             </div>
@@ -1286,7 +1317,7 @@ const CashierTransactionCreate = ({
                                                     onClick={() => {
                                                         handleQtyAction(
                                                             "MIN",
-                                                            index
+                                                            index,
                                                         );
                                                     }}
                                                     disabled={
@@ -1305,7 +1336,7 @@ const CashierTransactionCreate = ({
                                                     onClick={() => {
                                                         handleQtyAction(
                                                             "ADD",
-                                                            index
+                                                            index,
                                                         );
                                                     }}
                                                     disabled={
@@ -1425,7 +1456,7 @@ const CashierTransactionCreate = ({
                                     const inputValue = Number(e.target.value);
                                     const clampedValue = Math.max(
                                         0,
-                                        inputValue
+                                        inputValue,
                                     );
 
                                     const maxAllowedDiscount =
@@ -1435,7 +1466,7 @@ const CashierTransactionCreate = ({
 
                                     const finalValue = Math.min(
                                         clampedValue,
-                                        maxAllowedDiscount
+                                        maxAllowedDiscount,
                                     );
 
                                     setForm("event_discount", finalValue);
@@ -1458,18 +1489,21 @@ const CashierTransactionCreate = ({
                                         />
                                     )}
                                 </div>
-                                <Input
-                                    type="text"
-                                    placeholder="Misal BRI, BCA, ..."
-                                    className="w-full bg-white"
-                                    disabled={form.on_scanning_printer}
-                                    value={form.payment_provider || ""}
-                                    onChange={(e) => {
+                                <SelectSearchInput
+                                    direction={isMobile ? "auto" : "left"}
+                                    placeholder="Pilih bank..."
+                                    className="w-ful bg-white"
+                                    value={form.payment_provider}
+                                    options={EXPECTED_PAYMENT_PROVIDER}
+                                    onChange={(value) =>
                                         setForm(
                                             "payment_provider",
-                                            e.target.value.toUpperCase()
-                                        );
-                                    }}
+                                            value.toString().toUpperCase(),
+                                        )
+                                    }
+                                    removeValue={() =>
+                                        setForm("payment_provider", "")
+                                    }
                                 />
                             </div>
                         )}
@@ -1501,12 +1535,12 @@ const CashierTransactionCreate = ({
                                                     ) {
                                                         setPointUsedPlaceholder(
                                                             "point_used_placeholder",
-                                                            form.point_used
+                                                            form.point_used,
                                                         );
                                                     } else {
                                                         setPointUsedPlaceholder(
                                                             "point_used_placeholder",
-                                                            minimum_point_can_used
+                                                            minimum_point_can_used,
                                                         );
                                                     }
                                                 }}
@@ -1530,7 +1564,7 @@ const CashierTransactionCreate = ({
                                                 Gunakan poin sebagai diskon
                                                 senilai{" "}
                                                 {floatToIdCurrency(
-                                                    idr_point_value
+                                                    idr_point_value,
                                                 )}
                                             </DialogDescription>
                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -1558,7 +1592,7 @@ const CashierTransactionCreate = ({
                                                         }
                                                         onChange={(e) => {
                                                             let val = Number(
-                                                                e.target.value
+                                                                e.target.value,
                                                             );
                                                             const min =
                                                                 minimum_point_can_used;
@@ -1574,7 +1608,7 @@ const CashierTransactionCreate = ({
                                                                 val = max;
                                                             setPointUsedPlaceholder(
                                                                 "point_used_placeholder",
-                                                                val
+                                                                val,
                                                             );
                                                         }}
                                                         value={
@@ -1596,11 +1630,11 @@ const CashierTransactionCreate = ({
                                                     onClick={() => {
                                                         setPointUsedPlaceholder(
                                                             "point_used_placeholder",
-                                                            0
+                                                            0,
                                                         );
                                                         setForm(
                                                             "point_used",
-                                                            0
+                                                            0,
                                                         );
                                                     }}
                                                 >
@@ -1617,13 +1651,13 @@ const CashierTransactionCreate = ({
                                                     onClick={() => {
                                                         const input =
                                                             document.getElementById(
-                                                                "input_point_used"
+                                                                "input_point_used",
                                                             ) as HTMLInputElement | null;
                                                         if (input) {
                                                             savePointUsed(
                                                                 Number(
-                                                                    input.value
-                                                                )
+                                                                    input.value,
+                                                                ),
                                                             );
                                                         }
                                                     }}
@@ -1660,7 +1694,7 @@ const CashierTransactionCreate = ({
                                         </span>
                                         <span className="font-medium">
                                             {floatToIdCurrency(
-                                                form.point_discount
+                                                form.point_discount,
                                             )}
                                         </span>
                                     </div>
@@ -1670,7 +1704,7 @@ const CashierTransactionCreate = ({
                                         </span>
                                         <span className="font-medium">
                                             {floatToIdCurrency(
-                                                form.event_discount
+                                                form.event_discount,
                                             )}
                                         </span>
                                     </div>

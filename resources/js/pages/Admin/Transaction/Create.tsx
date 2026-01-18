@@ -37,6 +37,8 @@ import axios from "axios";
 import { Badge } from "@/components/ui/badge";
 import { floatToIdCurrency, humanCustType } from "@/components/helper/helper";
 import { Card, CardContent } from "@/components/ui/card";
+import EXPECTED_PAYMENT_PROVIDER from "@/components/helper/payment_providers";
+import { useIsMobile } from "@/hooks/use-mobile";
 type Props = PageTitleProps & TransactionCreateProps;
 
 const AdminTransactionCreate = ({
@@ -47,6 +49,7 @@ const AdminTransactionCreate = ({
     title,
     description,
 }: Props) => {
+    const isMobile = useIsMobile();
     const lastKeyTime = useRef(Date.now());
     const scannerTimer = useRef(null);
     const {
@@ -192,8 +195,8 @@ const AdminTransactionCreate = ({
         const currentCustomerType = form.is_new_customer
             ? form.register_customer.type
             : customerFinder.is_found
-            ? customerFinder.customer_found.type
-            : "member";
+              ? customerFinder.customer_found.type
+              : "member";
 
         const shouldUseMultiItemDiscount =
             form.items.length > 1 &&
@@ -261,7 +264,7 @@ const AdminTransactionCreate = ({
         const isChanged = updatedItems.some(
             (item, index) =>
                 Number(item.price_applied) !==
-                Number(form.items[index].price_applied)
+                Number(form.items[index].price_applied),
         );
 
         if (isChanged) {
@@ -273,7 +276,7 @@ const AdminTransactionCreate = ({
         const subtotal = form.items.reduce(
             (total, item) =>
                 total + Number(item.price_applied) * Number(item.qty),
-            0
+            0,
         );
 
         let point_earned = 0;
@@ -288,7 +291,7 @@ const AdminTransactionCreate = ({
                 ) {
                     point_earned += Math.floor(
                         (Number(item.price_applied) * Number(item.qty)) /
-                            Number(eligible_point_minimum)
+                            Number(eligible_point_minimum),
                     );
                 } else {
                     point_earned += Number(item.qty);
@@ -302,34 +305,60 @@ const AdminTransactionCreate = ({
         }
         if (form.payment_method && Array.isArray(admin_fee_criteria)) {
             if (form.payment_method === "debit") {
-                const debitCriteria = admin_fee_criteria.filter(
-                    (c) => c.payment_method === "debit"
-                );
+                if (form.payment_provider != "") {
+                    const debitCriteria = admin_fee_criteria
+                        .filter((c) => c.payment_method === "debit")
+                        .sort(
+                            (a, b) =>
+                                Number(a.min_total ?? 0) -
+                                Number(b.min_total ?? 0),
+                        );
 
-                let matchedFee = 0;
-                debitCriteria.forEach((c) => {
-                    if (Number(subtotal) >= Number(c.min_total ?? 0)) {
-                        if (form.payment_provider) {
-                            if (form.payment_provider === c.bank_origin) {
-                                matchedFee = 0;
-                            } else {
-                                if (subtotal >= Number(c.min_total ?? 0)) {
-                                    matchedFee = Number(c.admin_fee);
+                    let matchedFee = 0;
+                    let foundBankOriginMatch = false;
+
+                    if (form.payment_provider) {
+                        for (let i = 0; i < debitCriteria.length; i++) {
+                            const c = debitCriteria[i];
+                            if (Number(subtotal) >= Number(c.min_total ?? 0)) {
+                                let bankOrigins: string[] = [];
+                                if (typeof c.bank_origin === "string") {
+                                    bankOrigins = c.bank_origin
+                                        .split(",")
+                                        .map((b) => b.trim().toUpperCase());
+                                }
+                                if (
+                                    bankOrigins.length > 0 &&
+                                    bankOrigins.includes(
+                                        form.payment_provider.toUpperCase(),
+                                    )
+                                ) {
+                                    foundBankOriginMatch = true;
+                                    break;
                                 }
                             }
-                        } else {
-                            matchedFee = 0;
                         }
                     }
-                });
 
-                admin_fee = matchedFee;
+                    if (foundBankOriginMatch) {
+                        matchedFee = 0;
+                    } else {
+                        for (let i = 0; i < debitCriteria.length; i++) {
+                            const c = debitCriteria[i];
+                            if (Number(subtotal) >= Number(c.min_total ?? 0)) {
+                                matchedFee = Number(c.admin_fee);
+                            }
+                        }
+                    }
+
+                    admin_fee = matchedFee;
+                }
             } else {
                 const criteria = admin_fee_criteria
                     .filter((c) => c.payment_method === form.payment_method)
                     .sort(
                         (a, b) =>
-                            Number(a.min_total ?? 0) - Number(b.min_total ?? 0)
+                            Number(a.min_total ?? 0) - Number(b.min_total ?? 0),
                     );
 
                 let matchedFee = 0;
@@ -342,6 +371,7 @@ const AdminTransactionCreate = ({
                 admin_fee = matchedFee;
             }
         }
+
         const point_discount =
             Number(form.point_used) * Number(idr_point_value);
         const event_discount = Number(form.event_discount);
@@ -432,7 +462,7 @@ const AdminTransactionCreate = ({
                     : productVariantData;
 
                 const existingItemIndex = form.items.findIndex(
-                    (item) => item.id === singleProduct.id
+                    (item) => item.id === singleProduct.id,
                 );
                 let updatedItems = [...form.items];
                 if (existingItemIndex !== -1) {
@@ -488,7 +518,7 @@ const AdminTransactionCreate = ({
             ) {
                 BlastToaster(
                     "error",
-                    `Stok tidak mencukupi untuk ${updatedItems[index].sku}`
+                    `Stok tidak mencukupi untuk ${updatedItems[index].sku}`,
                 );
                 return;
             }
@@ -532,7 +562,7 @@ const AdminTransactionCreate = ({
                 setFormError("register_customer.name", "Nama wajib diisi");
                 setFormError(
                     "register_customer",
-                    "Data pelanggan tidak lengkap"
+                    "Data pelanggan tidak lengkap",
                 );
                 isValid = false;
             }
@@ -540,7 +570,7 @@ const AdminTransactionCreate = ({
                 setFormError("register_customer.phone", "No HP wajib diisi");
                 setFormError(
                     "register_customer",
-                    "Data pelanggan tidak lengkap"
+                    "Data pelanggan tidak lengkap",
                 );
                 isValid = false;
             }
@@ -561,7 +591,7 @@ const AdminTransactionCreate = ({
             const { transaction_id, message } = response.data;
 
             const printResponse = await axios.get(
-                `/admin/transactions/print/${transaction_id}`
+                `/admin/transactions/print/${transaction_id}`,
             );
             const { transaction: trxData, setting: settingData } =
                 printResponse.data;
@@ -574,7 +604,7 @@ const AdminTransactionCreate = ({
 
             BlastToaster(
                 "success",
-                message || "Transaksi berhasil & Struk dicetak"
+                message || "Transaksi berhasil & Struk dicetak",
             );
             handleResetAll();
         } catch (error: any) {
@@ -591,7 +621,7 @@ const AdminTransactionCreate = ({
             ) {
                 BlastToaster(
                     "success",
-                    "Transaksi Berhasil Tanpa Cetak Struk."
+                    "Transaksi Berhasil Tanpa Cetak Struk.",
                 );
                 handleResetAll();
             } else {
@@ -599,7 +629,7 @@ const AdminTransactionCreate = ({
                     "error",
                     error.response?.data?.message ||
                         error.message ||
-                        "Terjadi kesalahan"
+                        "Terjadi kesalahan",
                 );
             }
         } finally {
@@ -621,7 +651,7 @@ const AdminTransactionCreate = ({
                         onOpenChange={(open) => {
                             setSkuFinder(
                                 "is_multiple_found",
-                                !skuFinder.is_multiple_found
+                                !skuFinder.is_multiple_found,
                             );
                             setSkuFinder("multiple_found_items", []);
                             return open;
@@ -641,7 +671,7 @@ const AdminTransactionCreate = ({
                                             onClick={() => {
                                                 const existingItem =
                                                     form.items.find(
-                                                        (i) => i.id === item.id
+                                                        (i) => i.id === item.id,
                                                     );
                                                 if (
                                                     existingItem &&
@@ -650,22 +680,22 @@ const AdminTransactionCreate = ({
                                                 ) {
                                                     BlastToaster(
                                                         "error",
-                                                        `Stok tidak mencukupi untuk ${item.sku}`
+                                                        `Stok tidak mencukupi untuk ${item.sku}`,
                                                     );
                                                     setSkuFinder(
                                                         "is_multiple_found",
-                                                        false
+                                                        false,
                                                     );
                                                     setSkuFinder(
                                                         "multiple_found_items",
-                                                        []
+                                                        [],
                                                     );
                                                     return;
                                                 }
 
                                                 const existingItemIndex =
                                                     form.items.findIndex(
-                                                        (i) => i.id === item.id
+                                                        (i) => i.id === item.id,
                                                     );
                                                 let updatedItems = [
                                                     ...form.items,
@@ -709,11 +739,11 @@ const AdminTransactionCreate = ({
                                                 setForm("items", updatedItems);
                                                 setSkuFinder(
                                                     "is_multiple_found",
-                                                    false
+                                                    false,
                                                 );
                                                 setSkuFinder(
                                                     "multiple_found_items",
-                                                    []
+                                                    [],
                                                 );
                                             }}
                                             className="relative py-3 overflow-hidden cursor-pointer"
@@ -761,7 +791,7 @@ const AdminTransactionCreate = ({
                                                 </div>
                                             </CardContent>
                                         </Card>
-                                    )
+                                    ),
                                 )}
                             </div>
                             <DialogFooter>
@@ -783,7 +813,7 @@ const AdminTransactionCreate = ({
                         onOpenChange={(open) => {
                             setCustomerFinder(
                                 "is_multiple_found",
-                                !customerFinder.is_multiple_found
+                                !customerFinder.is_multiple_found,
                             );
                             setCustomerFinder("multiple_found_items", []);
                             return open;
@@ -803,27 +833,27 @@ const AdminTransactionCreate = ({
                                             onClick={() => {
                                                 setCustomerFinder(
                                                     "is_found",
-                                                    true
+                                                    true,
                                                 );
                                                 setCustomerFinder(
                                                     "customer_found",
-                                                    item
+                                                    item,
                                                 );
                                                 setForm(
                                                     "customer_id",
-                                                    item.id as string
+                                                    item.id as string,
                                                 );
                                                 setForm(
                                                     "customer_type",
-                                                    item.type
+                                                    item.type,
                                                 );
                                                 setCustomerFinder(
                                                     "is_multiple_found",
-                                                    false
+                                                    false,
                                                 );
                                                 setCustomerFinder(
                                                     "multiple_found_items",
-                                                    []
+                                                    [],
                                                 );
                                             }}
                                             className="relative py-3 overflow-hidden cursor-pointer"
@@ -840,7 +870,7 @@ const AdminTransactionCreate = ({
                                                         >
                                                             <span>
                                                                 {humanCustType(
-                                                                    item.type
+                                                                    item.type,
                                                                 )}
                                                             </span>
                                                         </Badge>
@@ -860,7 +890,7 @@ const AdminTransactionCreate = ({
                                                 </div>
                                             </CardContent>
                                         </Card>
-                                    )
+                                    ),
                                 )}
                             </div>
                             <DialogFooter>
@@ -904,7 +934,7 @@ const AdminTransactionCreate = ({
                                             () => {
                                                 handleFindSKU(value);
                                             },
-                                            200
+                                            200,
                                         ) as unknown as null;
                                     }
                                 }}
@@ -934,7 +964,7 @@ const AdminTransactionCreate = ({
                                             onChange={(value) =>
                                                 setForm(
                                                     "is_new_customer",
-                                                    value === "1"
+                                                    value === "1",
                                                 )
                                             }
                                             className="w-full"
@@ -970,7 +1000,7 @@ const AdminTransactionCreate = ({
                                                 onChange={(e) =>
                                                     setCustomerFinder(
                                                         "customer_find",
-                                                        e.target.value
+                                                        e.target.value,
                                                     )
                                                 }
                                             />
@@ -1035,7 +1065,7 @@ const AdminTransactionCreate = ({
                                                                             name: e
                                                                                 .target
                                                                                 .value,
-                                                                        }
+                                                                        },
                                                                     )
                                                                 }
                                                             />
@@ -1076,7 +1106,7 @@ const AdminTransactionCreate = ({
                                                                             phone: e
                                                                                 .target
                                                                                 .value,
-                                                                        }
+                                                                        },
                                                                     )
                                                                 }
                                                             />
@@ -1116,7 +1146,7 @@ const AdminTransactionCreate = ({
                                                                                 e
                                                                                     .target
                                                                                     .value,
-                                                                        }
+                                                                        },
                                                                     )
                                                                 }
                                                             />
@@ -1155,7 +1185,8 @@ const AdminTransactionCreate = ({
                                                 <Badge>
                                                     {humanCustType(
                                                         customerFinder
-                                                            .customer_found.type
+                                                            .customer_found
+                                                            .type,
                                                     )}
                                                 </Badge>
                                             </div>
@@ -1190,11 +1221,11 @@ const AdminTransactionCreate = ({
                                             onClick={() => {
                                                 setCustomerFinder(
                                                     "is_found",
-                                                    false
+                                                    false,
                                                 );
                                                 setCustomerFinder(
                                                     "customer_find",
-                                                    ""
+                                                    "",
                                                 );
                                             }}
                                         >
@@ -1277,7 +1308,7 @@ const AdminTransactionCreate = ({
                                                 </div>
                                                 <p className="font-semibold">
                                                     {floatToIdCurrency(
-                                                        item.price_applied
+                                                        item.price_applied,
                                                     )}
                                                 </p>
                                             </div>
@@ -1288,7 +1319,7 @@ const AdminTransactionCreate = ({
                                                     onClick={() => {
                                                         handleQtyAction(
                                                             "MIN",
-                                                            index
+                                                            index,
                                                         );
                                                     }}
                                                     disabled={
@@ -1307,7 +1338,7 @@ const AdminTransactionCreate = ({
                                                     onClick={() => {
                                                         handleQtyAction(
                                                             "ADD",
-                                                            index
+                                                            index,
                                                         );
                                                     }}
                                                     disabled={
@@ -1427,7 +1458,7 @@ const AdminTransactionCreate = ({
                                     const inputValue = Number(e.target.value);
                                     const clampedValue = Math.max(
                                         0,
-                                        inputValue
+                                        inputValue,
                                     );
 
                                     const maxAllowedDiscount =
@@ -1437,7 +1468,7 @@ const AdminTransactionCreate = ({
 
                                     const finalValue = Math.min(
                                         clampedValue,
-                                        maxAllowedDiscount
+                                        maxAllowedDiscount,
                                     );
 
                                     setForm("event_discount", finalValue);
@@ -1460,18 +1491,21 @@ const AdminTransactionCreate = ({
                                         />
                                     )}
                                 </div>
-                                <Input
-                                    type="text"
-                                    placeholder="Misal BRI, BCA, ..."
-                                    className="w-full bg-white"
-                                    disabled={form.on_scanning_printer}
-                                    value={form.payment_provider || ""}
-                                    onChange={(e) => {
+                                <SelectSearchInput
+                                    direction={isMobile ? "auto" : "left"}
+                                    placeholder="Pilih bank..."
+                                    className="w-ful bg-white"
+                                    value={form.payment_provider}
+                                    options={EXPECTED_PAYMENT_PROVIDER}
+                                    onChange={(value) =>
                                         setForm(
                                             "payment_provider",
-                                            e.target.value.toUpperCase()
-                                        );
-                                    }}
+                                            value.toString().toUpperCase(),
+                                        )
+                                    }
+                                    removeValue={() =>
+                                        setForm("payment_provider", "")
+                                    }
                                 />
                             </div>
                         )}
@@ -1503,12 +1537,12 @@ const AdminTransactionCreate = ({
                                                     ) {
                                                         setPointUsedPlaceholder(
                                                             "point_used_placeholder",
-                                                            form.point_used
+                                                            form.point_used,
                                                         );
                                                     } else {
                                                         setPointUsedPlaceholder(
                                                             "point_used_placeholder",
-                                                            minimum_point_can_used
+                                                            minimum_point_can_used,
                                                         );
                                                     }
                                                 }}
@@ -1532,7 +1566,7 @@ const AdminTransactionCreate = ({
                                                 Gunakan poin sebagai diskon
                                                 senilai{" "}
                                                 {floatToIdCurrency(
-                                                    idr_point_value
+                                                    idr_point_value,
                                                 )}
                                             </DialogDescription>
                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -1560,7 +1594,7 @@ const AdminTransactionCreate = ({
                                                         }
                                                         onChange={(e) => {
                                                             let val = Number(
-                                                                e.target.value
+                                                                e.target.value,
                                                             );
                                                             const min =
                                                                 minimum_point_can_used;
@@ -1576,7 +1610,7 @@ const AdminTransactionCreate = ({
                                                                 val = max;
                                                             setPointUsedPlaceholder(
                                                                 "point_used_placeholder",
-                                                                val
+                                                                val,
                                                             );
                                                         }}
                                                         value={
@@ -1598,11 +1632,11 @@ const AdminTransactionCreate = ({
                                                     onClick={() => {
                                                         setPointUsedPlaceholder(
                                                             "point_used_placeholder",
-                                                            0
+                                                            0,
                                                         );
                                                         setForm(
                                                             "point_used",
-                                                            0
+                                                            0,
                                                         );
                                                     }}
                                                 >
@@ -1619,13 +1653,13 @@ const AdminTransactionCreate = ({
                                                     onClick={() => {
                                                         const input =
                                                             document.getElementById(
-                                                                "input_point_used"
+                                                                "input_point_used",
                                                             ) as HTMLInputElement | null;
                                                         if (input) {
                                                             savePointUsed(
                                                                 Number(
-                                                                    input.value
-                                                                )
+                                                                    input.value,
+                                                                ),
                                                             );
                                                         }
                                                     }}
@@ -1662,7 +1696,7 @@ const AdminTransactionCreate = ({
                                         </span>
                                         <span className="font-medium">
                                             {floatToIdCurrency(
-                                                form.point_discount
+                                                form.point_discount,
                                             )}
                                         </span>
                                     </div>
@@ -1672,7 +1706,7 @@ const AdminTransactionCreate = ({
                                         </span>
                                         <span className="font-medium">
                                             {floatToIdCurrency(
-                                                form.event_discount
+                                                form.event_discount,
                                             )}
                                         </span>
                                     </div>
