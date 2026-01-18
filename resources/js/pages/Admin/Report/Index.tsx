@@ -77,7 +77,7 @@ const AdminReportIndex = ({
                 replace: true,
                 preserveScroll: true,
                 only: ["transactions", "summary", "filters"],
-            }
+            },
         );
     }, [data.start_date, data.end_date]);
 
@@ -142,7 +142,8 @@ const AdminReportIndex = ({
                             </p>
                             <h3 className="text-2xl font-bold text-primary">
                                 {floatToIdCurrency(
-                                    summary.total_revenue_by_payment_method.cash
+                                    summary.total_revenue_by_payment_method
+                                        .cash,
                                 )}
                             </h3>
                         </div>
@@ -160,7 +161,7 @@ const AdminReportIndex = ({
                             <h3 className="text-2xl font-bold text-blue-700">
                                 {floatToIdCurrency(
                                     summary.total_revenue_by_payment_method
-                                        .transfer
+                                        .transfer,
                                 )}
                             </h3>
                         </div>
@@ -177,7 +178,8 @@ const AdminReportIndex = ({
                             </p>
                             <h3 className="text-2xl font-bold text-green-700">
                                 {floatToIdCurrency(
-                                    summary.total_revenue_by_payment_method.qris
+                                    summary.total_revenue_by_payment_method
+                                        .qris,
                                 )}
                             </h3>
                         </div>
@@ -195,7 +197,7 @@ const AdminReportIndex = ({
                             <h3 className="text-2xl font-bold text-yellow-700">
                                 {floatToIdCurrency(
                                     summary.total_revenue_by_payment_method
-                                        .debit
+                                        .debit,
                                 )}
                             </h3>
                         </div>
@@ -271,7 +273,7 @@ const AdminReportIndex = ({
                                             <CalendarIcon size={12} />
                                             {ymdToIdDate(
                                                 trx.transaction_time,
-                                                true
+                                                true,
                                             )}
                                         </div>
                                     </div>
@@ -283,7 +285,10 @@ const AdminReportIndex = ({
                                         }
                                         className="capitalize"
                                     >
-                                        {humanPaymentMethod(trx.payment_method)}
+                                        {humanPaymentMethod(trx.payment_method)}{" "}
+                                        {trx.payment_provider
+                                            ? `${trx.payment_provider}`
+                                            : ""}
                                     </Badge>
                                 </div>
 
@@ -296,7 +301,7 @@ const AdminReportIndex = ({
                                                 : "Umum"}
                                             <span className="text-xs ml-1 bg-slate-100 px-1.5 py-0.5 rounded-full">
                                                 {humanCustType(
-                                                    trx.customer_type
+                                                    trx.customer_type,
                                                 )}
                                             </span>
                                         </span>

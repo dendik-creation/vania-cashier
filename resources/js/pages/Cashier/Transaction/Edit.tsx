@@ -51,6 +51,7 @@ const CashierTransactionEdit = ({
     description,
     transaction,
 }: Props) => {
+    const isMobile = useIsMobile();
     const lastKeyTime = useRef(Date.now());
     const scannerTimer = useRef(null);
     const {
@@ -189,8 +190,8 @@ const CashierTransactionEdit = ({
         const currentCustomerType = form.is_new_customer
             ? form.register_customer.type
             : customerFinder.is_found
-            ? customerFinder.customer_found.type
-            : "member";
+              ? customerFinder.customer_found.type
+              : "member";
 
         const shouldUseMultiItemDiscount =
             form.items.length > 1 &&
@@ -258,7 +259,7 @@ const CashierTransactionEdit = ({
         const isChanged = updatedItems.some(
             (item, index) =>
                 Number(item.price_applied) !==
-                Number(form.items[index].price_applied)
+                Number(form.items[index].price_applied),
         );
 
         if (isChanged) {
@@ -270,7 +271,7 @@ const CashierTransactionEdit = ({
         const subtotal = form.items.reduce(
             (total, item) =>
                 total + Number(item.price_applied) * Number(item.qty),
-            0
+            0,
         );
 
         let point_earned = 0;
@@ -285,7 +286,7 @@ const CashierTransactionEdit = ({
                 ) {
                     point_earned += Math.floor(
                         (Number(item.price_applied) * Number(item.qty)) /
-                            Number(eligible_point_minimum)
+                            Number(eligible_point_minimum),
                     );
                 } else {
                     point_earned += Number(item.qty);
@@ -299,34 +300,60 @@ const CashierTransactionEdit = ({
         }
         if (form.payment_method && Array.isArray(admin_fee_criteria)) {
             if (form.payment_method === "debit") {
-                const debitCriteria = admin_fee_criteria.filter(
-                    (c) => c.payment_method === "debit"
-                );
+                if (form.payment_provider != "") {
+                    const debitCriteria = admin_fee_criteria
+                        .filter((c) => c.payment_method === "debit")
+                        .sort(
+                            (a, b) =>
+                                Number(a.min_total ?? 0) -
+                                Number(b.min_total ?? 0),
+                        );
 
-                let matchedFee = 0;
-                debitCriteria.forEach((c) => {
-                    if (Number(subtotal) >= Number(c.min_total ?? 0)) {
-                        if (form.payment_provider) {
-                            if (form.payment_provider === c.bank_origin) {
-                                matchedFee = 0;
-                            } else {
-                                if (subtotal >= Number(c.min_total ?? 0)) {
-                                    matchedFee = Number(c.admin_fee);
+                    let matchedFee = 0;
+                    let foundBankOriginMatch = false;
+
+                    if (form.payment_provider) {
+                        for (let i = 0; i < debitCriteria.length; i++) {
+                            const c = debitCriteria[i];
+                            if (Number(subtotal) >= Number(c.min_total ?? 0)) {
+                                let bankOrigins: string[] = [];
+                                if (typeof c.bank_origin === "string") {
+                                    bankOrigins = c.bank_origin
+                                        .split(",")
+                                        .map((b) => b.trim().toUpperCase());
+                                }
+                                if (
+                                    bankOrigins.length > 0 &&
+                                    bankOrigins.includes(
+                                        form.payment_provider.toUpperCase(),
+                                    )
+                                ) {
+                                    foundBankOriginMatch = true;
+                                    break;
                                 }
                             }
-                        } else {
-                            matchedFee = 0;
                         }
                     }
-                });
 
-                admin_fee = matchedFee;
+                    if (foundBankOriginMatch) {
+                        matchedFee = 0;
+                    } else {
+                        for (let i = 0; i < debitCriteria.length; i++) {
+                            const c = debitCriteria[i];
+                            if (Number(subtotal) >= Number(c.min_total ?? 0)) {
+                                matchedFee = Number(c.admin_fee);
+                            }
+                        }
+                    }
+
+                    admin_fee = matchedFee;
+                }
             } else {
                 const criteria = admin_fee_criteria
                     .filter((c) => c.payment_method === form.payment_method)
                     .sort(
                         (a, b) =>
-                            Number(a.min_total ?? 0) - Number(b.min_total ?? 0)
+                            Number(a.min_total ?? 0) - Number(b.min_total ?? 0),
                     );
 
                 let matchedFee = 0;
@@ -339,6 +366,7 @@ const CashierTransactionEdit = ({
                 admin_fee = matchedFee;
             }
         }
+
         const point_discount =
             Number(form.point_used) * Number(idr_point_value);
         const event_discount = Number(form.event_discount);
@@ -430,7 +458,7 @@ const CashierTransactionEdit = ({
                     : productVariantData;
 
                 const existingItemIndex = form.items.findIndex(
-                    (item) => item.id === singleProduct.id
+                    (item) => item.id === singleProduct.id,
                 );
                 let updatedItems = [...form.items];
                 if (existingItemIndex !== -1) {
@@ -486,7 +514,7 @@ const CashierTransactionEdit = ({
             ) {
                 BlastToaster(
                     "error",
-                    `Stok tidak mencukupi untuk ${updatedItems[index].sku}`
+                    `Stok tidak mencukupi untuk ${updatedItems[index].sku}`,
                 );
                 return;
             }
@@ -554,7 +582,7 @@ const CashierTransactionEdit = ({
                         onOpenChange={(open) => {
                             setSkuFinder(
                                 "is_multiple_found",
-                                !skuFinder.is_multiple_found
+                                !skuFinder.is_multiple_found,
                             );
                             setSkuFinder("multiple_found_items", []);
                             return open;
@@ -576,7 +604,7 @@ const CashierTransactionEdit = ({
                                                     form.items.find(
                                                         (i) =>
                                                             i.id ==
-                                                            Number(item.id)
+                                                            Number(item.id),
                                                     );
                                                 if (
                                                     existingItem &&
@@ -585,15 +613,15 @@ const CashierTransactionEdit = ({
                                                 ) {
                                                     BlastToaster(
                                                         "error",
-                                                        `Stok tidak mencukupi untuk ${item.sku}`
+                                                        `Stok tidak mencukupi untuk ${item.sku}`,
                                                     );
                                                     setSkuFinder(
                                                         "is_multiple_found",
-                                                        false
+                                                        false,
                                                     );
                                                     setSkuFinder(
                                                         "multiple_found_items",
-                                                        []
+                                                        [],
                                                     );
                                                     return;
                                                 }
@@ -602,7 +630,7 @@ const CashierTransactionEdit = ({
                                                     form.items.findIndex(
                                                         (i) =>
                                                             i.id ==
-                                                            Number(item.id)
+                                                            Number(item.id),
                                                     );
                                                 let updatedItems = [
                                                     ...form.items,
@@ -646,11 +674,11 @@ const CashierTransactionEdit = ({
                                                 setForm("items", updatedItems);
                                                 setSkuFinder(
                                                     "is_multiple_found",
-                                                    false
+                                                    false,
                                                 );
                                                 setSkuFinder(
                                                     "multiple_found_items",
-                                                    []
+                                                    [],
                                                 );
                                             }}
                                             className="relative py-3 overflow-hidden cursor-pointer"
@@ -698,7 +726,7 @@ const CashierTransactionEdit = ({
                                                 </div>
                                             </CardContent>
                                         </Card>
-                                    )
+                                    ),
                                 )}
                             </div>
                             <DialogFooter>
@@ -720,7 +748,7 @@ const CashierTransactionEdit = ({
                         onOpenChange={(open) => {
                             setCustomerFinder(
                                 "is_multiple_found",
-                                !customerFinder.is_multiple_found
+                                !customerFinder.is_multiple_found,
                             );
                             setCustomerFinder("multiple_found_items", []);
                             return open;
@@ -740,29 +768,29 @@ const CashierTransactionEdit = ({
                                             onClick={() => {
                                                 setCustomerFinder(
                                                     "is_found",
-                                                    true
+                                                    true,
                                                 );
                                                 setCustomerFinder(
                                                     "customer_found",
-                                                    item
+                                                    item,
                                                 );
                                                 setForm(
                                                     "customer_id",
-                                                    item.id as string
+                                                    item.id as string,
                                                 );
                                                 setForm(
                                                     "customer_type",
                                                     item.type as
                                                         | "member"
-                                                        | "reseller"
+                                                        | "reseller",
                                                 );
                                                 setCustomerFinder(
                                                     "is_multiple_found",
-                                                    false
+                                                    false,
                                                 );
                                                 setCustomerFinder(
                                                     "multiple_found_items",
-                                                    []
+                                                    [],
                                                 );
                                             }}
                                             className="relative py-3 overflow-hidden cursor-pointer"
@@ -779,7 +807,7 @@ const CashierTransactionEdit = ({
                                                         >
                                                             <span>
                                                                 {humanCustType(
-                                                                    item.type
+                                                                    item.type,
                                                                 )}
                                                             </span>
                                                         </Badge>
@@ -799,7 +827,7 @@ const CashierTransactionEdit = ({
                                                 </div>
                                             </CardContent>
                                         </Card>
-                                    )
+                                    ),
                                 )}
                             </div>
                             <DialogFooter>
@@ -842,7 +870,7 @@ const CashierTransactionEdit = ({
                                             () => {
                                                 handleFindSKU(value);
                                             },
-                                            200
+                                            200,
                                         ) as unknown as null;
                                     }
                                 }}
@@ -864,7 +892,7 @@ const CashierTransactionEdit = ({
                                             onChange={(value) =>
                                                 setForm(
                                                     "is_new_customer",
-                                                    value === "1"
+                                                    value === "1",
                                                 )
                                             }
                                             className="w-full"
@@ -897,7 +925,7 @@ const CashierTransactionEdit = ({
                                                 onChange={(e) =>
                                                     setCustomerFinder(
                                                         "customer_find",
-                                                        e.target.value
+                                                        e.target.value,
                                                     )
                                                 }
                                             />
@@ -953,7 +981,7 @@ const CashierTransactionEdit = ({
                                                                             name: e
                                                                                 .target
                                                                                 .value,
-                                                                        }
+                                                                        },
                                                                     )
                                                                 }
                                                             />
@@ -991,7 +1019,7 @@ const CashierTransactionEdit = ({
                                                                             phone: e
                                                                                 .target
                                                                                 .value,
-                                                                        }
+                                                                        },
                                                                     )
                                                                 }
                                                             />
@@ -1028,7 +1056,7 @@ const CashierTransactionEdit = ({
                                                                                 e
                                                                                     .target
                                                                                     .value,
-                                                                        }
+                                                                        },
                                                                     )
                                                                 }
                                                             />
@@ -1064,7 +1092,8 @@ const CashierTransactionEdit = ({
                                                 <Badge>
                                                     {humanCustType(
                                                         customerFinder
-                                                            .customer_found.type
+                                                            .customer_found
+                                                            .type,
                                                     )}
                                                 </Badge>
                                             </div>
@@ -1098,16 +1127,16 @@ const CashierTransactionEdit = ({
                                             onClick={() => {
                                                 setCustomerFinder(
                                                     "is_found",
-                                                    false
+                                                    false,
                                                 );
                                                 setCustomerFinder(
                                                     "customer_find",
-                                                    ""
+                                                    "",
                                                 );
                                                 setForm("customer_id", "");
                                                 setForm(
                                                     "customer_type",
-                                                    "general"
+                                                    "general",
                                                 );
                                             }}
                                         >
@@ -1190,7 +1219,7 @@ const CashierTransactionEdit = ({
                                                 </div>
                                                 <p className="font-semibold">
                                                     {floatToIdCurrency(
-                                                        item.price_applied
+                                                        item.price_applied,
                                                     )}
                                                 </p>
                                             </div>
@@ -1201,7 +1230,7 @@ const CashierTransactionEdit = ({
                                                     onClick={() => {
                                                         handleQtyAction(
                                                             "MIN",
-                                                            index
+                                                            index,
                                                         );
                                                     }}
                                                     aria-label="Kurangi Qty"
@@ -1217,7 +1246,7 @@ const CashierTransactionEdit = ({
                                                     onClick={() => {
                                                         handleQtyAction(
                                                             "ADD",
-                                                            index
+                                                            index,
                                                         );
                                                     }}
                                                     aria-label="Tambah Qty"
@@ -1329,7 +1358,7 @@ const CashierTransactionEdit = ({
                                     const inputValue = Number(e.target.value);
                                     const clampedValue = Math.max(
                                         0,
-                                        inputValue
+                                        inputValue,
                                     );
 
                                     const maxAllowedDiscount =
@@ -1339,7 +1368,7 @@ const CashierTransactionEdit = ({
 
                                     const finalValue = Math.min(
                                         clampedValue,
-                                        maxAllowedDiscount
+                                        maxAllowedDiscount,
                                     );
 
                                     setForm("event_discount", finalValue);
@@ -1362,17 +1391,23 @@ const CashierTransactionEdit = ({
                                         />
                                     )}
                                 </div>
-                                <Input
-                                    type="text"
-                                    placeholder="Misal BRI, BCA, ..."
-                                    className="w-full bg-white"
-                                    value={form.payment_provider || ""}
-                                    onChange={(e) => {
+                                <SelectSearchInput
+                                    direction={isMobile ? "auto" : "left"}
+                                    placeholder="Pilih bank..."
+                                    className="w-ful bg-white"
+                                    value={
+                                        form.payment_provider?.toString() || ""
+                                    }
+                                    options={EXPECTED_PAYMENT_PROVIDER}
+                                    onChange={(value) =>
                                         setForm(
                                             "payment_provider",
-                                            e.target.value.toUpperCase()
-                                        );
-                                    }}
+                                            value.toString().toUpperCase(),
+                                        )
+                                    }
+                                    removeValue={() =>
+                                        setForm("payment_provider", "")
+                                    }
                                 />
                             </div>
                         )}
@@ -1404,12 +1439,12 @@ const CashierTransactionEdit = ({
                                                     ) {
                                                         setPointUsedPlaceholder(
                                                             "point_used_placeholder",
-                                                            form.point_used
+                                                            form.point_used,
                                                         );
                                                     } else {
                                                         setPointUsedPlaceholder(
                                                             "point_used_placeholder",
-                                                            minimum_point_can_used
+                                                            minimum_point_can_used,
                                                         );
                                                     }
                                                 }}
@@ -1430,7 +1465,7 @@ const CashierTransactionEdit = ({
                                                 Gunakan poin sebagai diskon
                                                 senilai{" "}
                                                 {floatToIdCurrency(
-                                                    idr_point_value
+                                                    idr_point_value,
                                                 )}
                                             </DialogDescription>
                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -1455,7 +1490,7 @@ const CashierTransactionEdit = ({
                                                         }
                                                         onChange={(e) => {
                                                             let val = Number(
-                                                                e.target.value
+                                                                e.target.value,
                                                             );
                                                             const min =
                                                                 minimum_point_can_used;
@@ -1471,7 +1506,7 @@ const CashierTransactionEdit = ({
                                                                 val = max;
                                                             setPointUsedPlaceholder(
                                                                 "point_used_placeholder",
-                                                                val
+                                                                val,
                                                             );
                                                         }}
                                                         value={
@@ -1490,11 +1525,11 @@ const CashierTransactionEdit = ({
                                                     onClick={() => {
                                                         setPointUsedPlaceholder(
                                                             "point_used_placeholder",
-                                                            0
+                                                            0,
                                                         );
                                                         setForm(
                                                             "point_used",
-                                                            0
+                                                            0,
                                                         );
                                                     }}
                                                 >
@@ -1508,13 +1543,13 @@ const CashierTransactionEdit = ({
                                                     onClick={() => {
                                                         const input =
                                                             document.getElementById(
-                                                                "input_point_used"
+                                                                "input_point_used",
                                                             ) as HTMLInputElement | null;
                                                         if (input) {
                                                             savePointUsed(
                                                                 Number(
-                                                                    input.value
-                                                                )
+                                                                    input.value,
+                                                                ),
                                                             );
                                                         }
                                                     }}
@@ -1551,7 +1586,7 @@ const CashierTransactionEdit = ({
                                         </span>
                                         <span className="font-medium">
                                             {floatToIdCurrency(
-                                                form.point_discount
+                                                form.point_discount,
                                             )}
                                         </span>
                                     </div>
@@ -1561,7 +1596,7 @@ const CashierTransactionEdit = ({
                                         </span>
                                         <span className="font-medium">
                                             {floatToIdCurrency(
-                                                form.event_discount
+                                                form.event_discount,
                                             )}
                                         </span>
                                     </div>
