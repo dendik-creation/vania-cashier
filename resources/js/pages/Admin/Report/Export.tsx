@@ -1,6 +1,11 @@
 import React, { useEffect } from "react";
 import { Head } from "@inertiajs/react";
-import { floatToIdCurrency, ymdToIdDate } from "@/components/helper/helper";
+import {
+    floatToIdCurrency,
+    humanCustType,
+    humanPaymentMethod,
+    ymdToIdDate,
+} from "@/components/helper/helper";
 
 type Transaction = {
     id: number;
@@ -10,6 +15,7 @@ type Transaction = {
     cashier: { name: string };
     total: number;
     payment_method: string;
+    payment_provider: string;
     transaction_time: string;
     items: {
         id: number;
@@ -30,6 +36,12 @@ type ExportProps = {
         total_revenue: number;
         total_transactions: number;
         total_items_sold: number;
+        total_revenue_by_payment_method: {
+            cash: number;
+            debit: number;
+            transfer: number;
+            qris: number;
+        };
     };
     filters: {
         start_date: string;
@@ -147,26 +159,72 @@ const AdminReportExport = ({
                 </div>
             </div>
 
+            <div className="grid grid-cols-4 gap-4 mb-8 border border-gray-300 p-4 rounded-lg">
+                <div className="text-center">
+                    <div className="text-sm text-center text-gray-500 mb-1">
+                        Pendapatan dari Tunai
+                    </div>
+                    <div className="text-xl font-bold">
+                        {floatToIdCurrency(
+                            summary.total_revenue_by_payment_method.cash,
+                        )}
+                    </div>
+                </div>
+                <div className="text-center border-l border-gray-300">
+                    <div className="text-sm text-center text-gray-500 mb-1">
+                        Pendapatan dari Transfer
+                    </div>
+                    <div className="text-xl font-bold">
+                        {floatToIdCurrency(
+                            summary.total_revenue_by_payment_method.transfer,
+                        )}
+                    </div>
+                </div>
+                <div className="text-center border-l border-gray-300">
+                    <div className="text-sm text-center text-gray-500 mb-1">
+                        Pendapatan dari QRIS
+                    </div>
+                    <div className="text-xl font-bold">
+                        {floatToIdCurrency(
+                            summary.total_revenue_by_payment_method.qris,
+                        )}
+                    </div>
+                </div>
+                <div className="text-center border-l border-gray-300">
+                    <div className="text-sm text-center text-gray-500 mb-1">
+                        Pendapatan dari Debit
+                    </div>
+                    <div className="text-xl font-bold">
+                        {floatToIdCurrency(
+                            summary.total_revenue_by_payment_method.debit,
+                        )}
+                    </div>
+                </div>
+            </div>
+
             {/* Table */}
             <table className="w-full text-sm border-collapse border border-gray-300">
                 <thead>
                     <tr className="bg-gray-100">
-                        <th className="border border-gray-300 p-2 text-left w-12">
+                        <th className="border border-gray-300 p-2 text-center w-12">
                             No
                         </th>
-                        <th className="border border-gray-300 p-2 text-left">
+                        <th className="border border-gray-300 p-2 text-center">
                             Invoice
                         </th>
-                        <th className="border border-gray-300 p-2 text-left">
+                        <th className="border border-gray-300 p-2 text-center">
                             Waktu
                         </th>
-                        <th className="border border-gray-300 p-2 text-left">
+                        <th className="border border-gray-300 p-2 text-center">
                             Pelanggan
                         </th>
-                        <th className="border border-gray-300 p-2 text-left">
+                        <th className="border border-gray-300 p-2 text-center">
                             Item
                         </th>
-                        <th className="border border-gray-300 p-2 text-right">
+                        <th className="border border-gray-300 p-2 text-center">
+                            Metode Bayar
+                        </th>
+                        <th className="border border-gray-300 p-2 text-center">
                             Total
                         </th>
                     </tr>
@@ -187,9 +245,11 @@ const AdminReportExport = ({
                                 <div>
                                     {t.customer ? t.customer.name : "Umum"}
                                 </div>
-                                <div className="text-xs text-gray-500 capitalize">
-                                    {t.customer_type}
-                                </div>
+                                {t.customer != null && (
+                                    <div className="text-xs text-gray-500 capitalize">
+                                        {humanCustType(t.customer_type)}
+                                    </div>
+                                )}
                             </td>
                             <td className="border border-gray-300 p-2 align-top">
                                 <ul className="list-disc list-inside text-xs">
@@ -201,7 +261,13 @@ const AdminReportExport = ({
                                     ))}
                                 </ul>
                             </td>
-                            <td className="border border-gray-300 p-2 text-right align-top">
+                            <td className="border border-gray-300 p-2 text-center align-top">
+                                {humanPaymentMethod(t.payment_method)}{" "}
+                                {t.payment_provider
+                                    ? `${t.payment_provider}`
+                                    : ""}
+                            </td>
+                            <td className="border border-gray-300 p-2 text-center align-top">
                                 {floatToIdCurrency(t.total)}
                             </td>
                         </tr>
