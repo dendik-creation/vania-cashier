@@ -63,7 +63,7 @@ export class ReceiptPrinter {
         if (transaction.customer_type != "general") {
             printRow(
                 "Poin Terkini",
-                `${Number(transaction.customer?.points || 0)}`
+                `${Number(transaction.customer?.points || 0)}`,
             );
         }
         e.line("-".repeat(this.width));
@@ -132,7 +132,7 @@ export class ReceiptPrinter {
                 Number(sum) +
                 Number(item.variant?.price_criteria.basic || 0) *
                     Number(item.quantity),
-            0
+            0,
         );
         const totalDiscount = normalAllAmount - transaction.subtotal;
         printRow("Subtotal", formatCurrency(normalAllAmount));
@@ -142,19 +142,19 @@ export class ReceiptPrinter {
         if (transaction.point_discount > 0)
             printRow(
                 "Konversi Poin",
-                "-" + formatCurrency(transaction.point_discount)
+                "-" + formatCurrency(transaction.point_discount),
             );
         if (transaction.event_discount > 0)
             printRow(
                 "Diskon Event",
-                "-" + formatCurrency(transaction.event_discount)
+                "-" + formatCurrency(transaction.event_discount),
             );
         printRow(
             "Metode Bayar",
             humanPaymentMethod(transaction.payment_method) +
                 (transaction.payment_provider
                     ? ` ${transaction.payment_provider}`
-                    : "")
+                    : ""),
         );
         if (transaction.admin_fee > 0)
             printRow("Biaya Admin", formatCurrency(transaction.admin_fee));
@@ -183,7 +183,7 @@ export class ReceiptPrinter {
 
     async printLabel(
         variants: (ProductVariant & { copies?: number })[],
-        itemPerRow: number = 1
+        itemPerRow: number = 1,
     ) {
         const bytes = this.generateTSPLCommands(variants, itemPerRow);
         if (this.debugReceipt) {
@@ -195,7 +195,7 @@ export class ReceiptPrinter {
 
     private generateTSPLCommands(
         variants: (ProductVariant & { copies?: number })[],
-        itemPerRow: number
+        itemPerRow: number,
     ): Uint8Array {
         let commands = "";
 
@@ -271,7 +271,7 @@ export class ReceiptPrinter {
                 const barcodeX = Math.floor(labelCenterDots - barcodeWidth / 2);
                 const finalBarcodeX = Math.max(
                     xOffsetDots + paddingDots,
-                    barcodeX
+                    barcodeX,
                 );
 
                 // Y=50, Height=60.
@@ -295,7 +295,7 @@ export class ReceiptPrinter {
                 const printRow = (
                     leftText: string,
                     rightText: string,
-                    y: number
+                    y: number,
                 ) => {
                     // Left Text
                     commands += `TEXT ${leftX},${y},"0",0,9,9,"${leftText}"\r\n`;
@@ -310,7 +310,7 @@ export class ReceiptPrinter {
                 // Row 1: Color | (Beli 1) Harga
                 const color = (item.attributes.color || "").substring(0, 12);
                 const priceBasic = `(Beli 1) ${formatPrice(
-                    item.price_criteria.basic
+                    item.price_criteria.basic,
                 )}`;
                 printRow(color, priceBasic, currentY);
 
@@ -318,19 +318,37 @@ export class ReceiptPrinter {
                 currentY += lineHeight;
                 const size = String(item.attributes.size || "").substring(
                     0,
-                    12
+                    12,
                 );
-                const price3 = `(Beli 3) ${formatPrice(
-                    item.price_criteria.order_qty_3
-                )}`;
-                printRow(size, price3, currentY);
-
-                // Row 3: (empty left) | (Beli 6) Harga
-                currentY += lineHeight;
-                const price6 = `(Beli 6) ${formatPrice(
-                    item.price_criteria.order_qty_6
-                )}`;
-                printRow("", price6, currentY);
+                if (
+                    item.price_criteria.order_qty_3 &&
+                    item.price_criteria.order_qty_3 !== 0
+                ) {
+                    const price3 = `(Beli 3) ${formatPrice(
+                        item.price_criteria.order_qty_3,
+                    )}`;
+                    printRow(size, price3, currentY);
+                    // Row 3: (empty left) | (Beli 6) Harga
+                    currentY += lineHeight;
+                    if (
+                        item.price_criteria.order_qty_6 &&
+                        item.price_criteria.order_qty_6 !== 0
+                    ) {
+                        const price6 = `(Beli 6) ${formatPrice(
+                            item.price_criteria.order_qty_6,
+                        )}`;
+                        printRow("", price6, currentY);
+                    }
+                } else if (
+                    item.price_criteria.order_qty_6 &&
+                    item.price_criteria.order_qty_6 !== 0
+                ) {
+                    // If price 3 is not shown but price 6 is, still increment Y and print price 6
+                    const price6 = `(Beli 6) ${formatPrice(
+                        item.price_criteria.order_qty_6,
+                    )}`;
+                    printRow(size, price6, currentY);
+                }
             });
 
             commands += `PRINT 1\r\n`;
@@ -341,7 +359,7 @@ export class ReceiptPrinter {
 
     private async printToBluetooth(
         bytes: Uint8Array,
-        printerConfig: typeof PRINTERS.RECEIPT
+        printerConfig: typeof PRINTERS.RECEIPT,
     ) {
         const nav = navigator as any;
         if (!nav.bluetooth) {
@@ -357,17 +375,17 @@ export class ReceiptPrinter {
             });
 
             console.log(
-                `Perangkat dipilih: ${device.name}. Menghubungkan GATT...`
+                `Perangkat dipilih: ${device.name}. Menghubungkan GATT...`,
             );
 
             const server = await device.gatt.connect();
             console.log("GATT Terhubung.");
 
             const service = await server.getPrimaryService(
-                printerConfig.service
+                printerConfig.service,
             );
             const characteristic = await service.getCharacteristic(
-                printerConfig.characteristic
+                printerConfig.characteristic,
             );
 
             console.log("Characteristic ditemukan. Memulai transfer data...");
@@ -424,7 +442,7 @@ export class ReceiptPrinter {
         const win = window.open(
             "",
             "Debug Receipt",
-            "width=500,height=800,menubar=0,toolbar=0,location=0,status=0,scrollbars=1,resizable=1"
+            "width=500,height=800,menubar=0,toolbar=0,location=0,status=0,scrollbars=1,resizable=1",
         );
         if (win) {
             win.document.write(`
