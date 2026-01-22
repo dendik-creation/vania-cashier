@@ -21,8 +21,14 @@ const CashierProductEdit = ({
         useForm({
             name: product.name,
             type: product.type,
-            with_price_criteria: product.with_price_criteria || false,
-            can_earn_point: product.can_earn_point || false,
+            with_price_criteria:
+                product.with_price_criteria === true ||
+                product.with_price_criteria === 1 ||
+                product.with_price_criteria === "1",
+            can_earn_point:
+                product.can_earn_point === true ||
+                product.can_earn_point === 1 ||
+                product.can_earn_point === "1",
             brand: product.brand || "",
             variants: (product.variants || []).map((v: VariantFormData) => ({
                 id: v.id,
