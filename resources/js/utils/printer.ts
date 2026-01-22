@@ -322,7 +322,7 @@ export class ReceiptPrinter {
                 );
                 if (
                     item.price_criteria.order_qty_3 &&
-                    item.price_criteria.order_qty_3 !== 0
+                    item.price_criteria.order_qty_3 != 0
                 ) {
                     const price3 = `(Beli 3) ${formatPrice(
                         item.price_criteria.order_qty_3,
@@ -332,7 +332,7 @@ export class ReceiptPrinter {
                     currentY += lineHeight;
                     if (
                         item.price_criteria.order_qty_6 &&
-                        item.price_criteria.order_qty_6 !== 0
+                        item.price_criteria.order_qty_6 != 0
                     ) {
                         const price6 = `(Beli 6) ${formatPrice(
                             item.price_criteria.order_qty_6,
@@ -341,7 +341,7 @@ export class ReceiptPrinter {
                     }
                 } else if (
                     item.price_criteria.order_qty_6 &&
-                    item.price_criteria.order_qty_6 !== 0
+                    item.price_criteria.order_qty_6 != 0
                 ) {
                     // If price 3 is not shown but price 6 is, still increment Y and print price 6
                     const price6 = `(Beli 6) ${formatPrice(

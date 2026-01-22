@@ -173,14 +173,7 @@ const AdminProductEdit = ({
                         "Harga reseller wajib diisi",
                     );
                     isValid = false;
-                } else if (Number(variant.price_criteria.reseller) <= 0) {
-                    setError(
-                        `variants.${index}.price_criteria.reseller`,
-                        "Harga reseller harus lebih dari 0",
-                    );
-                    isValid = false;
                 }
-
                 // Validasi price criteria - Harga qty 3+
                 if (
                     !variant.price_criteria.order_qty_3 ||
@@ -189,12 +182,6 @@ const AdminProductEdit = ({
                     setError(
                         `variants.${index}.price_criteria.order_qty_3`,
                         "Harga qty 3+ wajib diisi",
-                    );
-                    isValid = false;
-                } else if (Number(variant.price_criteria.order_qty_3) <= 0) {
-                    setError(
-                        `variants.${index}.price_criteria.order_qty_3`,
-                        "Harga qty 3+ harus lebih dari 0",
                     );
                     isValid = false;
                 }
@@ -207,12 +194,6 @@ const AdminProductEdit = ({
                     setError(
                         `variants.${index}.price_criteria.order_qty_6`,
                         "Harga qty 6+ wajib diisi",
-                    );
-                    isValid = false;
-                } else if (Number(variant.price_criteria.order_qty_6) <= 0) {
-                    setError(
-                        `variants.${index}.price_criteria.order_qty_6`,
-                        "Harga qty 6+ harus lebih dari 0",
                     );
                     isValid = false;
                 }
