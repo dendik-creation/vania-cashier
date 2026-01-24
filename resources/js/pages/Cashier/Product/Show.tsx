@@ -1,9 +1,15 @@
 import { Button } from "@/components/ui/button";
 import AppLayout from "@/partials/AppLayout";
 import { PageTitle } from "@/partials/PageTitle";
-import { Link } from "@inertiajs/react";
+import { Link, useForm } from "@inertiajs/react";
 import { Edit, ArrowLeft } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import {
     Table,
     TableBody,
@@ -18,12 +24,32 @@ import {
     floatToIdCurrency,
     humanProductType,
 } from "@/components/helper/helper";
+import { SearchInput } from "@/components/custom/FormElement";
 
 const CashierProductShow = ({
     title,
     description,
     product,
 }: AdminProductShowProps) => {
+    const searchParam =
+        typeof window !== "undefined" && window.location.search
+            ? new URLSearchParams(window.location.search).get("search") || ""
+            : "";
+    const { data: variant, setData: setVariant } = useForm({
+        search: searchParam || "",
+        variantResults: product.variants || [],
+    });
+
+    const handleSearchVariant = (search: string) => {
+        const filteredVariants = product.variants.filter((variant) =>
+            variant.sku.toLowerCase().includes(search.toLowerCase()),
+        );
+        setVariant({
+            ...variant,
+            search: search,
+            variantResults: filteredVariants,
+        });
+    };
     return (
         <AppLayout>
             <PageTitle title={title} description={description} />
@@ -97,6 +123,18 @@ const CashierProductShow = ({
                 <Card>
                     <CardHeader>
                         <CardTitle>Daftar Varian</CardTitle>
+                        <CardDescription className="text-black">
+                            <div className="flex">
+                                <SearchInput
+                                    placeholder="Cari kode produk"
+                                    className="lg:max-w-sm w-full"
+                                    onChange={(e) =>
+                                        handleSearchVariant(e.target.value)
+                                    }
+                                    value={variant.search || ""}
+                                />
+                            </div>
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="overflow-x-auto">

@@ -1,9 +1,15 @@
 import { Button } from "@/components/ui/button";
 import AppLayout from "@/partials/AppLayout";
 import { PageTitle } from "@/partials/PageTitle";
-import { Link } from "@inertiajs/react";
+import { Link, router, useForm, usePage } from "@inertiajs/react";
 import { Edit, ArrowLeft } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import {
     Table,
     TableBody,
@@ -18,12 +24,32 @@ import {
     floatToIdCurrency,
     humanProductType,
 } from "@/components/helper/helper";
+import { SearchInput } from "@/components/custom/FormElement";
 
 const AdminProductShow = ({
     title,
     description,
     product,
 }: AdminProductShowProps) => {
+    const searchParam =
+        typeof window !== "undefined" && window.location.search
+            ? new URLSearchParams(window.location.search).get("search") || ""
+            : "";
+    const { data: variant, setData: setVariant } = useForm({
+        search: searchParam || "",
+        variantResults: product.variants || [],
+    });
+
+    const handleSearchVariant = (search: string) => {
+        const filteredVariants = product.variants.filter((variant) =>
+            variant.sku.toLowerCase().includes(search.toLowerCase()),
+        );
+        setVariant({
+            ...variant,
+            search: search,
+            variantResults: filteredVariants,
+        });
+    };
     return (
         <AppLayout>
             <PageTitle title={title} description={description} />
@@ -97,6 +123,18 @@ const AdminProductShow = ({
                 <Card>
                     <CardHeader>
                         <CardTitle>Daftar Varian</CardTitle>
+                        <CardDescription className="text-black">
+                            <div className="flex">
+                                <SearchInput
+                                    placeholder="Cari kode produk"
+                                    className="lg:max-w-sm w-full"
+                                    onChange={(e) =>
+                                        handleSearchVariant(e.target.value)
+                                    }
+                                    value={variant.search || ""}
+                                />
+                            </div>
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="overflow-x-auto">
@@ -132,8 +170,8 @@ const AdminProductShow = ({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {!product.variants ||
-                                    product.variants.length === 0 ? (
+                                    {!variant.variantResults ||
+                                    variant.variantResults.length === 0 ? (
                                         <TableRow>
                                             <TableCell
                                                 colSpan={
@@ -147,72 +185,78 @@ const AdminProductShow = ({
                                             </TableCell>
                                         </TableRow>
                                     ) : (
-                                        product.variants.map((variant) => (
-                                            <TableRow key={variant.id}>
-                                                <TableCell className="font-mono">
-                                                    <pre>{variant.sku}</pre>
-                                                </TableCell>
-                                                <TableCell>
-                                                    {variant.attributes
-                                                        ?.color || "-"}
-                                                </TableCell>
-                                                {product.type === "sepatu" && (
+                                        variant.variantResults.map(
+                                            (variant) => (
+                                                <TableRow key={variant.id}>
+                                                    <TableCell className="font-mono">
+                                                        <pre>{variant.sku}</pre>
+                                                    </TableCell>
                                                     <TableCell>
                                                         {variant.attributes
-                                                            ?.size || "-"}
+                                                            ?.color || "-"}
                                                     </TableCell>
-                                                )}
-                                                <TableCell>
-                                                    <span className="font-normal">
-                                                        {floatToIdCurrency(
-                                                            variant
-                                                                .price_criteria
-                                                                ?.basic || 0,
-                                                        )}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <span className="font-normal">
-                                                        {floatToIdCurrency(
-                                                            variant
-                                                                .price_criteria
-                                                                ?.reseller || 0,
-                                                        )}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <span className="font-normal">
-                                                        {floatToIdCurrency(
-                                                            variant
-                                                                .price_criteria
-                                                                ?.order_qty_3 ||
-                                                                0,
-                                                        )}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <span className="font-normal">
-                                                        {floatToIdCurrency(
-                                                            variant
-                                                                .price_criteria
-                                                                ?.order_qty_6 ||
-                                                                0,
-                                                        )}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge
-                                                        variant={
-                                                            variant.stock > 0
-                                                                ? "default"
-                                                                : "destructive"
-                                                        }
-                                                    >
-                                                        {variant.stock}
-                                                    </Badge>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
+                                                    {product.type ===
+                                                        "sepatu" && (
+                                                        <TableCell>
+                                                            {variant.attributes
+                                                                ?.size || "-"}
+                                                        </TableCell>
+                                                    )}
+                                                    <TableCell>
+                                                        <span className="font-normal">
+                                                            {floatToIdCurrency(
+                                                                variant
+                                                                    .price_criteria
+                                                                    ?.basic ||
+                                                                    0,
+                                                            )}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <span className="font-normal">
+                                                            {floatToIdCurrency(
+                                                                variant
+                                                                    .price_criteria
+                                                                    ?.reseller ||
+                                                                    0,
+                                                            )}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <span className="font-normal">
+                                                            {floatToIdCurrency(
+                                                                variant
+                                                                    .price_criteria
+                                                                    ?.order_qty_3 ||
+                                                                    0,
+                                                            )}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <span className="font-normal">
+                                                            {floatToIdCurrency(
+                                                                variant
+                                                                    .price_criteria
+                                                                    ?.order_qty_6 ||
+                                                                    0,
+                                                            )}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge
+                                                            variant={
+                                                                variant.stock >
+                                                                0
+                                                                    ? "default"
+                                                                    : "destructive"
+                                                            }
+                                                        >
+                                                            {variant.stock}
+                                                        </Badge>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ),
+                                        )
                                     )}
                                 </TableBody>
                             </Table>
