@@ -147,11 +147,9 @@ const CashierProductShow = ({
                                         <TableHead className="min-w-[100px]">
                                             Warna
                                         </TableHead>
-                                        {product.type === "sepatu" && (
-                                            <TableHead className="min-w-20">
-                                                Ukuran
-                                            </TableHead>
-                                        )}
+                                        <TableHead className="min-w-20">
+                                            Ukuran
+                                        </TableHead>
                                         <TableHead className="min-w-[120px]">
                                             Harga Dasar
                                         </TableHead>
@@ -194,12 +192,10 @@ const CashierProductShow = ({
                                                     {variant.attributes
                                                         ?.color || "-"}
                                                 </TableCell>
-                                                {product.type === "sepatu" && (
-                                                    <TableCell>
-                                                        {variant.attributes
-                                                            ?.size || "-"}
-                                                    </TableCell>
-                                                )}
+                                                <TableCell>
+                                                    {variant.attributes?.size ||
+                                                        "-"}
+                                                </TableCell>
                                                 <TableCell>
                                                     <span className="font-normal">
                                                         {floatToIdCurrency(

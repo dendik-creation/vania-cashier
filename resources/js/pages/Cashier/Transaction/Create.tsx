@@ -180,6 +180,8 @@ const CashierTransactionCreate = ({
         switch (type) {
             case "sepatu":
                 return <Footprints size={size} />;
+            case "sandal":
+                return <Footprints size={size} />;
             case "tas":
                 return <Handbag size={size} />;
             case "aksesoris":
@@ -1293,8 +1295,7 @@ const CashierTransactionCreate = ({
                                                     <span className="text-xs">
                                                         {item.attributes.color}
                                                     </span>
-                                                    {item.product_type ==
-                                                        "sepatu" && (
+                                                    {item.attributes?.size && (
                                                         <span className="text-xs">
                                                             {" | "}
                                                             {

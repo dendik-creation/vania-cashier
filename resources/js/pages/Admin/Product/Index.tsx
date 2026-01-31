@@ -67,6 +67,8 @@ const AdminProductIndex = ({
         switch (type) {
             case "sepatu":
                 return <Footprints size={size} />;
+            case "sandal":
+                return <Footprints size={size} />;
             case "tas":
                 return <Handbag size={size} />;
             case "aksesoris":

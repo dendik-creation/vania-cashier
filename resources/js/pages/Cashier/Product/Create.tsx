@@ -110,19 +110,6 @@ const AdminProductCreate = ({
                 isValid = false;
             }
 
-            // Ukuran wajib untuk sepatu
-            if (
-                data.type === "sepatu" &&
-                (!variant.attributes.size ||
-                    variant.attributes.size.trim() === "")
-            ) {
-                setError(
-                    `variants.${index}.attributes.size`,
-                    "Ukuran wajib diisi untuk sepatu",
-                );
-                isValid = false;
-            }
-
             // Validasi price criteria - Harga Dasar
             if (
                 !variant.price_criteria.basic ||
@@ -398,34 +385,32 @@ const AdminProductCreate = ({
                                                 />
                                             </div>
 
-                                            {data.type === "sepatu" && (
-                                                <div className="space-y-1">
-                                                    <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
-                                                        Ukuran
-                                                    </Label>
-                                                    <Input
-                                                        value={
-                                                            variant.attributes
-                                                                .size || ""
-                                                        }
-                                                        onChange={(e) =>
-                                                            updateVariant(
-                                                                index,
-                                                                "size",
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        placeholder="Masukkan ukuran"
-                                                    />
-                                                    <ErrorInput
-                                                        error={
-                                                            errors[
-                                                                `variants.${index}.attributes.size` as any
-                                                            ]
-                                                        }
-                                                    />
-                                                </div>
-                                            )}
+                                            <div className="space-y-1">
+                                                <Label className="text-base mb-1">
+                                                    Ukuran (Jika perlu)
+                                                </Label>
+                                                <Input
+                                                    value={
+                                                        variant.attributes
+                                                            .size || ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        updateVariant(
+                                                            index,
+                                                            "size",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Masukkan ukuran"
+                                                />
+                                                <ErrorInput
+                                                    error={
+                                                        errors[
+                                                            `variants.${index}.attributes.size` as any
+                                                        ]
+                                                    }
+                                                />
+                                            </div>
 
                                             <div className="space-y-1">
                                                 <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
