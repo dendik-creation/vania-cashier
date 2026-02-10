@@ -310,7 +310,8 @@ export class ReceiptPrinter {
                 // Row 1: Color | (Beli 1) Harga
                 const color = (
                     item.attributes &&
-                    typeof item.attributes.color !== "undefined"
+                    typeof item.attributes.color !== "undefined" &&
+                    item.attributes.color != null
                         ? String(item.attributes.color)
                         : ""
                 ).substring(0, 12);
@@ -323,7 +324,8 @@ export class ReceiptPrinter {
                 currentY += lineHeight;
                 const size = (
                     item.attributes &&
-                    typeof item.attributes.size !== "undefined"
+                    typeof item.attributes.size !== "undefined" &&
+                    item.attributes.size != null
                         ? String(item.attributes.size)
                         : ""
                 ).substring(0, 12);
