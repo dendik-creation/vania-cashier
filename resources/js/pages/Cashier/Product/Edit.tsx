@@ -408,7 +408,7 @@ const CashierProductEdit = ({
 
                                             <div className="space-y-1">
                                                 <Label className="text-base mb-1">
-                                                    Ukuran
+                                                    Ukuran (Jika Perlu)
                                                 </Label>
                                                 <Input
                                                     value={

@@ -407,8 +407,8 @@ const AdminProductEdit = ({
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
-                                                    Ukuran
+                                                <Label className="text-base mb-1">
+                                                    Ukuran (Jika Perlu)
                                                 </Label>
                                                 <Input
                                                     value={
