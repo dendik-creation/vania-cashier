@@ -110,19 +110,6 @@ const AdminProductCreate = ({
                 isValid = false;
             }
 
-            // Ukuran wajib untuk sepatu
-            if (
-                data.type === "sepatu" &&
-                (!variant.attributes.size ||
-                    variant.attributes.size.trim() === "")
-            ) {
-                setError(
-                    `variants.${index}.attributes.size`,
-                    "Ukuran wajib diisi untuk sepatu",
-                );
-                isValid = false;
-            }
-
             // Validasi price criteria - Harga Dasar
             if (
                 !variant.price_criteria.basic ||
@@ -152,12 +139,6 @@ const AdminProductCreate = ({
                         "Harga reseller wajib diisi",
                     );
                     isValid = false;
-                } else if (Number(variant.price_criteria.reseller) <= 0) {
-                    setError(
-                        `variants.${index}.price_criteria.reseller`,
-                        "Harga reseller harus lebih dari 0",
-                    );
-                    isValid = false;
                 }
 
                 // Validasi price criteria - Harga qty 3+
@@ -170,14 +151,7 @@ const AdminProductCreate = ({
                         "Harga qty 3+ wajib diisi",
                     );
                     isValid = false;
-                } else if (Number(variant.price_criteria.order_qty_3) <= 0) {
-                    setError(
-                        `variants.${index}.price_criteria.order_qty_3`,
-                        "Harga qty 3+ harus lebih dari 0",
-                    );
-                    isValid = false;
                 }
-
                 // Validasi price criteria - Harga qty 6+
                 if (
                     !variant.price_criteria.order_qty_6 ||
@@ -186,12 +160,6 @@ const AdminProductCreate = ({
                     setError(
                         `variants.${index}.price_criteria.order_qty_6`,
                         "Harga qty 6+ wajib diisi",
-                    );
-                    isValid = false;
-                } else if (Number(variant.price_criteria.order_qty_6) <= 0) {
-                    setError(
-                        `variants.${index}.price_criteria.order_qty_6`,
-                        "Harga qty 6+ harus lebih dari 0",
                     );
                     isValid = false;
                 }
@@ -409,34 +377,32 @@ const AdminProductCreate = ({
                                                 />
                                             </div>
 
-                                            {data.type === "sepatu" && (
-                                                <div className="space-y-1">
-                                                    <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
-                                                        Ukuran
-                                                    </Label>
-                                                    <Input
-                                                        value={
-                                                            variant.attributes
-                                                                .size || ""
-                                                        }
-                                                        onChange={(e) =>
-                                                            updateVariant(
-                                                                index,
-                                                                "size",
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        placeholder="Masukkan ukuran"
-                                                    />
-                                                    <ErrorInput
-                                                        error={
-                                                            errors[
-                                                                `variants.${index}.attributes.size` as any
-                                                            ]
-                                                        }
-                                                    />
-                                                </div>
-                                            )}
+                                            <div className="space-y-1">
+                                                <Label className="text-base mb-1">
+                                                    Ukuran (Jika perlu)
+                                                </Label>
+                                                <Input
+                                                    value={
+                                                        variant.attributes
+                                                            .size || ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        updateVariant(
+                                                            index,
+                                                            "size",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Masukkan ukuran"
+                                                />
+                                                <ErrorInput
+                                                    error={
+                                                        errors[
+                                                            `variants.${index}.attributes.size` as any
+                                                        ]
+                                                    }
+                                                />
+                                            </div>
 
                                             <div className="space-y-1">
                                                 <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">

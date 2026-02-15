@@ -308,46 +308,64 @@ export class ReceiptPrinter {
                 };
 
                 // Row 1: Color | (Beli 1) Harga
-                const color = (item.attributes.color || "").substring(0, 12);
+                const color = (
+                    item.attributes &&
+                    typeof item.attributes.color !== "undefined" &&
+                    item.attributes.color != null
+                        ? String(item.attributes.color)
+                        : ""
+                ).substring(0, 12);
                 const priceBasic = `(Beli 1) ${formatPrice(
-                    item.price_criteria.basic,
+                    Number(item.price_criteria.basic),
                 )}`;
                 printRow(color, priceBasic, currentY);
 
                 // Row 2: Size | (Beli 3) Harga
                 currentY += lineHeight;
-                const size = String(item.attributes.size || "").substring(
-                    0,
-                    12,
-                );
+                const size = (
+                    item.attributes &&
+                    typeof item.attributes.size !== "undefined" &&
+                    item.attributes.size != null
+                        ? String(item.attributes.size)
+                        : ""
+                ).substring(0, 12);
                 if (
-                    item.price_criteria.order_qty_3 &&
-                    item.price_criteria.order_qty_3 !== 0
+                    size &&
+                    (item.price_criteria.order_qty_3 == 0 ||
+                        item.price_criteria.order_qty_3 == undefined)
                 ) {
-                    const price3 = `(Beli 3) ${formatPrice(
-                        item.price_criteria.order_qty_3,
-                    )}`;
-                    printRow(size, price3, currentY);
-                    // Row 3: (empty left) | (Beli 6) Harga
-                    currentY += lineHeight;
+                    printRow(size, "", currentY);
+                    return;
+                } else {
                     if (
-                        item.price_criteria.order_qty_6 &&
-                        item.price_criteria.order_qty_6 !== 0
+                        item.price_criteria.order_qty_3 &&
+                        Number(item.price_criteria.order_qty_3) !== 0
                     ) {
-                        const price6 = `(Beli 6) ${formatPrice(
-                            item.price_criteria.order_qty_6,
+                        const price3 = `(Beli 3) ${formatPrice(
+                            Number(item.price_criteria.order_qty_3),
                         )}`;
-                        printRow("", price6, currentY);
+                        printRow(size, price3, currentY);
+                        // Row 3: (empty left) | (Beli 6) Harga
+                        currentY += lineHeight;
+                        if (
+                            item.price_criteria.order_qty_6 &&
+                            Number(item.price_criteria.order_qty_6) !== 0
+                        ) {
+                            const price6 = `(Beli 6) ${formatPrice(
+                                Number(item.price_criteria.order_qty_6),
+                            )}`;
+                            printRow("", price6, currentY);
+                        }
+                    } else if (
+                        item.price_criteria.order_qty_6 &&
+                        Number(item.price_criteria.order_qty_6) !== 0
+                    ) {
+                        // If price 3 is not shown but price 6 is, still increment Y and print price 6
+                        const price6 = `(Beli 6) ${formatPrice(
+                            Number(item.price_criteria.order_qty_6),
+                        )}`;
+                        printRow(size, price6, currentY);
                     }
-                } else if (
-                    item.price_criteria.order_qty_6 &&
-                    item.price_criteria.order_qty_6 !== 0
-                ) {
-                    // If price 3 is not shown but price 6 is, still increment Y and print price 6
-                    const price6 = `(Beli 6) ${formatPrice(
-                        item.price_criteria.order_qty_6,
-                    )}`;
-                    printRow(size, price6, currentY);
                 }
             });
 

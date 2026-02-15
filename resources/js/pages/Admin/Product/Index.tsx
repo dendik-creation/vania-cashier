@@ -67,6 +67,8 @@ const AdminProductIndex = ({
         switch (type) {
             case "sepatu":
                 return <Footprints size={size} />;
+            case "sandal":
+                return <Footprints size={size} />;
             case "tas":
                 return <Handbag size={size} />;
             case "aksesoris":
@@ -106,7 +108,7 @@ const AdminProductIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["products"],
-            }
+            },
         );
     });
 
@@ -258,7 +260,7 @@ const AdminProductIndex = ({
                                 </div>
                                 <div className="flex items-center justify-end gap-2 mt-4">
                                     <Link
-                                        href={`/admin/products/${product.id}`}
+                                        href={`/admin/products/${product.id} ${filterData.search ? `?search=${filterData.search}` : ""}`}
                                     >
                                         <Button variant="outline">
                                             <Eye className="h-4 w-4" />

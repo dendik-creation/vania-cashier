@@ -27,7 +27,10 @@ class ProductController extends Controller
             $products->where(function ($query) use ($by_search) {
                 $query
                     ->where("name", "like", "%" . $by_search . "%")
-                    ->orWhere("brand", "like", "%" . $by_search . "%");
+                    ->orWhere("brand", "like", "%" . $by_search . "%")
+                    ->orWhereHas("variants", function ($q) use ($by_search) {
+                        $q->where("sku", "like", "%" . $by_search . "%");
+                    });
             });
         }
 
@@ -74,12 +77,9 @@ class ProductController extends Controller
                 "variants.*.attributes" => "required|array",
                 "variants.*.price_criteria" => "required|array",
                 "variants.*.price_criteria.basic" => "required|integer|min:0",
-                "variants.*.price_criteria.reseller" =>
-                    "nullable|integer|min:0",
-                "variants.*.price_criteria.order_qty_3" =>
-                    "nullable|integer|min:0",
-                "variants.*.price_criteria.order_qty_6" =>
-                    "nullable|integer|min:0",
+                "variants.*.price_criteria.reseller" => "nullable|integer",
+                "variants.*.price_criteria.order_qty_3" => "nullable|integer",
+                "variants.*.price_criteria.order_qty_6" => "nullable|integer",
                 "variants.*.stock" => "required|integer|min:0",
             ],
             [
@@ -175,9 +175,9 @@ class ProductController extends Controller
             "variants.*.attributes" => "required|array",
             "variants.*.price_criteria" => "required|array",
             "variants.*.price_criteria.basic" => "required|integer|min:0",
-            "variants.*.price_criteria.reseller" => "nullable|integer|min:0",
-            "variants.*.price_criteria.order_qty_3" => "nullable|integer|min:0",
-            "variants.*.price_criteria.order_qty_6" => "nullable|integer|min:0",
+            "variants.*.price_criteria.reseller" => "nullable|integer",
+            "variants.*.price_criteria.order_qty_3" => "nullable|integer",
+            "variants.*.price_criteria.order_qty_6" => "nullable|integer",
             "variants.*.stock" => "required|integer|min:0",
         ]);
 

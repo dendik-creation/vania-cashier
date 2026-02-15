@@ -77,10 +77,26 @@ export function SearchInput({
                 spellCheck="false"
                 disabled={disabled}
             />
-            <Search
-                className="absolute top-2.5 right-2 text-gray-500"
-                size={16}
-            />
+            {value ? (
+                <button
+                    type="button"
+                    className="absolute top-2.5 cursor-pointer right-2 text-gray-500"
+                    onClick={() => {
+                        const event = {
+                            target: { value: "" },
+                        } as ChangeEvent<HTMLInputElement>;
+                        onChange(event);
+                    }}
+                    tabIndex={-1}
+                >
+                    <CircleX size={16} />
+                </button>
+            ) : (
+                <Search
+                    className="absolute top-2.5 right-2 text-gray-500"
+                    size={16}
+                />
+            )}
         </div>
     );
 }

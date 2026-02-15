@@ -110,19 +110,6 @@ const AdminProductCreate = ({
                 isValid = false;
             }
 
-            // Ukuran wajib untuk sepatu
-            if (
-                data.type === "sepatu" &&
-                (!variant.attributes.size ||
-                    variant.attributes.size.trim() === "")
-            ) {
-                setError(
-                    `variants.${index}.attributes.size`,
-                    "Ukuran wajib diisi untuk sepatu"
-                );
-                isValid = false;
-            }
-
             // Validasi price criteria - Harga Dasar
             if (
                 !variant.price_criteria.basic ||
@@ -130,13 +117,13 @@ const AdminProductCreate = ({
             ) {
                 setError(
                     `variants.${index}.price_criteria.basic`,
-                    "Harga dasar wajib diisi"
+                    "Harga dasar wajib diisi",
                 );
                 isValid = false;
             } else if (Number(variant.price_criteria.basic) <= 0) {
                 setError(
                     `variants.${index}.price_criteria.basic`,
-                    "Harga dasar harus lebih dari 0"
+                    "Harga dasar harus lebih dari 0",
                 );
                 isValid = false;
             }
@@ -149,13 +136,7 @@ const AdminProductCreate = ({
                 ) {
                     setError(
                         `variants.${index}.price_criteria.reseller`,
-                        "Harga reseller wajib diisi"
-                    );
-                    isValid = false;
-                } else if (Number(variant.price_criteria.reseller) <= 0) {
-                    setError(
-                        `variants.${index}.price_criteria.reseller`,
-                        "Harga reseller harus lebih dari 0"
+                        "Harga reseller wajib diisi",
                     );
                     isValid = false;
                 }
@@ -167,13 +148,7 @@ const AdminProductCreate = ({
                 ) {
                     setError(
                         `variants.${index}.price_criteria.order_qty_3`,
-                        "Harga qty 3+ wajib diisi"
-                    );
-                    isValid = false;
-                } else if (Number(variant.price_criteria.order_qty_3) <= 0) {
-                    setError(
-                        `variants.${index}.price_criteria.order_qty_3`,
-                        "Harga qty 3+ harus lebih dari 0"
+                        "Harga qty 3+ wajib diisi",
                     );
                     isValid = false;
                 }
@@ -185,13 +160,7 @@ const AdminProductCreate = ({
                 ) {
                     setError(
                         `variants.${index}.price_criteria.order_qty_6`,
-                        "Harga qty 6+ wajib diisi"
-                    );
-                    isValid = false;
-                } else if (Number(variant.price_criteria.order_qty_6) <= 0) {
-                    setError(
-                        `variants.${index}.price_criteria.order_qty_6`,
-                        "Harga qty 6+ harus lebih dari 0"
+                        "Harga qty 6+ wajib diisi",
                     );
                     isValid = false;
                 }
@@ -299,7 +268,7 @@ const AdminProductCreate = ({
                                         onCheckedChange={(value) =>
                                             setData(
                                                 "with_price_criteria",
-                                                value
+                                                value,
                                             )
                                         }
                                     />
@@ -363,7 +332,7 @@ const AdminProductCreate = ({
                                                             updateVariant(
                                                                 index,
                                                                 "sku",
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                         placeholder="Masukkan Kode Barang"
@@ -402,7 +371,7 @@ const AdminProductCreate = ({
                                                         updateVariant(
                                                             index,
                                                             "color",
-                                                            e.target.value
+                                                            e.target.value,
                                                         )
                                                     }
                                                     placeholder="Masukkan warna"
@@ -416,34 +385,32 @@ const AdminProductCreate = ({
                                                 />
                                             </div>
 
-                                            {data.type === "sepatu" && (
-                                                <div className="space-y-1">
-                                                    <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
-                                                        Ukuran
-                                                    </Label>
-                                                    <Input
-                                                        value={
-                                                            variant.attributes
-                                                                .size || ""
-                                                        }
-                                                        onChange={(e) =>
-                                                            updateVariant(
-                                                                index,
-                                                                "size",
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        placeholder="Masukkan ukuran"
-                                                    />
-                                                    <ErrorInput
-                                                        error={
-                                                            errors[
-                                                                `variants.${index}.attributes.size` as any
-                                                            ]
-                                                        }
-                                                    />
-                                                </div>
-                                            )}
+                                            <div className="space-y-1">
+                                                <Label className="text-base mb-1">
+                                                    Ukuran (Jika perlu)
+                                                </Label>
+                                                <Input
+                                                    value={
+                                                        variant.attributes
+                                                            .size || ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        updateVariant(
+                                                            index,
+                                                            "size",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Masukkan ukuran"
+                                                />
+                                                <ErrorInput
+                                                    error={
+                                                        errors[
+                                                            `variants.${index}.attributes.size` as any
+                                                        ]
+                                                    }
+                                                />
+                                            </div>
 
                                             <div className="space-y-1">
                                                 <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
@@ -456,7 +423,7 @@ const AdminProductCreate = ({
                                                         updateVariant(
                                                             index,
                                                             "stock",
-                                                            e.target.value
+                                                            e.target.value,
                                                         )
                                                     }
                                                     placeholder="0"
@@ -492,7 +459,7 @@ const AdminProductCreate = ({
                                                             updateVariant(
                                                                 index,
                                                                 "basic",
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                     />
@@ -520,7 +487,7 @@ const AdminProductCreate = ({
                                                             updateVariant(
                                                                 index,
                                                                 "reseller",
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                         disabled={
@@ -551,7 +518,7 @@ const AdminProductCreate = ({
                                                             updateVariant(
                                                                 index,
                                                                 "order_qty_3",
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                         disabled={
@@ -582,7 +549,7 @@ const AdminProductCreate = ({
                                                             updateVariant(
                                                                 index,
                                                                 "order_qty_6",
-                                                                e.target.value
+                                                                e.target.value,
                                                             )
                                                         }
                                                         disabled={

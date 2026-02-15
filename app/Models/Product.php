@@ -13,6 +13,7 @@ class Product extends Model
     protected $casts = [
         "type" => "string",
         "with_price_criteria" => "boolean",
+        "can_earn_point" => "boolean",
     ];
 
     protected $hidden = ["created_at", "updated_at"];
