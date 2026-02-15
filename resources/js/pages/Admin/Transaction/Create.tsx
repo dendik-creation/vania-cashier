@@ -587,6 +587,7 @@ const AdminTransactionCreate = ({
 
         try {
             setForm("on_scanning_printer", true);
+
             const response = await axios.post("/admin/transactions", form);
             const { transaction_id, message } = response.data;
 
@@ -598,8 +599,6 @@ const AdminTransactionCreate = ({
 
             const printer = new ReceiptPrinter();
             const bytes = printer.generateReceipt(trxData, settingData);
-
-            // Direct Bluetooth Print
             await printer.printReceipt(bytes);
 
             BlastToaster(
@@ -610,19 +609,12 @@ const AdminTransactionCreate = ({
         } catch (error: any) {
             console.error(error);
             if (error.response?.status === 422) {
-                const errors = error.response.data.errors;
-                Object.keys(errors).forEach((key) => {
-                    setFormError(key as any, errors[key][0]);
-                });
-                BlastToaster("error", "Periksa kembali inputan anda");
             } else if (
                 error.name === "NotFoundError" ||
-                error.name === "SecurityError"
+                error.name === "SecurityError" ||
+                error.name === "NotAllowedError"
             ) {
-                BlastToaster(
-                    "success",
-                    "Transaksi Berhasil Tanpa Cetak Struk.",
-                );
+                BlastToaster("success", "Transaksi Berhasil Tanpa Cetak Struk");
                 handleResetAll();
             } else {
                 BlastToaster(

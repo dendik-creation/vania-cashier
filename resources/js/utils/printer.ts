@@ -369,16 +369,32 @@ export class ReceiptPrinter {
         try {
             console.log("Mencari perangkat...");
 
+            // 1. FILTER SPESIFIK: Jangan gunakan acceptAllDevices jika Anda sudah tahu UUID-nya.
             const device = await nav.bluetooth.requestDevice({
-                acceptAllDevices: true,
-                optionalServices: [printerConfig.service],
+                filters: [{ services: [printerConfig.service] }],
             });
 
             console.log(
                 `Perangkat dipilih: ${device.name}. Menghubungkan GATT...`,
             );
 
-            const server = await device.gatt.connect();
+            // 2. RETRY MECHANISM: Bluetooth sering gagal di percobaan pertama. Kita buat looping retry 3 kali.
+            let server: any = null;
+            let retries = 3;
+            while (retries > 0) {
+                try {
+                    server = await device.gatt.connect();
+                    break;
+                } catch (error) {
+                    console.warn(
+                        `Gagal connect GATT. Sisa percobaan: ${retries - 1}`,
+                    );
+                    retries--;
+                    if (retries === 0) throw error;
+                    await new Promise((res) => setTimeout(res, 500));
+                }
+            }
+
             console.log("GATT Terhubung.");
 
             const service = await server.getPrimaryService(
@@ -396,9 +412,8 @@ export class ReceiptPrinter {
 
             for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
                 const chunk = bytes.slice(i, i + CHUNK_SIZE);
-
                 await characteristic.writeValue(chunk);
-                await delay(60);
+                await delay(50);
             }
 
             console.log("Semua data terkirim.");
