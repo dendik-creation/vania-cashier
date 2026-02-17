@@ -36,6 +36,7 @@ import axios from "axios";
 import { Badge } from "@/components/ui/badge";
 import { floatToIdCurrency, humanCustType } from "@/components/helper/helper";
 import { Card, CardContent } from "@/components/ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Props = PageTitleProps &
     TransactionCreateProps & {
@@ -203,8 +204,14 @@ const CashierTransactionEdit = ({
         let updatedItems;
 
         if (shouldUseMultiItemDiscount) {
+            const ELIGIBLE_MINIMUM = eligible_point_minimum;
             const totalAllQty = form.items.reduce((sum, item) => {
-                return sum + (Number(item.qty) || 0);
+                const basicPrice = Number(item.price_criteria?.basic) || 0;
+
+                if (basicPrice >= ELIGIBLE_MINIMUM) {
+                    return sum + (Number(item.qty) || 0);
+                }
+                return sum;
             }, 0);
 
             const differences: number[] = [];
@@ -231,7 +238,11 @@ const CashierTransactionEdit = ({
             updatedItems = form.items.map((item) => {
                 let price = Number(item.price_criteria.basic);
 
-                if (item.with_price_criteria && lowestDiff > 0) {
+                if (
+                    item.with_price_criteria &&
+                    lowestDiff > 0 &&
+                    totalAllQty >= 3
+                ) {
                     price = Number(item.price_criteria.basic) - lowestDiff;
                 }
 

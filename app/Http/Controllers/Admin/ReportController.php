@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -13,6 +14,7 @@ class ReportController extends Controller
     public function index(Request $request)
     {
         $query = Transaction::query()->with(["cashier", "customer"]);
+        $setting = Setting::first();
 
         $startDate = $request->input("start_date");
         $endDate = $request->input("end_date");
@@ -54,6 +56,31 @@ class ReportController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        $adminFeeCriteria = $setting->admin_fee_criteria;
+        $availableDebitProviders = [];
+        if (\is_array($adminFeeCriteria)) {
+            foreach ($adminFeeCriteria as $criteria) {
+                if (
+                    isset($criteria["payment_method"]) &&
+                    $criteria["payment_method"] === "debit" &&
+                    isset($criteria["bank_origin"])
+                ) {
+                    $banks = explode(",", $criteria["bank_origin"]);
+                    foreach ($banks as $bank) {
+                        $bank = trim($bank);
+                        if (
+                            $bank !== "" &&
+                            !\in_array($bank, $availableDebitProviders)
+                        ) {
+                            $availableDebitProviders[] = $bank;
+                        }
+                    }
+                }
+            }
+        }
+
+        $availableDebitProviders = collect($availableDebitProviders);
+
         return Inertia::render("Admin/Report/Index", [
             "title" => "Laporan Penjualan",
             "description" => "Ringkasan dan detail transaksi penjualan",
@@ -77,6 +104,17 @@ class ReportController extends Controller
                         ->sum("total"),
                 ],
             ],
+            "available_debit_providers" => $availableDebitProviders->map(
+                function ($bank, $index) use ($summaryQuery) {
+                    return [
+                        "bank_provider" => $bank,
+                        "sum_trx" => (clone $summaryQuery)
+                            ->where("payment_method", "debit")
+                            ->where("payment_provider", $bank)
+                            ->sum("total"),
+                    ];
+                },
+            ),
             "filters" => [
                 "start_date" => $startDate,
                 "end_date" => $endDate,
@@ -91,6 +129,7 @@ class ReportController extends Controller
             "customer",
             "items.variant.product",
         ]);
+        $setting = Setting::first();
 
         $startDate = $request->input("start_date");
         $endDate = $request->input("end_date");
@@ -124,6 +163,31 @@ class ReportController extends Controller
             )
             ->sum("transaction_items.quantity");
 
+        $adminFeeCriteria = $setting->admin_fee_criteria;
+        $availableDebitProviders = [];
+        if (\is_array($adminFeeCriteria)) {
+            foreach ($adminFeeCriteria as $criteria) {
+                if (
+                    isset($criteria["payment_method"]) &&
+                    $criteria["payment_method"] === "debit" &&
+                    isset($criteria["bank_origin"])
+                ) {
+                    $banks = explode(",", $criteria["bank_origin"]);
+                    foreach ($banks as $bank) {
+                        $bank = trim($bank);
+                        if (
+                            $bank !== "" &&
+                            !\in_array($bank, $availableDebitProviders)
+                        ) {
+                            $availableDebitProviders[] = $bank;
+                        }
+                    }
+                }
+            }
+        }
+
+        $availableDebitProviders = collect($availableDebitProviders);
+
         $transactions = $query->latest("transaction_time")->get();
 
         return Inertia::render("Admin/Report/Export", [
@@ -148,6 +212,17 @@ class ReportController extends Controller
                         ->sum("total"),
                 ],
             ],
+            "available_debit_providers" => $availableDebitProviders->map(
+                function ($bank, $index) use ($summaryQuery) {
+                    return [
+                        "bank_provider" => $bank,
+                        "sum_trx" => (clone $summaryQuery)
+                            ->where("payment_method", "debit")
+                            ->where("payment_provider", $bank)
+                            ->sum("total"),
+                    ];
+                },
+            ),
             "filters" => [
                 "start_date" => $startDate,
                 "end_date" => $endDate,

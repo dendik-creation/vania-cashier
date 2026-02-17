@@ -43,6 +43,10 @@ type ExportProps = {
             qris: number;
         };
     };
+    available_debit_providers: {
+        bank_provider: string;
+        sum_trx: number;
+    }[];
     filters: {
         start_date: string;
         end_date: string;
@@ -54,6 +58,7 @@ const AdminReportExport = ({
     title,
     transactions,
     summary,
+    available_debit_providers,
     filters,
     print_date,
 }: ExportProps) => {
@@ -201,6 +206,32 @@ const AdminReportExport = ({
                     </div>
                 </div>
             </div>
+
+            {available_debit_providers &&
+                available_debit_providers.length > 0 && (
+                    <div
+                        className="flex gap-3 mb-4 w-full justify-center items-center overflow-x-auto"
+                        style={{ WebkitOverflowScrolling: "touch" }}
+                    >
+                        {available_debit_providers.map((provider) => (
+                            <div
+                                key={provider.bank_provider}
+                                className="text-center border-l border-gray-300 flex-1 min-w-[120px] max-w-40 px-2"
+                                style={{
+                                    fontSize: "0.85rem",
+                                }}
+                            >
+                                <div className="text-xs text-center text-gray-500 mb-0.5">
+                                    Pendapatan dari Debit{" "}
+                                    {provider.bank_provider}
+                                </div>
+                                <div className="text-base font-bold">
+                                    {floatToIdCurrency(provider.sum_trx)}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
             {/* Table */}
             <table className="w-full text-sm border-collapse border border-gray-300">

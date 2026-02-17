@@ -57,9 +57,6 @@ export class ReceiptPrinter {
         // Info
         printRow("Kasir", transaction.cashier?.name || "-");
         printRow("Pelanggan", transaction.customer?.name || "Umum");
-        if (transaction.customer_id) {
-            printRow("No HP", transaction.customer?.phone || "-");
-        }
         if (transaction.customer_type != "general") {
             printRow(
                 "Poin Terkini",

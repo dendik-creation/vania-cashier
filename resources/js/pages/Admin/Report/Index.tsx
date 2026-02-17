@@ -41,6 +41,10 @@ type PageProps = PageTitleProps & {
             qris: number;
         };
     };
+    available_debit_providers: {
+        bank_provider: string;
+        sum_trx: number;
+    }[];
     filters: {
         start_date: string;
         end_date: string;
@@ -52,6 +56,7 @@ const AdminReportIndex = ({
     description,
     transactions,
     summary,
+    available_debit_providers,
     filters,
 }: PageProps) => {
     const firstRender = useRef(true);
@@ -207,6 +212,45 @@ const AdminReportIndex = ({
                     </CardContent>
                 </Card>
             </div>
+
+            {available_debit_providers &&
+                available_debit_providers.length > 0 && (
+                    <div
+                        className="flex gap-3 mb-4 w-full overflow-x-auto"
+                        style={{ WebkitOverflowScrolling: "touch" }}
+                    >
+                        {available_debit_providers.map((provider) => (
+                            <div
+                                key={provider.bank_provider}
+                                className="shrink-0"
+                                style={{
+                                    minWidth: 220,
+                                    maxWidth: 320,
+                                    width: "100%",
+                                }}
+                            >
+                                <Card className="border-gray-200 shadow-sm p-2 h-full">
+                                    <CardContent className="p-2 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-medium text-muted-foreground">
+                                                Pendapatan dari Debit{" "}
+                                                {provider.bank_provider}
+                                            </p>
+                                            <h3 className="text-lg font-bold text-gray-700">
+                                                {floatToIdCurrency(
+                                                    provider.sum_trx,
+                                                )}
+                                            </h3>
+                                        </div>
+                                        <div className="p-1 bg-gray-100 rounded-full text-gray-700">
+                                            <Banknote size={16} />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
             {/* Filters and Actions */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-3 mb-4">
