@@ -25,9 +25,9 @@ class ReportController extends Controller
                 Carbon::parse($endDate)->endOfDay(),
             ]);
         } else {
-            // Default to current month
-            $startDate = Carbon::now()->startOfMonth()->format("Y-m-d");
-            $endDate = Carbon::now()->endOfMonth()->format("Y-m-d");
+            // Default to today
+            $startDate = Carbon::now()->format("Y-m-d");
+            $endDate = Carbon::now()->format("Y-m-d");
 
             $query->whereBetween("transaction_time", [
                 Carbon::parse($startDate)->startOfDay(),
@@ -141,9 +141,9 @@ class ReportController extends Controller
                 Carbon::parse($endDate)->endOfDay(),
             ]);
         } else {
-            $startDate = Carbon::now()->startOfMonth()->format("Y-m-d");
-            $endDate = Carbon::now()->endOfMonth()->format("Y-m-d");
-
+            // Default to today
+            $startDate = Carbon::now()->format("Y-m-d");
+            $endDate = Carbon::now()->format("Y-m-d");
             $query->whereBetween("transaction_time", [
                 Carbon::parse($startDate)->startOfDay(),
                 Carbon::parse($endDate)->endOfDay(),
