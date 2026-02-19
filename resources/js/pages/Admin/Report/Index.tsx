@@ -197,7 +197,7 @@ const AdminReportIndex = ({
                     <CardContent className="p-4 flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-muted-foreground">
-                                Pendapatan dari Debit
+                                Total Pendapatan Debit
                             </p>
                             <h3 className="text-2xl font-bold text-yellow-700">
                                 {floatToIdCurrency(
@@ -233,7 +233,7 @@ const AdminReportIndex = ({
                                     <CardContent className="p-2 flex items-center justify-between">
                                         <div>
                                             <p className="text-xs font-medium text-muted-foreground">
-                                                Pendapatan dari Debit{" "}
+                                                Pendapatan Debit{" "}
                                                 {provider.bank_provider}
                                             </p>
                                             <h3 className="text-lg font-bold text-gray-700">

@@ -105,10 +105,11 @@ class ReportController extends Controller
                 ],
             ],
             "available_debit_providers" => $availableDebitProviders->map(
-                function ($bank, $index) use ($summaryQuery) {
+                function ($bank) use ($summaryQuery) {
+                    $filteredQuery = clone $summaryQuery;
                     return [
                         "bank_provider" => $bank,
-                        "sum_trx" => (clone $summaryQuery)
+                        "sum_trx" => $filteredQuery
                             ->where("payment_method", "debit")
                             ->where("payment_provider", $bank)
                             ->sum("total"),
@@ -213,10 +214,11 @@ class ReportController extends Controller
                 ],
             ],
             "available_debit_providers" => $availableDebitProviders->map(
-                function ($bank, $index) use ($summaryQuery) {
+                function ($bank) use ($summaryQuery) {
+                    $filteredQuery = clone $summaryQuery;
                     return [
                         "bank_provider" => $bank,
-                        "sum_trx" => (clone $summaryQuery)
+                        "sum_trx" => $filteredQuery
                             ->where("payment_method", "debit")
                             ->where("payment_provider", $bank)
                             ->sum("total"),

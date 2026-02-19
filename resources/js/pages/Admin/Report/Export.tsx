@@ -197,7 +197,7 @@ const AdminReportExport = ({
                 </div>
                 <div className="text-center border-l border-gray-300">
                     <div className="text-sm text-center text-gray-500 mb-1">
-                        Pendapatan dari Debit
+                        Total Pendapatan Debit
                     </div>
                     <div className="text-xl font-bold">
                         {floatToIdCurrency(
@@ -222,8 +222,7 @@ const AdminReportExport = ({
                                 }}
                             >
                                 <div className="text-xs text-center text-gray-500 mb-0.5">
-                                    Pendapatan dari Debit{" "}
-                                    {provider.bank_provider}
+                                    Pendapatan Debit {provider.bank_provider}
                                 </div>
                                 <div className="text-base font-bold">
                                     {floatToIdCurrency(provider.sum_trx)}
