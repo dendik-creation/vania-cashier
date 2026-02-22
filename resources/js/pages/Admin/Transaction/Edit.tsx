@@ -1174,7 +1174,7 @@ const AdminTransactionEdit = ({
                                 />
                             )}
                         </div>
-                        <div className="grid grid-cols-1 gap-2 max-h-[230px] overflow-y-auto">
+                        <div className="">
                             {form.items.length == 0 && (
                                 <div className="border w-full rounded-md col-span-2 gap-3 px-1.5 py-3 flex flex-col justify-center items-center min-h-[100px]">
                                     <div className="flex items-center justify-center w-full h-full">
@@ -1188,88 +1188,95 @@ const AdminTransactionEdit = ({
                                     </p>
                                 </div>
                             )}
-                            {/*Item list with card*/}
-                            {form.items.length > 0 &&
-                                form.items.map((item, index) => (
-                                    <div
-                                        key={index}
-                                        className="border w-full rounded-md relative overflow-hidden px-1.5 py-3"
-                                    >
-                                        <div className="flex gap-2 min-h-5">
-                                            {/*Icon*/}
-                                            <div className="h-full absolute left-0 top-0 p-3  bg-pink-200">
-                                                <div className="flex items-center justify-center w-full h-full">
-                                                    {renderProductIcon({
-                                                        type: item.product_type,
-                                                    })}
+                            <div className="grid grid-cols-1 gap-2 max-h-[230px] overflow-y-auto">
+                                {/*Item list with card*/}
+                                {form.items.length > 0 &&
+                                    form.items.map((item, index) => (
+                                        <div
+                                            key={index}
+                                            className="border w-full rounded-md relative overflow-hidden px-1.5 py-3"
+                                        >
+                                            <div className="flex gap-2 min-h-5">
+                                                {/*Icon*/}
+                                                <div className="h-full absolute left-0 top-0 p-3  bg-pink-200">
+                                                    <div className="flex items-center justify-center w-full h-full">
+                                                        {renderProductIcon({
+                                                            type: item.product_type,
+                                                        })}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="ms-15 flex flex-col items-start w-full">
-                                                {/*Product Name*/}
-                                                <p className="">
-                                                    {item.product_name}
-                                                </p>
-                                                <div className="flex gap-1">
-                                                    <span className="text-xs">
-                                                        <pre>
-                                                            {"(" +
-                                                                item.sku +
-                                                                ")"}
-                                                        </pre>
-                                                    </span>
-                                                    <span className="text-xs">
-                                                        {item.attributes.color}
-                                                    </span>
-                                                    {item.attributes?.size && (
+                                                <div className="ms-15 flex flex-col items-start w-full">
+                                                    {/*Product Name*/}
+                                                    <p className="">
+                                                        {item.product_name}
+                                                    </p>
+                                                    <div className="flex gap-1">
                                                         <span className="text-xs">
-                                                            {" | "}
+                                                            <pre>
+                                                                {"(" +
+                                                                    item.sku +
+                                                                    ")"}
+                                                            </pre>
+                                                        </span>
+                                                        <span className="text-xs">
                                                             {
                                                                 item.attributes
-                                                                    .size
+                                                                    .color
                                                             }
                                                         </span>
-                                                    )}
+                                                        {item.attributes
+                                                            ?.size && (
+                                                            <span className="text-xs">
+                                                                {" | "}
+                                                                {
+                                                                    item
+                                                                        .attributes
+                                                                        .size
+                                                                }
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="font-semibold">
+                                                        {floatToIdCurrency(
+                                                            item.price_applied,
+                                                        )}
+                                                    </p>
                                                 </div>
-                                                <p className="font-semibold">
-                                                    {floatToIdCurrency(
-                                                        item.price_applied,
-                                                    )}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center gap-2 mt-2 me-2">
-                                                <Button
-                                                    variant="outline"
-                                                    size="icon"
-                                                    onClick={() => {
-                                                        handleQtyAction(
-                                                            "MIN",
-                                                            index,
-                                                        );
-                                                    }}
-                                                    aria-label="Kurangi Qty"
-                                                >
-                                                    -
-                                                </Button>
-                                                <span className="px-3">
-                                                    {item.qty}
-                                                </span>
-                                                <Button
-                                                    variant="outline"
-                                                    size="icon"
-                                                    onClick={() => {
-                                                        handleQtyAction(
-                                                            "ADD",
-                                                            index,
-                                                        );
-                                                    }}
-                                                    aria-label="Tambah Qty"
-                                                >
-                                                    +
-                                                </Button>
+                                                <div className="flex items-center gap-2 mt-2 me-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon"
+                                                        onClick={() => {
+                                                            handleQtyAction(
+                                                                "MIN",
+                                                                index,
+                                                            );
+                                                        }}
+                                                        aria-label="Kurangi Qty"
+                                                    >
+                                                        -
+                                                    </Button>
+                                                    <span className="px-3">
+                                                        {item.qty}
+                                                    </span>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon"
+                                                        onClick={() => {
+                                                            handleQtyAction(
+                                                                "ADD",
+                                                                index,
+                                                            );
+                                                        }}
+                                                        aria-label="Tambah Qty"
+                                                    >
+                                                        +
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                            </div>
                         </div>
                     </div>
                 </div>
