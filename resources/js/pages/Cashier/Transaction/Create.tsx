@@ -37,6 +37,8 @@ import axios from "axios";
 import { Badge } from "@/components/ui/badge";
 import { floatToIdCurrency, humanCustType } from "@/components/helper/helper";
 import { Card, CardContent } from "@/components/ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
+import EXPECTED_PAYMENT_PROVIDER from "@/components/helper/payment_providers";
 type Props = PageTitleProps & TransactionCreateProps;
 
 const CashierTransactionCreate = ({

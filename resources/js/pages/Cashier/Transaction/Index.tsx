@@ -73,6 +73,10 @@ const paymentMethodOptions = [
         label: "Transfer",
         value: "transfer",
     },
+    {
+        label: "Debit",
+        value: "debit",
+    },
 ];
 
 const CashierTransactionIndex = ({
@@ -105,7 +109,7 @@ const CashierTransactionIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["transactions"],
-            }
+            },
         );
     });
 
@@ -119,7 +123,7 @@ const CashierTransactionIndex = ({
     const readyPrintReceipt = async (trxId: number) => {
         try {
             const printResponse = await axios.get(
-                `/cashier/transactions/print/${trxId}`
+                `/cashier/transactions/print/${trxId}`,
             );
             const { transaction: trxData, setting: settingData } =
                 printResponse.data;
@@ -257,7 +261,7 @@ const CashierTransactionIndex = ({
                                         <BanknoteArrowUp size={16} />
                                         <span className="text-sm">
                                             {humanPaymentMethod(
-                                                trx.payment_method
+                                                trx.payment_method,
                                             )}{" "}
                                             {trx.payment_provider
                                                 ? ` ${trx.payment_provider}`
@@ -271,7 +275,7 @@ const CashierTransactionIndex = ({
                                         <span className="text-sm">
                                             {ymdToIdDate(
                                                 trx.transaction_time,
-                                                true
+                                                true,
                                             )}
                                         </span>
                                     </div>

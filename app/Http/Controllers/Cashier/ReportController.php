@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Cashier;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
@@ -81,7 +81,7 @@ class ReportController extends Controller
 
         $availableDebitProviders = collect($availableDebitProviders);
 
-        return Inertia::render("Admin/Report/Index", [
+        return Inertia::render("Cashier/Report/Index", [
             "title" => "Laporan Penjualan",
             "description" => "Ringkasan dan detail transaksi penjualan",
             "transactions" => $transactions,
@@ -200,7 +200,7 @@ class ReportController extends Controller
 
         $transactions = $query->latest("transaction_time")->get();
 
-        return Inertia::render("Admin/Report/Export", [
+        return Inertia::render("Cashier/Report/Export", [
             "title" => "Laporan Penjualan",
             "transactions" => $transactions,
             "summary" => [

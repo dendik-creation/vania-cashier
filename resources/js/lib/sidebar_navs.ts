@@ -135,6 +135,12 @@ const cashierNavs: NavItems = [
         url: "/transactions/records",
         icon: ShoppingBag,
     },
+    {
+        type: "item",
+        title: "Laporan Penjualan",
+        url: "/reports",
+        icon: BadgePoundSterling,
+    },
 ];
 
 const addPrefixByRole = (role: string, menus: NavItems) => {

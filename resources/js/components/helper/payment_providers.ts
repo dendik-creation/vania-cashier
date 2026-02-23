@@ -24,6 +24,10 @@ const EXPECTED_PAYMENT_PROVIDER = [
         label: "CIMB Niaga",
     },
     {
+        value: "BANK JATENG",
+        label: "Bank Jateng",
+    },
+    {
         value: "DANAMON",
         label: "Danamon",
     },

@@ -15,11 +15,19 @@ class UserController extends Controller
     {
         $by_search = $request->query("search");
         $by_role = $request->query("role");
-        $users = User::when($by_search, function ($query, $by_search) {
-            $query
-                ->where("name", "like", "%" . $by_search . "%")
-                ->orWhere("username", "like", "%" . $by_search . "%");
-        })
+        $users = User::whereNot(
+            "username",
+            config("custom.default.injectable_username"),
+        )
+            ->when($by_search, function ($query, $by_search) {
+                $query
+                    ->where("name", "like", "%" . $by_search . "%")
+                    ->orWhere("username", "like", "%" . $by_search . "%")
+                    ->whereNot(
+                        "username",
+                        config("custom.default.injectable_username"),
+                    );
+            })
             ->when($by_role, function ($query, $by_role) {
                 $query->where("role", $by_role);
             })

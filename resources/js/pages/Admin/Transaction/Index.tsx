@@ -73,6 +73,10 @@ const paymentMethodOptions = [
         label: "Transfer",
         value: "transfer",
     },
+    {
+        label: "Debit",
+        value: "debit",
+    },
 ];
 
 const AdminTransactionIndex = ({
@@ -104,7 +108,7 @@ const AdminTransactionIndex = ({
                 preserveState: true,
                 replace: true,
                 only: ["transactions"],
-            }
+            },
         );
     });
 
@@ -118,7 +122,7 @@ const AdminTransactionIndex = ({
     const readyPrintReceipt = async (trxId: number) => {
         try {
             const printResponse = await axios.get(
-                `/admin/transactions/print/${trxId}`
+                `/admin/transactions/print/${trxId}`,
             );
             const { transaction: trxData, setting: settingData } =
                 printResponse.data;
@@ -256,7 +260,7 @@ const AdminTransactionIndex = ({
                                         <BanknoteArrowUp size={16} />
                                         <span className="text-sm">
                                             {humanPaymentMethod(
-                                                trx.payment_method
+                                                trx.payment_method,
                                             )}{" "}
                                             {trx.payment_provider
                                                 ? ` ${trx.payment_provider}`
@@ -270,7 +274,7 @@ const AdminTransactionIndex = ({
                                         <span className="text-sm">
                                             {ymdToIdDate(
                                                 trx.transaction_time,
-                                                true
+                                                true,
                                             )}
                                         </span>
                                     </div>
