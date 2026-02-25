@@ -57,10 +57,14 @@ class TransactionController extends Controller
             );
         }
 
-        if($product_variants->count() == 1 && $product_variants->first()->stock <= 0){
+        if (
+            $product_variants->count() == 1 &&
+            $product_variants->first()->stock <= 0
+        ) {
             return response()->json(
                 [
-                    "message" => "Stok " . $product_variants->first()->sku . " kosong",
+                    "message" =>
+                        "Stok " . $product_variants->first()->sku . " kosong",
                 ],
                 400,
             );
@@ -177,15 +181,15 @@ class TransactionController extends Controller
     private function generateInvoiceCode()
     {
         $datePart = date("Ymd");
-        $countInvoiceToday =
-            Transaction::whereDate(
-                "created_at",
-                now()->toDateString(),
-            )->count() + 1;
-        return "TRX-" .
-            $datePart .
-            "-" .
-            str_pad($countInvoiceToday, 4, "0", STR_PAD_LEFT);
+        $maxNumber = Transaction::whereDate("created_at", now()->toDateString())
+            ->selectRaw(
+                "MAX(CAST(SUBSTRING_INDEX(invoice_code, '-', -1) AS UNSIGNED)) as max_number",
+            )
+            ->value("max_number");
+
+        $nextNumber = $maxNumber ? $maxNumber + 1 : 1;
+
+        return "TRX-{$datePart}-" . str_pad($nextNumber, 4, "0", STR_PAD_LEFT);
     }
 
     private function recalculateSubtotal($items)
@@ -204,7 +208,7 @@ class TransactionController extends Controller
         return $subtotal - $point_discount - $event_discount + $admin_fee;
     }
 
-     public function store(Request $request)
+    public function store(Request $request)
     {
         $validated = $request->validate([
             "is_new_customer" => ["required", "boolean"],
