@@ -185,6 +185,8 @@ const AdminProductCreate = ({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!validateForm()) return;
+        // Convert Json strigify variants
+        setData("variants" as any, JSON.stringify(data.variants) as any);
         post("/admin/products", {
             preserveScroll: true,
             replace: true,

@@ -206,6 +206,7 @@ const CashierProductEdit = ({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!validateForm()) return;
+        setData("variants" as any, JSON.stringify(data.variants) as any);
         put("/cashier/products/" + product.id, {
             preserveScroll: true,
             replace: true,

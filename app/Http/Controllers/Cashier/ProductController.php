@@ -66,6 +66,11 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+        if ($request->has("variants") && is_string($request->variants)) {
+            $request->merge([
+                "variants" => json_decode($request->variants, true),
+            ]);
+        }
         $request->validate(
             [
                 "name" => "required|string|max:255",
@@ -149,6 +154,11 @@ class ProductController extends Controller
     public function update(Request $request, $id)
     {
         $product = Product::findOrFail($id);
+        if ($request->has("variants") && is_string($request->variants)) {
+            $request->merge([
+                "variants" => json_decode($request->variants, true),
+            ]);
+        }
 
         $request->validate([
             "name" => "required|string|max:255",
