@@ -24,6 +24,7 @@ const AdminProductCreate = ({
             with_price_criteria: true,
             can_earn_point: true,
             variants: [] as VariantFormData[],
+            variants_stringify: "",
         });
 
     const addVariant = () => {
@@ -186,8 +187,8 @@ const AdminProductCreate = ({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!validateForm()) return;
-        // Convert Json strigify variants
-        setData("variants" as any, JSON.stringify(data.variants) as any);
+        // Convert Json strigify variants_stringify
+        setData("variants_stringify", JSON.stringify(data.variants));
         post("/cashier/products", {
             preserveScroll: true,
             replace: true,

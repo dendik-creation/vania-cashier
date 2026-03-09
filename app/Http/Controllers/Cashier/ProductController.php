@@ -66,9 +66,12 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        if ($request->has("variants") && is_string($request->variants)) {
+        if (
+            $request->has("variants_stringify") &&
+            is_string($request->variants_stringify)
+        ) {
             $request->merge([
-                "variants" => json_decode($request->variants, true),
+                "variants" => json_decode($request->variants_stringify, true),
             ]);
         }
         $request->validate(
@@ -154,9 +157,12 @@ class ProductController extends Controller
     public function update(Request $request, $id)
     {
         $product = Product::findOrFail($id);
-        if ($request->has("variants") && is_string($request->variants)) {
+        if (
+            $request->has("variants_stringify") &&
+            is_string($request->variants_stringify)
+        ) {
             $request->merge([
-                "variants" => json_decode($request->variants, true),
+                "variants" => json_decode($request->variants_stringify, true),
             ]);
         }
 
@@ -167,23 +173,6 @@ class ProductController extends Controller
             "with_price_criteria" => "required|boolean",
             "can_earn_point" => "required|boolean",
             "variants" => "required|array|min:1",
-            "variants.*.sku" => [
-                "required",
-                "string",
-                function ($attribute, $value, $fail) use ($request) {
-                    if (preg_match("/variants\.(\d+)\.sku/", $attribute, $m)) {
-                        $index = $m[1];
-                        $variantId = $request->input("variants.$index.id");
-                        $query = ProductVariant::where("sku", $value);
-                        if ($variantId) {
-                            $query->where("id", "!=", $variantId);
-                        }
-                        if ($query->exists()) {
-                            $fail("Kode barang sudah digunakan.");
-                        }
-                    }
-                },
-            ],
             "variants.*.attributes" => "required|array",
             "variants.*.price_criteria" => "required|array",
             "variants.*.price_criteria.basic" => "required|integer|min:0",
@@ -202,7 +191,6 @@ class ProductController extends Controller
                 ]);
             }
         }
-
         // Validate SKU uniqueness (excluding current product variants)
         foreach ($request->variants as $index => $variantData) {
             $skuExists = ProductVariant::where("sku", $variantData["sku"])

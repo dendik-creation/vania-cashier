@@ -45,6 +45,7 @@ const AdminProductEdit = ({
                 },
                 stock: v.stock,
             })) as VariantFormData[],
+            variants_stringify: "",
         });
 
     const addVariant = () => {
@@ -206,7 +207,7 @@ const AdminProductEdit = ({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!validateForm()) return;
-        setData("variants" as any, JSON.stringify(data.variants) as any);
+        setData("variants_stringify", JSON.stringify(data.variants));
         put("/admin/products/" + product.id, {
             preserveScroll: true,
             replace: true,
