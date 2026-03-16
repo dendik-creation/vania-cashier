@@ -373,18 +373,14 @@ const CashierProductLabelIndex = ({
                                                         "-"}
                                                 </span>
                                             </div>
-                                            {item.attributes?.size && (
-                                                <div className="flex items-center gap-2">
-                                                    <RulerDimensionLine
-                                                        size={16}
-                                                    />
-                                                    <span className="text-sm">
-                                                        Ukuran{" "}
-                                                        {item.attributes
-                                                            ?.size ?? "-"}
-                                                    </span>
-                                                </div>
-                                            )}
+                                            <div className="flex items-center gap-2">
+                                                <RulerDimensionLine size={16} />
+                                                <span className="text-sm">
+                                                    Ukuran{" "}
+                                                    {item.attributes?.size ??
+                                                        "-"}
+                                                </span>
+                                            </div>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -444,8 +440,7 @@ const CashierProductLabelIndex = ({
                                                             ?.color ?? "-"}
                                                     </span>
                                                 </div>
-                                                {item.product_type ==
-                                                    "sepatu" && (
+                                                {item.attributes?.size && (
                                                     <div className="flex items-center gap-2">
                                                         <RulerDimensionLine
                                                             size={16}
