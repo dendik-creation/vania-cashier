@@ -208,14 +208,8 @@ const CashierTransactionCreate = ({
         let updatedItems;
 
         if (shouldUseMultiItemDiscount) {
-            const ELIGIBLE_MINIMUM = eligible_point_minimum;
             const totalAllQty = form.items.reduce((sum, item) => {
-                const basicPrice = Number(item.price_criteria?.basic) || 0;
-
-                if (basicPrice >= ELIGIBLE_MINIMUM) {
-                    return sum + (Number(item.qty) || 0);
-                }
-                return sum;
+                return sum + (Number(item.qty) || 0);
             }, 0);
 
             const differences: number[] = [];
