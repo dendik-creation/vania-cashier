@@ -10,6 +10,7 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -64,6 +65,7 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+        Log::info("Store Product Action");
         if (
             $request->has("variants_stringify") &&
             is_string($request->variants_stringify)
@@ -81,7 +83,7 @@ class ProductController extends Controller
                 "can_earn_point" => "required|boolean",
                 "variants" => "required|array|min:1",
                 "variants.*.sku" =>
-                    "required|string|unique:product_variants,sku",
+                    "required|string|distinct",
                 "variants.*.attributes" => "required|array",
                 "variants.*.price_criteria" => "required|array",
                 "variants.*.price_criteria.basic" => "required|integer|min:0",
@@ -91,9 +93,21 @@ class ProductController extends Controller
                 "variants.*.stock" => "required|integer|min:0",
             ],
             [
+                "variants.*.sku.distinct" => "Kode barang tidak boleh duplikat dalam satu produk.",
                 "variants.*.sku.unique" => "Kode barang sudah digunakan.",
             ],
         );
+
+        foreach ($request->variants as $index => $variantData) {
+            $skuExists = ProductVariant::withTrashed()
+                ->where("sku", $variantData["sku"])
+                ->exists();
+            if ($skuExists) {
+                return back()->withErrors([
+                    "variants.{$index}.sku" => "Kode barang sudah digunakan.",
+                ])->withInput();
+            }
+        }
 
         if (!$request->with_price_criteria) {
             foreach ($request->variants as $index => $variantData) {
@@ -171,6 +185,7 @@ class ProductController extends Controller
             "with_price_criteria" => "required|boolean",
             "can_earn_point" => "required|boolean",
             "variants" => "required|array|min:1",
+            "variants.*.sku" => "required|string|distinct",
             "variants.*.attributes" => "required|array",
             "variants.*.price_criteria" => "required|array",
             "variants.*.price_criteria.basic" => "required|integer|min:0",
@@ -178,6 +193,8 @@ class ProductController extends Controller
             "variants.*.price_criteria.order_qty_3" => "nullable|integer",
             "variants.*.price_criteria.order_qty_6" => "nullable|integer",
             "variants.*.stock" => "required|integer|min:0",
+        ], [
+            "variants.*.sku.distinct" => "Kode barang tidak boleh duplikat dalam satu produk.",
         ]);
 
         if (!$request->with_price_criteria) {
@@ -190,38 +207,25 @@ class ProductController extends Controller
             }
         }
 
-        // Validate SKU uniqueness (excluding current product variants)
         foreach ($request->variants as $index => $variantData) {
-            $skuExists = ProductVariant::where("sku", $variantData["sku"])
-                ->where("product_id", "!=", $id)
-                ->exists();
+            $sku = $variantData["sku"];
+            $variantId = $variantData["id"] ?? null;
 
-            if (isset($variantData["id"])) {
-                // Check if SKU changed and conflicts
-                $currentVariant = ProductVariant::find($variantData["id"]);
-                if (
-                    $currentVariant &&
-                    $currentVariant->sku !== $variantData["sku"]
-                ) {
-                    $skuExists = ProductVariant::where(
-                        "sku",
-                        $variantData["sku"],
-                    )
-                        ->where("id", "!=", $variantData["id"])
-                        ->exists();
-
-                    if ($skuExists) {
-                        return back()->withErrors([
-                            "variants.{$index}.sku" => "Kode barang sudah digunakan.",
-                        ]);
-                    }
-                }
+            if ($variantId) {
+                $skuExists = ProductVariant::withTrashed()
+                    ->where("sku", $sku)
+                    ->where("id", "!=", $variantId)
+                    ->exists();
             } else {
-                if ($skuExists) {
-                    return back()->withErrors([
-                        "variants.{$index}.sku" => "Kode barang sudah digunakan.",
-                    ]);
-                }
+                $skuExists = ProductVariant::withTrashed()
+                    ->where("sku", $sku)
+                    ->exists();
+            }
+
+            if ($skuExists) {
+                return back()->withErrors([
+                    "variants.{$index}.sku" => "Kode barang sudah digunakan.",
+                ])->withInput();
             }
         }
 
@@ -234,9 +238,8 @@ class ProductController extends Controller
                 "can_earn_point" => $request->can_earn_point,
             ]);
 
-            // Handle Variants
             $submittedVariants = collect($request->variants);
-            $existingVariantIds = $product->variants->pluck("id")->toArray();
+            $existingVariantIds = $product->variants()->withTrashed()->pluck("id")->toArray();
             $submittedVariantIds = $submittedVariants
                 ->pluck("id")
                 ->filter()
