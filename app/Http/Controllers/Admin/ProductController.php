@@ -65,7 +65,6 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        Log::info("Store Product Action");
         if (
             $request->has("variants_stringify") &&
             is_string($request->variants_stringify)
@@ -82,8 +81,7 @@ class ProductController extends Controller
                 "with_price_criteria" => "required|boolean",
                 "can_earn_point" => "required|boolean",
                 "variants" => "required|array|min:1",
-                "variants.*.sku" =>
-                    "required|string|distinct",
+                "variants.*.sku" => "required|string|distinct",
                 "variants.*.attributes" => "required|array",
                 "variants.*.price_criteria" => "required|array",
                 "variants.*.price_criteria.basic" => "required|integer|min:0",
@@ -93,7 +91,8 @@ class ProductController extends Controller
                 "variants.*.stock" => "required|integer|min:0",
             ],
             [
-                "variants.*.sku.distinct" => "Kode barang tidak boleh duplikat dalam satu produk.",
+                "variants.*.sku.distinct" =>
+                    "Kode barang tidak boleh duplikat dalam satu produk.",
                 "variants.*.sku.unique" => "Kode barang sudah digunakan.",
             ],
         );
@@ -103,9 +102,11 @@ class ProductController extends Controller
                 ->where("sku", $variantData["sku"])
                 ->exists();
             if ($skuExists) {
-                return back()->withErrors([
-                    "variants.{$index}.sku" => "Kode barang sudah digunakan.",
-                ])->withInput();
+                return back()
+                    ->withErrors([
+                        "variants.{$index}.sku" => "Kode barang sudah digunakan.",
+                    ])
+                    ->withInput();
             }
         }
 
@@ -178,24 +179,28 @@ class ProductController extends Controller
             ]);
         }
 
-        $request->validate([
-            "name" => "required|string|max:255",
-            "type" => "required|string",
-            "brand" => "nullable|string|max:255",
-            "with_price_criteria" => "required|boolean",
-            "can_earn_point" => "required|boolean",
-            "variants" => "required|array|min:1",
-            "variants.*.sku" => "required|string|distinct",
-            "variants.*.attributes" => "required|array",
-            "variants.*.price_criteria" => "required|array",
-            "variants.*.price_criteria.basic" => "required|integer|min:0",
-            "variants.*.price_criteria.reseller" => "nullable|integer",
-            "variants.*.price_criteria.order_qty_3" => "nullable|integer",
-            "variants.*.price_criteria.order_qty_6" => "nullable|integer",
-            "variants.*.stock" => "required|integer|min:0",
-        ], [
-            "variants.*.sku.distinct" => "Kode barang tidak boleh duplikat dalam satu produk.",
-        ]);
+        $request->validate(
+            [
+                "name" => "required|string|max:255",
+                "type" => "required|string",
+                "brand" => "nullable|string|max:255",
+                "with_price_criteria" => "required|boolean",
+                "can_earn_point" => "required|boolean",
+                "variants" => "required|array|min:1",
+                "variants.*.sku" => "required|string|distinct",
+                "variants.*.attributes" => "required|array",
+                "variants.*.price_criteria" => "required|array",
+                "variants.*.price_criteria.basic" => "required|integer|min:0",
+                "variants.*.price_criteria.reseller" => "nullable|integer",
+                "variants.*.price_criteria.order_qty_3" => "nullable|integer",
+                "variants.*.price_criteria.order_qty_6" => "nullable|integer",
+                "variants.*.stock" => "required|integer|min:0",
+            ],
+            [
+                "variants.*.sku.distinct" =>
+                    "Kode barang tidak boleh duplikat dalam satu produk.",
+            ],
+        );
 
         if (!$request->with_price_criteria) {
             foreach ($request->variants as $index => $variantData) {
@@ -223,9 +228,11 @@ class ProductController extends Controller
             }
 
             if ($skuExists) {
-                return back()->withErrors([
-                    "variants.{$index}.sku" => "Kode barang sudah digunakan.",
-                ])->withInput();
+                return back()
+                    ->withErrors([
+                        "variants.{$index}.sku" => "Kode barang sudah digunakan.",
+                    ])
+                    ->withInput();
             }
         }
 
@@ -239,7 +246,11 @@ class ProductController extends Controller
             ]);
 
             $submittedVariants = collect($request->variants);
-            $existingVariantIds = $product->variants()->withTrashed()->pluck("id")->toArray();
+            $existingVariantIds = $product
+                ->variants()
+                ->withTrashed()
+                ->pluck("id")
+                ->toArray();
             $submittedVariantIds = $submittedVariants
                 ->pluck("id")
                 ->filter()
@@ -282,6 +293,7 @@ class ProductController extends Controller
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
+        $product->variants()->delete();
         $product->delete();
 
         Session::flash("success", "Produk berhasil dihapus");
@@ -303,10 +315,20 @@ class ProductController extends Controller
         return Inertia::location(route("admin.products.index"));
     }
 
-    public function labelView()
+    public function labelView(Request $request)
     {
+        $search = $request->input("search", "");
         $product_variants = ProductVariant::with("product")
-            ->orderBy("sku", "asc")
+            ->where(function ($query) use ($search) {
+                $query
+                    ->where("sku", "like", $search . "%")
+                    ->orWhereHas("product", function ($q) use ($search) {
+                        $q->where("name", "like", $search . "%");
+                    });
+            })
+            ->where("deleted_at", null)
+            ->latest("created_at")
+            ->limit(32)
             ->get()
             ->map(function ($variant) {
                 return [

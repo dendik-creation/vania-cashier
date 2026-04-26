@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import AppLayout from "@/partials/AppLayout";
 import { PageTitle, PageTitleProps } from "@/partials/PageTitle";
 import { ProductVariant } from "@/types/product";
-import { useForm } from "@inertiajs/react";
+import { router, useForm } from "@inertiajs/react";
 import {
     DialogClose,
     DialogContent,
@@ -94,22 +94,21 @@ const AdminProductLabelIndex = ({
     };
 
     const filterVariants = () => {
-        let filtered =
-            form.step === 1 ? product_variants : form.selected_variants;
-        if (filterData.search) {
-            filtered = filtered.filter((variant) => {
-                const productName = variant.product_name || "";
-                const sku = variant.sku || "";
-                const searchTerm = filterData.search!.toLowerCase();
-                return (
-                    productName.toLowerCase().includes(searchTerm) ||
-                    sku.toLowerCase().includes(searchTerm)
-                );
-            });
-        }
-        if (form.step == 1) {
-            setVariantList(filtered);
-        } else if (form.step == 2) {
+        if (form.step === 2) {
+            let filtered = form.selected_variants;
+            if (filterData.search) {
+                const searchTerm = filterData.search.toLowerCase();
+                filtered = filtered.filter((variant) => {
+                    const productName = (
+                        variant.product_name || ""
+                    ).toLowerCase();
+                    const sku = (variant.sku || "").toLowerCase();
+                    return (
+                        productName.includes(searchTerm) ||
+                        sku.includes(searchTerm)
+                    );
+                });
+            }
             setForm("filtered_selected_variants", filtered);
         }
     };
@@ -180,8 +179,34 @@ const AdminProductLabelIndex = ({
     };
 
     useEffect(() => {
-        filterVariants();
-    }, [filterData]);
+        if (form.step === 1) {
+            const delayDebounceFn = setTimeout(() => {
+                router.get(
+                    "/admin/products/label",
+                    { search: filterData.search },
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                        replace: true,
+                    },
+                );
+            }, 500);
+
+            return () => clearTimeout(delayDebounceFn);
+        }
+    }, [filterData.search, form.step]);
+
+    useEffect(() => {
+        if (form.step === 2) {
+            filterVariants();
+        }
+    }, [filterData.search, form.step, form.selected_variants]);
+
+    useEffect(() => {
+        if (form.step === 1) {
+            setVariantList(product_variants);
+        }
+    }, [product_variants, form.step]);
     return (
         <AppLayout>
             <PageTitle title={title} description={description} />

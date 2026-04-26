@@ -284,6 +284,7 @@ class ProductController extends Controller
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
+        $product->variants()->delete();
         $product->delete();
 
         Session::flash("success", "Produk berhasil dihapus");
@@ -305,10 +306,20 @@ class ProductController extends Controller
         return Inertia::location(route("cashier.products.index"));
     }
 
-    public function labelView()
+    public function labelView(Request $request)
     {
+        $search = $request->input("search", "");
         $product_variants = ProductVariant::with("product")
-            ->orderBy("sku", "asc")
+            ->where(function ($query) use ($search) {
+                $query
+                    ->where("sku", "like", $search . "%")
+                    ->orWhereHas("product", function ($q) use ($search) {
+                        $q->where("name", "like", $search . "%")
+                        ->whereNull("deleted_at");
+                    });
+            })
+            ->latest("created_at")
+            ->limit(32)
             ->get()
             ->map(function ($variant) {
                 return [
