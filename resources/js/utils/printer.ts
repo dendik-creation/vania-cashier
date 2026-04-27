@@ -23,7 +23,7 @@ export const PRINTERS = {
 
 export class ReceiptPrinter {
     encoder: any;
-    width: number = 32; // 58mm printer usually has 32 chars width
+    width: number = 32; // 58mm printer with 32 chars width
     debugReceipt: boolean = false;
 
     constructor() {
@@ -241,21 +241,15 @@ export class ReceiptPrinter {
                 const labelCenterDots = xOffsetDots + labelWidthDots / 2;
 
                 // 1. Title: item.product_name
-                // Menggunakan Font "0" (Triumvirate) agar lebih bagus.
-                // x_mul=12, y_mul=12. Estimasi lebar 12 dots/char.
                 const titleText = item.product_name
                     ? item.product_name
                     : "Item";
                 const titleWidthEst = titleText.length * 12;
                 const titleX = Math.floor(labelCenterDots - titleWidthEst / 2);
-                // TEXT x,y,"font",rotation,x_mul,y_mul,"content"
                 commands += `TEXT ${titleX},10,"0",0,12,12,"${titleText}"\r\n`;
 
                 // 2. Barcode
-                // Code128.
-                // Try narrow=2 first for better visibility.
                 const sku = item.sku;
-                // Width check: (10 * (len + 2) + 2) * 2.5
                 const barcodeWidthWide = (10 * (sku.length + 2) + 2) * 2.5;
                 let narrow = 2;
                 let barcodeWidth = barcodeWidthWide;
@@ -271,99 +265,69 @@ export class ReceiptPrinter {
                     barcodeX,
                 );
 
-                // Y=50, Height=60.
                 commands += `BARCODE ${finalBarcodeX},50,"128",60,1,0,${narrow},${
                     narrow * 2
                 },"${sku}"\r\n`;
 
-                // 3. Details
-                // Start Y after barcode. 50 + 60 + 20 (text) = 130.
-                // Add gap -> 140.
+                // 3. Details (Diperbarui agar rapi & tidak terpotong)
                 let currentY = 140;
                 const lineHeight = 30;
 
-                const leftX = xOffsetDots + paddingDots;
-                const rightX = xOffsetDots + labelWidthDots - paddingDots;
+                // X tetap untuk kolom kiri (mulai dari padding)
+                const leftColX = xOffsetDots + paddingDots;
 
-                const formatPrice = (val: number) => {
-                    return Math.floor(val / 1000) + "K";
+                // X tetap untuk kolom kanan (ditarik lebih aman ke kiri, yaitu di dot 100 dari offset)
+                // Ini menyisakan ruang 200 dots untuk harga, mustahil terpotong lagi
+                const rightColX = xOffsetDots + 100;
+
+                const formatPrice = (val: any) => {
+                    if (val === null || val === undefined) return "";
+                    const num = Number(val);
+                    if (isNaN(num) || num === 0) return "";
+                    return Math.floor(num / 1000) + "K";
                 };
 
-                const printRow = (
+                const printRowFixed = (
                     leftText: string,
                     rightText: string,
                     y: number,
                 ) => {
-                    // Left Text
-                    commands += `TEXT ${leftX},${y},"0",0,9,9,"${leftText}"\r\n`;
-
-                    // Right Text
-                    // Estimate width: chars * 12 dots (safe for longer text)
-                    const rightTextWidth = rightText.length * 12;
-                    const rightTextX = rightX - rightTextWidth;
-                    commands += `TEXT ${rightTextX},${y},"0",0,9,9,"${rightText}"\r\n`;
+                    if (leftText) {
+                        commands += `TEXT ${leftColX},${y},"0",0,9,9,"${leftText}"\r\n`;
+                    }
+                    if (rightText) {
+                        commands += `TEXT ${rightColX},${y},"0",0,9,9,"${rightText}"\r\n`;
+                    }
                 };
 
-                // Row 1: Color | (Beli 1) Harga
-                const color = (
-                    item.attributes &&
-                    typeof item.attributes.color !== "undefined" &&
-                    item.attributes.color != null
-                        ? String(item.attributes.color)
-                        : ""
-                ).substring(0, 12);
-                const priceBasic = `(Beli 1) ${formatPrice(
-                    Number(item.price_criteria.basic),
-                )}`;
-                printRow(color, priceBasic, currentY);
+                // Helper pembacaan attribute dengan aman (maksimal 15 karakter agar tidak bertabrakan dengan kolom kanan)
+                const getAttr = (key: string) => {
+                    return item.attributes &&
+                        item.attributes[key] !== undefined &&
+                        item.attributes[key] !== null
+                        ? String(item.attributes[key]).substring(0, 15)
+                        : "";
+                };
 
-                // Row 2: Size | (Beli 3) Harga
+                // Row 1: Variant Name | (Beli 1) Harga
+                const variantName = getAttr("name");
+                const price1Val = formatPrice(item.price_criteria?.basic);
+                const price1Text = price1Val ? `(Beli 1) ${price1Val}` : "";
+                printRowFixed(variantName, price1Text, currentY);
+
+                // Row 2: Color | (Beli 3) Harga
                 currentY += lineHeight;
-                const size = (
-                    item.attributes &&
-                    typeof item.attributes.size !== "undefined" &&
-                    item.attributes.size != null
-                        ? String(item.attributes.size)
-                        : ""
-                ).substring(0, 12);
-                if (
-                    size &&
-                    (item.price_criteria.order_qty_3 == 0 ||
-                        item.price_criteria.order_qty_3 == undefined)
-                ) {
-                    printRow(size, "", currentY);
-                    return;
-                } else {
-                    if (
-                        item.price_criteria.order_qty_3 &&
-                        Number(item.price_criteria.order_qty_3) !== 0
-                    ) {
-                        const price3 = `(Beli 3) ${formatPrice(
-                            Number(item.price_criteria.order_qty_3),
-                        )}`;
-                        printRow(size, price3, currentY);
-                        // Row 3: (empty left) | (Beli 6) Harga
-                        currentY += lineHeight;
-                        if (
-                            item.price_criteria.order_qty_6 &&
-                            Number(item.price_criteria.order_qty_6) !== 0
-                        ) {
-                            const price6 = `(Beli 6) ${formatPrice(
-                                Number(item.price_criteria.order_qty_6),
-                            )}`;
-                            printRow("", price6, currentY);
-                        }
-                    } else if (
-                        item.price_criteria.order_qty_6 &&
-                        Number(item.price_criteria.order_qty_6) !== 0
-                    ) {
-                        // If price 3 is not shown but price 6 is, still increment Y and print price 6
-                        const price6 = `(Beli 6) ${formatPrice(
-                            Number(item.price_criteria.order_qty_6),
-                        )}`;
-                        printRow(size, price6, currentY);
-                    }
-                }
+                const color = getAttr("color");
+                const price3Val = formatPrice(item.price_criteria?.order_qty_3);
+                const price3Text = price3Val ? `(Beli 3) ${price3Val}` : "";
+                printRowFixed(color, price3Text, currentY);
+
+                // Row 3: Size | (Beli 6) Harga
+                currentY += lineHeight;
+                const size = getAttr("size");
+                const price6Val = formatPrice(item.price_criteria?.order_qty_6);
+                const price6Text = price6Val ? `(Beli 6) ${price6Val}` : "";
+                printRowFixed(size, price6Text, currentY);
             });
 
             commands += `PRINT 1\r\n`;
