@@ -30,18 +30,27 @@ const paymentMethodOptions = [
 ];
 
 const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
-    const { data, setData, setError, errors, clearErrors, processing, post } =
-        useForm({
-            _method: "PUT",
-            app_name: setting.app_name || "",
-            app_logo: setting.app_logo || (null as File | null),
-            app_address: setting.app_address || "",
-            eligible_point_minimum: setting.eligible_point_minimum || 0,
-            idr_point_value: setting.idr_point_value || 0,
-            minimum_point_can_used: setting.minimum_point_can_used || 0,
-            admin_fee_criteria: setting.admin_fee_criteria || [],
-            product_types: setting.product_types || "",
-        });
+    const {
+        data,
+        setData,
+        setError,
+        errors,
+        clearErrors,
+        processing,
+        post,
+        transform,
+    } = useForm({
+        _method: "PUT",
+        app_name: setting.app_name || "",
+        app_logo: setting.app_logo || (null as File | null),
+        app_address: setting.app_address || "",
+        eligible_point_minimum: setting.eligible_point_minimum || 0,
+        idr_point_value: setting.idr_point_value || 0,
+        minimum_point_can_used: setting.minimum_point_can_used || 0,
+        admin_fee_criteria: setting.admin_fee_criteria || [],
+        admin_fee_criteria_cleared: 0 as number,
+        product_types: setting.product_types || "",
+    });
     const handleChangeInput = (field: keyof typeof data, value: any) => {
         setData(field, value);
     };
@@ -116,21 +125,21 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
         if (!data.eligible_point_minimum || data.eligible_point_minimum < 0) {
             setError(
                 "eligible_point_minimum",
-                "Nominal minimum syarat dapat poin wajib diisi dan tidak boleh negatif."
+                "Nominal minimum syarat dapat poin wajib diisi dan tidak boleh negatif.",
             );
             isValid = false;
         }
         if (!data.idr_point_value || data.idr_point_value < 0) {
             setError(
                 "idr_point_value",
-                "Nilai tukar setiap poin wajib diisi dan tidak boleh negatif."
+                "Nilai tukar setiap poin wajib diisi dan tidak boleh negatif.",
             );
             isValid = false;
         }
         if (!data.minimum_point_can_used || data.minimum_point_can_used < 0) {
             setError(
                 "minimum_point_can_used",
-                "Minimal poin yang dapat digunakan wajib diisi dan tidak boleh negatif."
+                "Minimal poin yang dapat digunakan wajib diisi dan tidak boleh negatif.",
             );
             isValid = false;
         }
@@ -138,13 +147,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
             setError("product_types", "Tipe produk wajib diisi.");
             isValid = false;
         }
-        if (data.admin_fee_criteria.length === 0) {
-            setError(
-                "admin_fee_criteria",
-                "Minimal harus ada satu kriteria biaya admin."
-            );
-            isValid = false;
-        } else {
+        if (data.admin_fee_criteria.length > 0) {
             data.admin_fee_criteria.forEach((criteria, index) => {
                 if (
                     !criteria.payment_method ||
@@ -152,7 +155,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                 ) {
                     setError(
                         `admin_fee_criteria.${index}.payment_method`,
-                        "Wajib diisi"
+                        "Wajib diisi",
                     );
                     isValid = false;
                 }
@@ -163,7 +166,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                     ) {
                         setError(
                             `admin_fee_criteria.${index}.bank_origin`,
-                            "Wajib diisi"
+                            "Wajib diisi",
                         );
                         isValid = false;
                     }
@@ -175,7 +178,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                     ) {
                         setError(
                             `admin_fee_criteria.${index}.min_total`,
-                            "Wajib diisi"
+                            "Wajib diisi",
                         );
                         isValid = false;
                     }
@@ -187,7 +190,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                 ) {
                     setError(
                         `admin_fee_criteria.${index}.admin_fee`,
-                        "Wajib diisi"
+                        "Wajib diisi",
                     );
                     isValid = false;
                 }
@@ -198,6 +201,13 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         if (!validateForm()) return;
+        // transform() memodifikasi payload sebelum dikirim ke server
+        // Ini cara resmi Inertia untuk handle kasus seperti empty array
+        transform((formData) => ({
+            ...formData,
+            admin_fee_criteria_cleared:
+                formData.admin_fee_criteria.length === 0 ? 1 : 0,
+        }));
         post("/admin/settings", {
             preserveScroll: true,
             replace: true,
@@ -282,7 +292,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                         onChange={(e) =>
                             handleChangeInput(
                                 "eligible_point_minimum",
-                                e.target.value
+                                e.target.value,
                             )
                         }
                     />
@@ -321,7 +331,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                         onChange={(e) =>
                             handleChangeInput(
                                 "minimum_point_can_used",
-                                e.target.value
+                                e.target.value,
                             )
                         }
                     />
@@ -331,8 +341,8 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                 </div>
                 <div className="flex flex-col w-full lg:col-span-3">
                     <div className="flex justify-between items-center mb-2">
-                        <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
-                            Kriteria Biaya Admin Transaksi
+                        <Label className="text-base mb-1">
+                            Kriteria Biaya Admin Transaksi{" "}
                         </Label>
                         <Button
                             type="button"
@@ -351,7 +361,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                                 "grid grid-cols-1 gap-3 mb-2",
                                 criteria.payment_method === "debit"
                                     ? "lg:grid-cols-4"
-                                    : "lg:grid-cols-3"
+                                    : "lg:grid-cols-3",
                             )}
                         >
                             <div className="flex flex-col flex-1">
@@ -416,7 +426,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                                             };
                                             setData(
                                                 "admin_fee_criteria",
-                                                updated
+                                                updated,
                                             );
                                         }}
                                     />
@@ -484,12 +494,12 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                                             updated[idx] = {
                                                 ...updated[idx],
                                                 admin_fee: Number(
-                                                    e.target.value
+                                                    e.target.value,
                                                 ),
                                             };
                                             setData(
                                                 "admin_fee_criteria",
-                                                updated
+                                                updated,
                                             );
                                         }}
                                     />
@@ -513,7 +523,7 @@ const AdminSettingIndex = ({ title, description, setting }: PageProps) => {
                 </div>
                 <div className="flex flex-col w-full lg:col-span-3">
                     <Label className="text-base mb-1 after:content-['*'] after:text-red-500 after:ml-1">
-                        Tipe produk yanga ada (dipisah dengan koma)
+                        Tipe produk yang ada (dipisah dengan koma)
                     </Label>
                     <Input
                         type="text"

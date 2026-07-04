@@ -34,12 +34,12 @@ class SettingController extends Controller
             "eligible_point_minimum" => "required|integer|min:0",
             "idr_point_value" => "required|integer|min:0",
             "minimum_point_can_used" => "required|integer|min:0",
-            "admin_fee_criteria" => "required|array|min:1",
+            "admin_fee_criteria" => "nullable|array",
             "admin_fee_criteria.*.payment_method" =>
-                "required",
-            "admin_fee_criteria.*.min_total" => "required|integer|min:0",
+                "required_with:admin_fee_criteria.*",
+            "admin_fee_criteria.*.min_total" => "nullable|integer|min:0",
             "admin_fee_criteria.*.bank_origin" => "nullable|string",
-            "admin_fee_criteria.*.admin_fee" => "required|integer|min:0",
+            "admin_fee_criteria.*.admin_fee" => "nullable|integer|min:0",
         ];
 
         if ($request->hasFile("app_logo")) {
@@ -77,6 +77,13 @@ class SettingController extends Controller
             "trim",
             explode(",", $validated["product_types"]),
         );
+        // admin_fee_criteria: jika user mengosongkan (kirim flag cleared),
+        // atau field tidak ada (array kosong via FormData), simpan sebagai []
+        if ($request->input("admin_fee_criteria_cleared") == 1 || !$request->has("admin_fee_criteria")) {
+            $validated["admin_fee_criteria"] = [];
+        } else {
+            $validated["admin_fee_criteria"] = $validated["admin_fee_criteria"] ?? [];
+        }
         $setting->update($validated);
         Session::flash("success", "Pengaturan aplikasi berhasil diperbarui.");
         return Inertia::location(route("admin.settings.index"));

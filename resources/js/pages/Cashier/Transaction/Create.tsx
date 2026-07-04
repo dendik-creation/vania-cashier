@@ -1714,6 +1714,8 @@ const CashierTransactionCreate = ({
                                             )}
                                         </span>
                                     </div>
+                                    {admin_fee_criteria && admin_fee_criteria.length > 0 && (
+                                    <>
                                     <div className="border-t"></div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
@@ -1723,6 +1725,8 @@ const CashierTransactionCreate = ({
                                             {floatToIdCurrency(form.admin_fee)}
                                         </span>
                                     </div>
+                                    </>
+                                    )}
                                     <div className="border-t my-2"></div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-lg font-semibold">
